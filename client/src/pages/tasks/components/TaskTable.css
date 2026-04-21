@@ -1,0 +1,344 @@
+.priority-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.priority-high {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.priority-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.priority-low {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.status-badge.in-progress {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.status-badge.verified {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.cancelled {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.task-table-action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.task-table-action-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    color: #475569;
+    transition: all 0.2s;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 13px;
+    margin-left: 8px;
+}
+
+.task-table-action-btn:first-child {
+    margin-left: 0;
+}
+
+.task-table-action-btn svg {
+    display: inline-block !important;
+    margin-right: 6px;
+    width: 14px;
+    height: 14px;
+}
+
+.task-table-action-btn.view:hover {
+    color: #6366f1;
+    border-color: #6366f1;
+    background: #eef2ff;
+}
+
+.task-table-action-btn.edit:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.task-table-action-btn.delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+/* ── Responsive Actions ── */
+
+.mobile-only {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: flex !important;
+        /* Changed from block to flex to match container */
+    }
+}
+
+.action-dropdown-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.more-actions-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.more-actions-btn:hover {
+    background: #f1f5f9;
+    border-color: var(--primary-accent);
+    color: var(--primary-accent);
+}
+
+.action-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    /* Higher z-index */
+    padding: 8px;
+    min-width: 180px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: dropdown-fade-in 0.2s ease-out;
+}
+
+.action-dropdown-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.action-dropdown-menu button:hover {
+    background: #f8fafc;
+    color: var(--primary-accent);
+}
+
+.action-dropdown-menu button.delete-action:hover {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.action-dropdown-menu button svg {
+    font-size: 14px;
+}
+
+@keyframes dropdown-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.table-loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ── User Avatars ── */
+.assigned-users-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.avatar-stack {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    cursor: pointer;
+    transition: transform 0.2s;
+    padding-left: 10px;
+}
+
+.avatar-stack:hover {
+    transform: scale(1.05);
+}
+
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid white;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #6366f1;
+    margin-left: -8px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.avatar-circle:last-child {
+    margin-left: 0;
+}
+
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-more {
+    background: #eef2ff !important;
+    color: #4f46e5 !important;
+    border: 1px solid #c7d2fe !important;
+}
+
+/* ── Popover ── */
+.users-popover {
+    position: fixed;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    z-index: 10000;
+    padding: 16px;
+    min-width: 260px;
+    animation: popover-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover-header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.popover-header h4 {
+    margin: 0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.popover-user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.popover-user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.popover-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-weight: 700;
+    color: #6366f1;
+    font-size: 13px;
+    border: 1px solid #e2e8f0;
+}
+
+.popover-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.popover-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.popover-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.popover-user-email {
+    font-size: 12px;
+    color: #64748b;
+}
+
+@keyframes popover-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "fgrow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "build": "npm run build --prefix client",
+    "start": "npm run start --prefix server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sukeshofficial/fgrow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sukeshofficial/fgrow/issues"
+  },
+  "homepage": "https://github.com/sukeshofficial/fgrow#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "pdfkit": "^0.17.2",
+    "slugify": "^1.6.6"
+  }
+}

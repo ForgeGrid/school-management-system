@@ -1,0 +1,198 @@
+/* ============================
+   OTP Modal
+   ============================ */
+
+.otp-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex: 1; /* Allow the actions container to grow */
+  justify-content: flex-end; /* Align buttons to the right */
+}
+
+.otp-actions .btn {
+  flex: 1;
+  height: 52px; /* Increased height from 48px */
+  min-width: 100px; /* Added minimum width */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  font-size: 1rem; /* Slightly larger font */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+  margin: 0 !important;
+  user-select: none;
+}
+
+/* Primary Button - Vibrant Purple */
+.otp-actions .btn.primary {
+  background: linear-gradient(135deg, #7c5cff 0%, #6344ff 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(124, 92, 255, 0.25);
+}
+
+.otp-actions .btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(124, 92, 255, 0.35);
+  background: linear-gradient(135deg, #8b71ff 0%, #6e54ff 100%);
+}
+
+.otp-actions .btn.primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(124, 92, 255, 0.2);
+}
+
+/* Ghost Button - Clean and Minimal */
+.otp-actions .btn.ghost {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.otp-actions .btn.ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.otp-actions .btn.ghost:active:not(:disabled) {
+  background: #e2e8f0;
+}
+
+/* Disabled State */
+.otp-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.otp-actions .btn.primary:disabled {
+  background: #94a3b8;
+  color: #ffffff;
+}
+
+/* Link Button (Resend) */
+.link-btn {
+  background: none;
+  border: none;
+  color: #7c5cff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.link-btn:hover:not(:disabled) {
+  background: rgba(124, 92, 255, 0.08);
+  color: #6344ff;
+}
+
+.link-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+
+/* Overlay */
+.otp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Modal */
+.otp-modal {
+  width: min(520px, 92%);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.otp-modal h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+/* Inputs */
+.otp-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+}
+
+.otp-cell {
+  width: 56px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  border: 1px solid #e6e9ee;
+  outline: none;
+}
+
+.otp-cell:focus {
+  border-color: #7c5cff;
+  box-shadow: 0 8px 24px rgba(124, 92, 255, 0.06);
+}
+
+/* OTP Alert */
+.otp-alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  background: rgba(255, 59, 48, 0.08);
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  color: #ffd7d7;
+  align-items: flex-start;
+}
+
+.otp-alert--error {
+  background: rgba(255, 59, 48, 0.08);
+  border-color: rgba(255, 59, 48, 0.35);
+}
+
+.otp-alert__icon {
+  font-size: 18px;
+  line-height: 1.2;
+  color: #ff0d00;
+}
+
+.otp-alert__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.otp-alert__title {
+  font-weight: 600;
+  color: #ff5050;
+}
+
+.otp-alert__message {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #460101;
+}

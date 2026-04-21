@@ -1,0 +1,185 @@
+# UNWANTED FOLDERS AND FILES FOR AUTH-ONLY SETUP
+# Use this list to strip down the project for a fresh Auth (Login/Register) setup.
+
+### SERVER DIRECTORY (server/src/)
+
+#### [UNWANTED] Controllers
+- controller/billing.controller.js
+- controller/billingEntity.controller.js
+- controller/client.controller.js
+- controller/clientGroup.controller.js
+- controller/document.controller.js
+- controller/documentCollectionRequest.controller.js
+- controller/documentType.controller.js
+- controller/dsc.controller.js
+- controller/expense.controller.js
+- controller/invitation.controller.js
+- controller/invoice.controller.js
+- controller/launch.controller.js
+- controller/notification.controller.js
+- controller/quotation.controller.js
+- controller/receipt.controller.js
+- controller/report.controller.js
+- controller/service.controller.js
+- controller/superadmin.controller.js
+- controller/tag.controller.js
+- controller/task.controller.js
+- controller/tenant.controller.js
+- controller/todo.controller.js
+- controllers/lead.controller.js
+
+#### [UNWANTED] Routes
+- routes/billing.routes.js
+- routes/billingEntity.routes.js
+- routes/client.routes.js
+- routes/clientGroup.routes.js
+- routes/document.routes.js
+- routes/documentCollectionRequest.routes.js
+- routes/documentType.routes.js
+- routes/dsc.routes.js
+- routes/expense.routes.js
+- routes/invitation.routes.js
+- routes/invoice.routes.js
+- routes/launch.routes.js
+- routes/lead.routes.js
+- routes/notification.routes.js
+- routes/quotation.routes.js
+- routes/receipt.routes.js
+- routes/report.routes.js
+- routes/service.routes.js
+- routes/superadmin.routes.js
+- routes/tag.routes.js
+- routes/task.routes.js
+- routes/tenant.routes.js
+- routes/todo.routes.js
+
+#### [UNWANTED] Models
+- models/billing/
+- models/client/
+- models/document/
+- models/documentCollectionRequest/
+- models/dsc/
+- models/expense/
+- models/invoice/
+- models/launch/
+- models/lead/
+- models/notification/
+- models/portal/
+- models/quotation/
+- models/receipt/
+- models/report/
+- models/service/
+- models/tag/
+- models/task/
+- models/tenant/
+- models/todo/
+
+#### [UNWANTED] Middleware
+- middleware/billing.middleware.js
+
+
+
+#### [UNWANTED] Utilities
+- utils/clients.utils.js
+- utils/generateDocumentCollectionRequestNumber.js
+- utils/generateExpenseNumber.js
+- utils/generateQuotationNumber.js
+- utils/notificationHelper.js
+
+- utils/pdf.helper.js
+- utils/totals.js
+
+#### [UNWANTED] Validators
+- validators/invoice.validator.js
+
+---
+
+### CLIENT DIRECTORY (client/src/)
+
+#### [UNWANTED] Pages
+
+- pages/LandingPage.jsx
+- pages/LaunchTimer.jsx
+- pages/Notifications/
+- pages/Settings.jsx
+- pages/Subscription.jsx
+- pages/Tasks.jsx
+- pages/Users.jsx
+- pages/Welcome.jsx
+
+- pages/clients/
+- pages/documents/
+- pages/expenses/
+- pages/invoices/
+- pages/quotations/
+- pages/receipts/
+- pages/services/
+- pages/tasks/
+- pages/todos/
+
+#### [UNWANTED] Features
+- features/invoices/
+- features/quotations/
+- features/receipts/
+
+#### [UNWANTED] API Services
+- api/billingEntity.api.js
+- api/client.api.js
+- api/document.api.js
+- api/documentCollection.api.js
+- api/documentType.api.js
+- api/dsc.api.js
+- api/expense.api.js
+- api/invitation.api.js
+- api/launch.api.js
+- api/notification.api.js
+- api/service.api.js
+- api/superadmin.api.js
+- api/task.api.js
+- api/tenant.api.js
+- api/todo.api.js
+- api/workspace.api.js
+
+#### [UNWANTED] Components
+- components/billing/
+- components/dashboard/
+- components/staff/
+- components/tasks/
+- components/tenant/
+- components/Notification/
+
+#### [UNWANTED] Styles
+- styles/AdvancedFilters.css
+- styles/ClientList.css
+- styles/CreateClient.css
+- styles/Documents.css
+- styles/ExpenseList.css
+- styles/InvoiceList.css
+- styles/ReceiptList.css
+- styles/SearchableDropdown.css
+- styles/Services.css
+- styles/Tasks.css
+- styles/Todo.css
+
+
+- styles/contactsalesmodal.css
+
+- styles/delete-modal.css
+- styles/global-modal.css
+- styles/launch-timer.css
+
+- styles/reappeal-modal.css
+- styles/rejection-modal.css
+- styles/settings.css
+
+- styles/subscription.css
+- styles/tenant-gate.css
+- styles/tenant-info.css
+- styles/tenant-pending.css
+- styles/welcome.css
+
+#### [UNWANTED] Assets
+- assets/ (Various feature-specific images/icons)
+
+#### [UNWANTED] Misc
+- test/
