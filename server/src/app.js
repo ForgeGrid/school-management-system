@@ -38,9 +38,7 @@ app.use(cookieParser());
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
-  "https://fgrow.vercel.app",
-  "https://fg-crm-super-admin.vercel.app",
-  "https://fgrow.forgegrid.in",
+  "https://school-management-system-alpha-two.vercel.app/",
   "http://localhost:5173",
 ].filter(Boolean);
 
