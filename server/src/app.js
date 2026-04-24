@@ -4,29 +4,18 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 
 import authRoutes from "./routes/auth.routes.js";
-import tenantRoutes from "./routes/tenant.routes.js";
+import schoolRoutes from "./routes/school.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
 // import clientRoutes from "./routes/client.routes.js";
-// import tagRoutes from "./routes/tag.routes.js";
-// import clientGroupRoutes from "./routes/clientGroup.routes.js";
-// import serviceRoutes from "./routes/service.routes.js";
 // import taskRoutes from "./routes/task.routes.js";
-// import todoRoutes from "./routes/todo.routes.js";
-// import invoiceRoutes from "./routes/invoice.routes.js";
 // import receiptRoutes from "./routes/receipt.routes.js";
-// import quotationRoutes from "./routes/quotation.routes.js";
 // import expenseRoutes from "./routes/expense.routes.js";
-// import documentTypeRoutes from "./routes/documentType.routes.js";
-// import documentRoutes from "./routes/document.routes.js";
-// import dscRoutes from "./routes/dsc.routes.js";
-// import documentCollectionRequestRoutes from "./routes/documentCollectionRequest.routes.js";
 // import billingEntityRoutes from "./routes/billingEntity.routes.js";
-// import reportRoutes from "./routes/report.routes.js";
 // import billingRoutes from "./routes/billing.routes.js";
-import profileRoutes from "./routes/profile.routes.js";
-// import leadRoutes from "./routes/lead.routes.js";
+// import profileRoutes from "./routes/profile.routes.js";
+import staffProfileRoutes from "./routes/staffProfile.routes.js";
+import studentRoutes from "./routes/student.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
-// import launchRoutes from "./routes/launch.routes.js";
 import superAdminRoutes from "./routes/superadmin.routes.js";
 
 import { errorMiddleware } from "./middleware/error.middleware.js";
@@ -81,29 +70,20 @@ app.use(express.urlencoded({ extended: true }));
 // Note: /uploads static route removed — all files are served from Cloudinary.
 
 app.use("/api/v0/auth", authRoutes);
-app.use("/api/v0/tenant", tenantRoutes);
+app.use("/api/v0/school", schoolRoutes);
 app.use("/api/v0/invitation", invitationRoutes);
 // app.use("/api/v0/clients", clientRoutes);
-// app.use("/api/v0/tags", tagRoutes);
-// app.use("/api/v0/client-groups", clientGroupRoutes);
-// app.use("/api/v0/services", serviceRoutes);
 // app.use("/api/v0/tasks", taskRoutes);
-// app.use("/api/v0/todos", todoRoutes);
 // app.use("/api/v0/invoices", invoiceRoutes);
 // app.use("/api/v0/receipts", receiptRoutes);
 // app.use("/api/v0/quotations", quotationRoutes);
 // app.use("/api/v0/expenses", expenseRoutes);
-// app.use("/api/v0/document-types", documentTypeRoutes);
-// app.use("/api/v0/documents", documentRoutes);
-// app.use("/api/v0/dsc", dscRoutes);
-// app.use("/api/v0/collection-requests", documentCollectionRequestRoutes);
 // app.use("/api/v0/billing-entities", billingEntityRoutes);
-// app.use("/api/v0/reports", reportRoutes);
 // app.use("/api/v0/billing", billingRoutes);
-app.use("/api/v0/profile", profileRoutes);
-// app.use("/api/v0/leads", leadRoutes);
+// app.use("/api/v0/profile", profileRoutes);
+app.use("/api/v0/staff-profile", staffProfileRoutes);
+app.use("/api/v0/student-profile", studentRoutes);
 app.use("/api/v0/notifications", notificationRoutes);
-// app.use("/api/v0/launch", launchRoutes);
 app.use("/api/v0/superadmin", superAdminRoutes);
 
 

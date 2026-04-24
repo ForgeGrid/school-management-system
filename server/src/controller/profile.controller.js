@@ -1,10 +1,11 @@
 import { User } from "../models/auth/user.model.js";
-import Tenant from "../models/tenant/tenant.model.js";
+import School from "../models/school_admin/school.model.js";
+import { StaffProfile } from "../models/staff/teacher.model.js";
+import { StudentProfile } from "../models/student/student.model.js";
 import { uploadBufferToCloud } from "../utils/cloudinary.js";
 import { v2 as cloudinary } from "cloudinary";
 import sendEmail from "../utils/sendEmail.js";
 import logger from "../utils/logger.js";
-import crypto from "crypto";
 
 /**
  * Update User Profile (Name)
@@ -49,7 +50,7 @@ export const requestPasswordOTP = async (req, res) => {
         // Send Email
         await sendEmail({
             to: user.email,
-            subject: "Your ForgeGrid Verification Code",
+            subject: "Your School Portal Verification Code",
             html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #2563eb; text-align: center;">Security Verification</h2>
@@ -60,7 +61,7 @@ export const requestPasswordOTP = async (req, res) => {
           </div>
           <p style="color: #64748b; font-size: 14px;">If you didn't request this, please secure your account immediately.</p>
           <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; text-align: center;">ForgeGrid Security Team</p>
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">Drona ERP Security Team</p>
         </div>
       `,
         });
@@ -99,25 +100,47 @@ export const verifyPasswordOTP = async (req, res) => {
 };
 
 /**
- * Unlink Self from Tenant (Staff only)
+ * Unlink Self from School
  */
-export const unlinkTenant = async (req, res) => {
+export const unlinkSchool = async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        if (user.tenant_role === "owner") {
-            return res.status(400).json({ message: "Owners cannot unlink. Transfer ownership or delete the organization first." });
+        if (!user.school_id) {
+            return res.status(400).json({ message: "User is not linked to any school" });
         }
 
-        user.tenant_id = null;
-        user.tenant_role = "none";
+        const school = await School.findById(user.school_id);
+        if (!school) {
+            return res.status(404).json({ message: "School not found" });
+        }
+
+        // Ownership check for school admins
+        if (user.role === "school_admin" && school.ownerUserId.toString() === user._id.toString()) {
+            return res.status(400).json({
+                message: "School admin cannot unlink directly. Transfer ownership first.",
+            });
+        }
+
+        // Delete respective profile based on role
+        if (["teacher", "staff", "school_admin"].includes(user.role)) {
+            await StaffProfile.deleteOne({ user_id: user._id });
+        } else if (user.role === "student") {
+            await StudentProfile.deleteOne({ user_id: user._id });
+        }
+
+        user.school_id = null;
+        user.role = "none";
+        user.invited_by = null;
+        user.status = "inactive";
+
         await user.save();
 
-        res.json({ message: "Unlinked from organization successfully" });
+        res.json({ message: "Unlinked from school successfully" });
     } catch (err) {
-        logger.error("Error unlinking tenant:", err);
+        logger.error("Error unlinking school:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 };

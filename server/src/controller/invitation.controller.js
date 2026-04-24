@@ -12,17 +12,17 @@ dotenv.config();
 
 export const inviteUser = async (req, res) => {
   try {
-    const { email, tenant_role } = req.body;
+    const { email, role } = req.body;
 
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const result = await inviteUserService({
-      tenant_id: req.user.tenant_id,
+      school_id: req.user.school_id,
       userId: req.user.id,
       email,
-      tenant_role,
+      role,
       frontendUrl: process.env.FRONTEND_URL,
     });
 
@@ -48,7 +48,7 @@ export const acceptInvitation = async (req, res) => {
 
 export const getPendingInvitations = async (req, res) => {
   try {
-    const invites = await fetchPendingInvitationsService(req.user.tenant_id);
+    const invites = await fetchPendingInvitationsService(req.user.school_id);
     res.status(200).json({
       success: true,
       data: invites,
@@ -61,7 +61,7 @@ export const getPendingInvitations = async (req, res) => {
 export const revokeInvitation = async (req, res) => {
   try {
     const { invitationId } = req.params;
-    const result = await revokeInvitationService(invitationId, req.user.tenant_id);
+    const result = await revokeInvitationService(invitationId, req.user.school_id);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });

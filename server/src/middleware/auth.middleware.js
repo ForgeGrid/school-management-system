@@ -53,7 +53,7 @@ export default async function authMiddleware(req, res, next) {
 
     // Load fresh user and validate account state
     const user = await User.findById(userId).select(
-      "name email tenant_id platform_role tenant_role status profile_avatar token_version",
+      "name email school_id platform_role role status profile_avatar token_version",
     );
 
     if (!user) {
@@ -77,9 +77,9 @@ export default async function authMiddleware(req, res, next) {
     // Attach minimal user object to request
     req.user = {
       id: user._id,
-      tenant_id: user.tenant_id,
+      school_id: user.school_id,
       platformRole: isSuperAdmin ? "super_admin" : user.platform_role,
-      tenant_role: user.tenant_role,
+      role: user.role,
       status: user.status,
       data: user,
     };

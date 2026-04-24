@@ -16,7 +16,7 @@ import validator from "validator";
 import fs from "fs";
 
 import sendEmail from "../utils/sendEmail.js";
-import Tenant from "../models/tenant/tenant.model.js";
+import School from "../models/school_admin/school.model.js";
 import logger from "../utils/logger.js";
 
 import { User } from "../models/auth/user.model.js";
@@ -43,9 +43,9 @@ const COOKIE_OPTIONS = {
  * Helper: issue JWT cookie and return safe user payload
  */
 const sendAuthSuccess = (res, user, payload = {}) => {
-  const token = generateToken({ 
-    userId: user._id, 
-    token_version: user.token_version ?? 0 
+  const token = generateToken({
+    userId: user._id,
+    token_version: user.token_version ?? 0
   });
 
   res.cookie("auth_token", token, COOKIE_OPTIONS);
@@ -115,20 +115,20 @@ export const registerUser = async (req, res) => {
     });
 
     let invitedBy;
-    let tenant_id = null;
-    let tenant_role = "none";
+    let school_id = null;
+    let role = "none";
 
     // Reconnection logic: if no active invitation, check for past associations
     if (!invitation) {
       // 1. Check for previously accepted invitations (staff)
       invitation = await UserInvitation.findOne({ email }).sort({ createdAt: -1 });
-      
+
       if (!invitation) {
-        // 2. Check if this user owns a tenant (owner)
-        const ownedTenant = await Tenant.findOne({ companyEmail: email });
-        if (ownedTenant) {
-          tenant_id = ownedTenant._id;
-          tenant_role = "owner";
+        // 2. Check if this user owns a Admin (owner)
+        const ownedSchool = await School.findOne({ schoolEmail: email });
+        if (ownedSchool) {
+          school_id = ownedSchool._id;
+          role = "school_admin";
         }
       }
     }
@@ -142,8 +142,8 @@ export const registerUser = async (req, res) => {
       }
 
       invitedBy = invitation.invited_by;
-      tenant_id = invitation.tenant_id;
-      tenant_role = invitation.tenant_role;
+      school_id = invitation.school_id;
+      role = invitation.role;
 
       if (!invitation.accepted_at) {
         invitation.accepted_at = new Date();
@@ -157,8 +157,8 @@ export const registerUser = async (req, res) => {
       username,
       email,
       invited_by: invitedBy,
-      tenant_id: tenant_id,
-      tenant_role: tenant_role,
+      school_id: school_id,
+      role: role,
       profile_avatar: avatarData,
       status: "active",
       joined_at: new Date(),
@@ -174,11 +174,12 @@ export const registerUser = async (req, res) => {
     user.reset_token_expiry = Date.now() + 5 * 60 * 1000;
 
     await user.save();
+
     // Send Registration Welcome & Verification Email
     logger.info(`Registration: Sending OTP to ${email}`);
     await sendEmail({
       to: email,
-      subject: "Welcome to FGROW! 🚀 — Verify your account",
+      subject: "Welcome to FG ERP! 🚀 — Verify your account",
       text: `Hello ${name}, welcome to the family! Your verification code is ${rawOtp}.`,
       html: `
     <!DOCTYPE html>
@@ -195,14 +196,14 @@ export const registerUser = async (req, res) => {
         <div style="max-width: 600px; margin: 40px auto; background: #ffffff; color: #1e293b; padding: 48px 40px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <div style="text-align: center; margin-bottom: 32px;">
-                <img src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775310579/tenants/a7tvcuo0moqztzeoevaz.png" alt="FGrow" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;">
+                <img src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775310579/tenants/a7tvcuo0moqztzeoevaz.png" alt="FG ERP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;">
                 <h1 style="color: #2563eb; font-size: 32px; margin: 0; letter-spacing: -0.02em; font-weight: 700;">Welcome! 🥂</h1>
-                <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Hello ${name?.split(" ")[0]}, we're thrilled to have you join FGROW.</p>
+                <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Hello ${name?.split(" ")[0]}, we're thrilled to have you join FG ERP.</p>
             </div>
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
                 <p style="font-size: 14px; line-height: 1.7; color: #334155; margin: 0; text-align: justify;">
-                    We're excited to have you on board. FGrow is your ultimate self-hosted hub for managing clients, tasks, and invoices. 
+                    We're excited to have you on board. FG ERP is your ultimate self-hosted hub for managing clients, tasks, and invoices. 
                     To get started and secure your account, please use the verification code below to activate your profile.
                 </p>
             </div>
@@ -277,9 +278,9 @@ export const verifyOtp = async (req, res) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // Reconnection: If reregistering owner, link the tenant back to this new user ID
-    if (user.tenant_role === "owner" && user.tenant_id) {
-      await Tenant.findByIdAndUpdate(user.tenant_id, {
+    // Reconnection: If reregistering owner, link the admin back to this new user ID
+    if (user.role === "school_admin" && user.school_id) {
+      await School.findByIdAndUpdate(user.school_id, {
         ownerUserId: user._id,
       });
     }
@@ -380,7 +381,7 @@ export const resendSignupOtp = async (req, res) => {
       </p>
 
       <p style="font-size: 13px; color: #888; text-align: center;">
-        — FGrow Team
+        — FG ERP Team
       </p>
 
     </div>
@@ -427,7 +428,7 @@ export const forgotPasswordRequest = async (req, res) => {
     logger.info(`ForgotPassword: Sending OTP to ${email}`);
     await sendEmail({
       to: email,
-      subject: "Password Reset OTP - FGrow 🛡️",
+      subject: "Password Reset OTP - FG ERP 🛡️",
       text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
       html: `
     <div style="font-family: 'Poppins', sans-serif; background-color: #f8fafc; padding: 40px 20px;">
@@ -436,7 +437,7 @@ export const forgotPasswordRequest = async (req, res) => {
         <div style="text-align: center; margin-bottom: 32px;">
           <img 
             src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775310579/tenants/a7tvcuo0moqztzeoevaz.png" 
-            alt="FGrow"
+            alt="FG ERP"
             style="width: 70px; height: 70px; border-radius: 18px; margin-bottom: 20px;"
           />
           <h2 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: 700;">Reset Your Password</h2>
@@ -457,7 +458,7 @@ export const forgotPasswordRequest = async (req, res) => {
         <div style="text-align: center; border-top: 1px solid #f1f5f9; padding-top: 24px;">
           <p style="font-size: 13px; color: #94a3b8; margin: 0;">
             Securing your growth,<br>
-            <strong>The FGrow Security Team</strong>
+            <strong>The FG ERP Security Team</strong>
           </p>
         </div>
       </div>
@@ -629,7 +630,7 @@ export const loginUser = async (req, res) => {
         </p>
 
         <p style="font-size: 13px; color: #888; text-align: center;">
-          — FGrow Security Team
+          — FG ERP Security Team
         </p>
 
       </div>
@@ -662,9 +663,11 @@ export const loginUser = async (req, res) => {
       user.platform_role = "super_admin";
     }
 
-    if (user.tenant_id && user.tenant_role === "none") {
-      user.tenant_role = "staff";
-    }
+    /* if (!user.role || user.role === "none") {
+    //   return res.status(403).json({
+    //     message: "User role not assigned",
+    //   });
+    // } */
 
     await user.save({ validateBeforeSave: false });
 
@@ -679,7 +682,7 @@ export const loginUser = async (req, res) => {
       logger.info(`Login: Sending 1st login welcome email to ${user.email}`);
       await sendEmail({
         to: user.email,
-        subject: "Welcome back! - FGrow ✨",
+        subject: "Welcome back! - FG ERP ✨",
         text: `Hello ${user.name}, welcome to your account! You have successfully logged in on ${loginTime}.`,
         html: `
     <!DOCTYPE html>
@@ -696,14 +699,14 @@ export const loginUser = async (req, res) => {
         <div style="max-width: 600px; margin: 40px auto; background: #ffffff; color: #1e293b; padding: 48px 40px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <div style="text-align: center; margin-bottom: 32px;">
-                <img src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775284858/profile_avatars/ahhwaxgntxhxsu3ifoa9.png" alt="FGrow" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;">
+                <img src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775284858/profile_avatars/ahhwaxgntxhxsu3ifoa9.png" alt="FG ERP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;">
                 <h1 style="color: #2563eb; font-size: 32px; margin: 0; letter-spacing: -0.02em; font-weight: 700;">Welcome back! ✨</h1>
                 <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Hello ${user.name?.split(" ")[0]}, your account is now fully active.</p>
             </div>
 
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
                 <p style="font-size: 14px; line-height: 1.7; color: #334155; margin: 0; text-align: justify;">
-                    Your account has been successfully verified and accessed. We're excited to see you continue your journey with FGrow. 
+                    Your account has been successfully verified and accessed. We're excited to see you continue your journey with FG ERP. 
                     Manage your clients, focus on your tasks, and automate your billing all in one place.
                 </p>
             </div>
@@ -844,12 +847,12 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ message: "user not found" });
     }
 
-    if (!user.tenant_id) {
+    if (!user.school_id) {
       const invitation = await UserInvitation.findOne({
         email: user.email,
         accepted_at: null,
         expires_at: { $gt: new Date() },
-      }).populate("tenant_id");
+      }).populate("school_id");
 
       if (invitation) {
         return res.status(200).json({
@@ -857,100 +860,99 @@ export const getMe = async (req, res) => {
           state: "INVITED",
           user,
           invitation: {
-            tenantName: invitation.tenant_id?.name || null,
-            tenant_role: invitation.tenant_role,
+            adminName: invitation.school_id?.name || null,
+            role: invitation.role,
             token: invitation.invite_token,
           },
         });
       }
 
       return res.status(200).json({
-        message: "Tenant setup required",
-        state: "NO_TENANT",
+        state: "NO_SCHOOL",
+        message: "No school associated",
         user,
       });
     }
 
-    const tenant = await Tenant.findById(user.tenant_id)
+    // Fetch school
+    const school = await School.findById(user.school_id)
       .select(
-        "name companyEmail companyPhone gstNumber registrationNumber companyAddress timezone currency verificationStatus verifiedBy verifiedAt rejection_reason isActive createdAt plan appealCount trialEndDate",
+        "name schoolEmail schoolPhone board medium address verificationStatus verifiedBy verifiedAt rejection_reason isActive trialUsed trialEndDate plan"
       )
       .populate("verifiedBy", "name email");
 
-    if (!tenant) {
-      // tenant reference broken or deleted
+    if (!school) {
       return res.status(400).json({
-        message: "Tenant not found (referenced tenant missing)",
-        state: "TENANT_MISSING",
+        state: "SCHOOL_MISSING",
+        message: "School not found",
         user,
       });
     }
 
-    // Tenant-level gating
-    if (!tenant.isActive) {
+    // School inactive
+    if (!school.isActive) {
       return res.status(200).json({
-        message: "Tenant is inactive",
-        state: "TENANT_INACTIVE",
+        state: "SCHOOL_INACTIVE",
+        message: "School is inactive",
         user,
-        tenant: {
-          id: tenant._id,
-          name: tenant.name,
-          isActive: tenant.isActive,
+        school: {
+          id: school._id,
+          name: school.name,
+          isActive: school.isActive,
         },
       });
     }
 
     // Use your existing verificationStatus field as the approval state
-    switch (tenant.verificationStatus) {
+    switch (admin.verificationStatus) {
       case "verified":
         return res.status(200).json({
           message: "User Active",
           state: "ACTIVE",
           user,
-          tenant: {
-            id: tenant._id,
-            name: tenant.name,
-            plan: req.user.platformRole === "super_admin" ? "pro" : tenant.plan,
-            trialEndDate: req.user.platformRole === "super_admin" ? null : tenant.trialEndDate,
+          school: {
+            id: school._id,
+            name: school.name,
+            plan: req.user.platformRole === "super_admin" ? "pro" : school.plan,
+            trialEndDate: req.user.platformRole === "super_admin" ? null : school.trialEndDate,
           },
         });
 
       case "pending":
       default:
         return res.status(200).json({
-          message: "Tenant pending verification",
+          message: "School pending verification",
           state: "PENDING_VERIFICATION",
           user,
-          tenant: {
-            id: tenant._id,
-            name: tenant.name,
-            verificationStatus: tenant.verificationStatus,
-            createdAt: tenant.createdAt,
-            plan: req.user.platformRole === "super_admin" ? "pro" : tenant.plan,
-            trialEndDate: req.user.platformRole === "super_admin" ? null : tenant.trialEndDate,
+          school: {
+            id: school._id,
+            name: school.name,
+            verificationStatus: school.verificationStatus,
+            createdAt: school.createdAt,
+            plan: req.user.platformRole === "super_admin" ? "pro" : school.plan,
+            trialEndDate: req.user.platformRole === "super_admin" ? null : school.trialEndDate,
           },
         });
 
       case "rejected":
         return res.status(200).json({
-          message: "Tenant rejected",
+          message: "School rejected",
           state: "REJECTED_VERIFICATION",
           user,
-          tenant: {
-            id: tenant._id,
-            name: tenant.name,
-            companyEmail: tenant.companyEmail,
-            companyPhone: tenant.companyPhone,
-            gstNumber: tenant.gstNumber,
-            registrationNumber: tenant.registrationNumber,
-            companyAddress: tenant.companyAddress,
-            timezone: tenant.timezone,
-            currency: tenant.currency,
-            verificationStatus: tenant.verificationStatus,
-            rejection_reason: tenant.rejection_reason,
-            appealCount: tenant.appealCount,
-            verifiedBy: tenant.verifiedBy,
-            verifiedAt: tenant.verifiedAt,
+          school: {
+            id: school._id,
+            name: school.name,
+            schoolEmail: school.schoolEmail,
+            schoolPhone: school.schoolPhone,
+            board: school.board,
+            medium: school.medium,
+            address: school.address,
+            timezone: school.timezone,
+            currency: school.currency,
+            verificationStatus: school.verificationStatus,
+            rejection_reason: school.rejection_reason,
+            verifiedBy: school.verifiedBy,
+            verifiedAt: school.verifiedAt,
           },
         });
     }

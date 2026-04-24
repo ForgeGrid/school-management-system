@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-import Tenant from "../models/tenant/tenant.model.js";
+import School from "../models/school_admin/school.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import logger from "../utils/logger.js";
 
@@ -8,39 +8,39 @@ import { User } from "../models/auth/user.model.js";
 import { UserInvitation } from "../models/auth/userInvitation.model.js";
 
 export const inviteUserService = async ({
-  tenant_id,
+  school_id,
   userId,
   email,
-  tenant_role,
+  role,
   frontendUrl,
 }) => {
-  // 1️⃣ Check tenant verification status
-  logger.info(`Inviting user to tenant: ${tenant_id} email: ${email}`);
-  const tenant = await Tenant.findById(tenant_id);
+  // 1️⃣ Check school verification status
+  logger.info(`Inviting user to school: ${school_id} email: ${email}`);
+  const school = await School.findById(school_id);
 
-  if (!tenant) {
-    throw new Error("Tenant not found");
+  if (!school) {
+    throw new Error("School not found");
   }
 
-  if (tenant.verificationStatus !== "verified") {
+  if (school.verificationStatus !== "verified") {
     throw new Error(
-      "Your organization is not verified. You cannot add staff or clients until verification is complete.",
+      "Your school is not verified. You cannot add staff until verification is complete.",
     );
   }
 
-  if (!tenant.isActive) {
-    throw new Error("Tenant is inactive");
+  if (!school.isActive) {
+    throw new Error("School is inactive");
   }
 
-  // 1b Check if the inviter is the owner
+  // 1b Check if the inviter is the admin
   const inviter = await User.findById(userId);
-  if (!inviter || inviter.tenant_role !== "owner") {
-    throw new Error("Only organization owners can invite new members.");
+  if (!inviter || inviter.role !== "school_admin") {
+    throw new Error("Only school admins can invite new members.");
   }
 
-  // 1c Check if the invited role is staff
-  if (tenant_role !== "staff") {
-    throw new Error("Only staff members can be invited.");
+  // 1c Check if the invited role is valid
+  if (!["teacher", "staff"].includes(role)) {
+    throw new Error("Only teachers or staff members can be invited.");
   }
 
   // 2️⃣ Generate invite token
@@ -50,7 +50,7 @@ export const inviteUserService = async ({
 
   // Check if there's already a pending invitation for the same email
   const existingInvitation = await UserInvitation.findOne({
-    tenant_id,
+    school_id,
     email,
     accepted_at: null,
     expires_at: { $gt: new Date() }
@@ -61,9 +61,9 @@ export const inviteUserService = async ({
   }
 
   const userInvitation = await UserInvitation.create({
-    tenant_id: tenant_id,
+    school_id: school_id,
     email,
-    tenant_role,
+    role,
     invited_by: userId,
     invite_token: inviteToken,
     expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -79,36 +79,31 @@ export const inviteUserService = async ({
     await user.save();
   }
 
-  // 4️⃣ Send email (placeholder - implement actual email sending logic here)
+  // 4️⃣ Send email
   await sendEmail({
     to: email,
-    subject: `You're invited to join ${tenant.name} on FGrow 🎉`,
+    subject: `You're invited to join ${school.name} on Drona ERP 🎉`,
     html: `
       <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background: #ffffff;">
-        <div style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); padding: 40px 20px; text-align: center;">
-          <img 
-            src="https://res.cloudinary.com/dbaeuihz7/image/upload/v1775310579/tenants/a7tvcuo0moqztzeoevaz.png" 
-            alt="Logo"
-            style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); margin-bottom: 20px;"
-          />
-          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Organization Invitation</h1>
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">School Portal Invitation</h1>
         </div>
         
         <div style="padding: 40px;">
           <p style="margin-top: 0; font-size: 16px; font-weight: 600; color: #1e293b;">Welcome!</p>
-          <p style="font-size: 16px; color: #475569;">You have been invited to join <strong>${tenant.name}</strong> on FGrow. We're excited to have you on board!</p>
+          <p style="font-size: 16px; color: #475569;">You have been invited to join <strong>${school.name}</strong> as a <strong>${role}</strong>. We're excited to have you on board!</p>
           
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
             <p style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Your Invitation Token</p>
             <div style="
               background: #ffffff;
-              border: 2px dashed #7c3aed;
+              border: 2px dashed #2563eb;
               border-radius: 12px;
               padding: 16px;
               font-family: 'Courier New', Courier, monospace;
               font-size: 20px;
               font-weight: 800;
-              color: #7c3aed;
+              color: #2563eb;
               letter-spacing: 2px;
             ">
               ${inviteToken}
@@ -116,14 +111,14 @@ export const inviteUserService = async ({
           </div>
 
           <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">
-            Please use this token to accept your invitation in the FGrow portal. If you did not expect this invitation, you can safely ignore this email.
+            Please use this token to accept your invitation in the Drona portal. If you did not expect this invitation, you can safely ignore this email.
           </p>
 
-          <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Thanks,<br/><strong>FGrow Team</strong></p>
+          <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Thanks,<br/><strong>Drona Team</strong></p>
         </div>
 
         <div style="background: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
-          <p style="margin: 0; color: #94a3b8; font-size: 12px; font-weight: 600;">Sent by <strong>${tenant.name}</strong> via FGrow</p>
+          <p style="margin: 0; color: #94a3b8; font-size: 12px; font-weight: 600;">Sent by <strong>${school.name}</strong> via Drona ERP</p>
         </div>
       </div>
     `,
@@ -163,8 +158,8 @@ export const acceptInvitationService = async ({ token, userId }) => {
     throw new Error("This invitation is not for this account");
   }
 
-  user.tenant_id = invitation.tenant_id;
-  user.tenant_role = invitation.tenant_role;
+  user.school_id = invitation.school_id;
+  user.role = invitation.role;
   user.status = "active";
 
   await user.save();
@@ -179,11 +174,11 @@ export const acceptInvitationService = async ({ token, userId }) => {
 };
 
 /**
- * Fetch all pending invitations for a tenant
+ * Fetch all pending invitations for a school
  */
-export const fetchPendingInvitationsService = async (tenant_id) => {
+export const fetchPendingInvitationsService = async (school_id) => {
   return await UserInvitation.find({
-    tenant_id,
+    school_id,
     accepted_at: null,
     expires_at: { $gt: new Date() },
   })
@@ -194,10 +189,10 @@ export const fetchPendingInvitationsService = async (tenant_id) => {
 /**
  * Revoke/Delete a pending invitation
  */
-export const revokeInvitationService = async (invitationId, tenant_id) => {
+export const revokeInvitationService = async (invitationId, school_id) => {
   const invitation = await UserInvitation.findOne({
     _id: invitationId,
-    tenant_id,
+    school_id,
   });
 
   if (!invitation) {
@@ -221,7 +216,7 @@ export const getInvitationByTokenService = async (token) => {
     invite_token: token,
     accepted_at: null,
     expires_at: { $gt: new Date() },
-  }).populate("tenant_id", "name logoUrl");
+  }).populate("school_id", "name logoUrl");
 
   if (!invitation) {
     throw new Error("Invalid or expired invitation");

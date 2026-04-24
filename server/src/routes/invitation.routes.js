@@ -1,17 +1,17 @@
 import express from "express";
-import { 
-  inviteUser, 
+import {
+  inviteUser,
   acceptInvitation,
   getPendingInvitations,
   revokeInvitation,
   getInvitationDetails
 } from "../controller/invitation.controller.js";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole } from "../middleware/tenant_role.middleware.js";
+import { requireRole } from "../middleware/school_role.middleware.js";
 
 const router = express.Router();
 
-const authManagement = [authMiddleware, requireRole("owner", "admin")];
+const authManagement = [authMiddleware, requireRole("school_admin")];
 
 router.post("/invite", ...authManagement, inviteUser);
 router.get("/details/:token", authMiddleware, getInvitationDetails);

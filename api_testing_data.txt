@@ -1,0 +1,168 @@
+========================================================================
+SCHOOL MANAGEMENT SYSTEM - API TESTING DATA
+========================================================================
+
+BASE URL: http://localhost:5000/api/v0 (Adjust port if necessary)
+
+------------------------------------------------------------------------
+1. STUDENT MANAGEMENT
+------------------------------------------------------------------------
+Base Route: /student-profile
+
+[POST] /student-profile/create
+Description: Manually register a student (Admin/Staff only)
+Payload:
+{
+  "student_name": "John Doe",
+  "email": "john.doe@example.com",
+  "password": "SecurePassword123!",
+  "admission_no": "ADM-2026-001",
+  "class_name": "10th Grade",
+  "section": "A",
+  "gender": "male",
+  "dob": "2010-05-15",
+  "age": 15,
+  "roll_no": "101",
+  "parent_name": "Robert Doe",
+  "parent_email": "robert.parent@example.com",
+  "parent_phone": "+919876543210",
+  "address": {
+    "street": "123 Maple Street",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "postalCode": "600001",
+    "country": "India"
+  },
+  "transport_required": true,
+  "bus_route": "Route-B4"
+}
+
+[PATCH] /student-profile/update/:studentId
+Description: Update student details (Admin/Staff only)
+Payload:
+{
+  "student_name": "Johnathan Doe",
+  "class_name": "11th Grade",
+  "section": "B",
+  "roll_no": "1102"
+}
+
+[GET] /student-profile/me
+Description: Get logged-in student's profile
+
+[GET] /student-profile/all
+Description: List all students in the school (Admin/Staff only)
+
+[GET] /student-profile/:studentId
+Description: Get single student details (Admin/Staff only)
+
+[DELETE] /student-profile/:studentId
+Description: Archive/Deactivate student (Admin/Staff only)
+
+[PATCH] /student-profile/avatar
+Description: Update profile picture (Multipart/form-data)
+Field: avatar (File)
+
+[POST] /student-profile/password/otp-request
+Description: Request OTP for password change
+Payload: {}
+
+[POST] /student-profile/password/otp-verify
+Description: Verify OTP and set new password
+Payload:
+{
+  "otp": "123456",
+  "newPassword": "NewSecurePassword@2026"
+}
+
+
+------------------------------------------------------------------------
+2. STAFF / TEACHER MANAGEMENT
+------------------------------------------------------------------------
+Base Route: /staff-profile
+
+[POST] /staff-profile/create
+Description: Create staff/teacher profile (Self)
+Payload:
+{
+  "designation": "Mathematics Teacher",
+  "department": "Science",
+  "qualification": "M.Sc Mathematics, B.Ed",
+  "experienceYears": 5,
+  "subjects": ["Mathematics", "Physics"],
+  "employeeId": "STF-2026-045",
+  "joiningDate": "2026-01-10",
+  "phone": "+919988776655",
+  "alternatePhone": "+919988776644"
+}
+
+[PATCH] /staff-profile/update
+Description: Update your own staff profile
+Payload:
+{
+  "phone": "+919988776650",
+  "experienceYears": 6
+}
+
+[GET] /staff-profile/me
+Description: Get logged-in staff profile
+
+[GET] /staff-profile/all-teachers
+Description: List all teachers (Admin only)
+
+[PATCH] /staff-profile/approve/:profileId
+Description: Approve staff member (Admin only)
+
+[PATCH] /staff-profile/reject/:profileId
+Description: Reject staff member (Admin only)
+Payload:
+{
+  "reason": "Missing documentation for qualification"
+}
+
+[POST] /staff-profile/password/otp-request
+Description: Request OTP for password change
+Payload: {}
+
+[POST] /staff-profile/password/otp-verify
+Description: Verify OTP and set new password
+Payload:
+{
+  "otp": "123456",
+  "newPassword": "StaffNewPassword@2026"
+}
+
+[DELETE] /staff-profile/unlink
+Description: Leave the current school
+========================================================================
+
+------------------------------------------------------------------------
+3. INVITATION MANAGEMENT
+------------------------------------------------------------------------
+Base Route: /invitation
+
+[POST] /invitation/invite
+Description: Invite a teacher or staff member (School Admin only)
+Payload:
+{
+  "email": "teacher.new@example.com",
+  "role": "teacher" 
+}
+
+[GET] /invitation/details/:token
+Description: Get details of an invitation by token
+
+[POST] /invitation/accept
+Description: Accept an invitation (User must be logged in with matching email)
+Payload:
+{
+  "token": "YOUR_INVITATION_TOKEN_HERE"
+}
+
+[GET] /invitation/pending
+Description: List all pending invitations for the school (Admin only)
+
+[DELETE] /invitation/:invitationId
+Description: Revoke a pending invitation (Admin only)
+
+========================================================================

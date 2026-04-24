@@ -3,9 +3,9 @@ import crypto from "crypto";
 
 const userInvitationSchema = new mongoose.Schema(
   {
-    tenant_id: {
+    school_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Tenant",
+      ref: "School",
       required: true,
       index: true,
     },
@@ -18,9 +18,9 @@ const userInvitationSchema = new mongoose.Schema(
       index: true,
     },
 
-    tenant_role: {
+    role: {
       type: String,
-      enum: ["admin", "staff", "read_only"],
+      enum: ["school_admin", "teacher", "staff"],
       default: "staff",
     },
 

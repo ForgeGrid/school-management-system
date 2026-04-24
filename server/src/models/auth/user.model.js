@@ -23,10 +23,10 @@ const SALT_ROUNDS = 12;
 // User schema definition
 const userSchema = new mongoose.Schema(
   {
-    // Multi-tenant reference
-    tenant_id: {
+    // Multi-School reference
+    school_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Tenant",
+      ref: "School",
       default: null,
       index: true,
     },
@@ -83,9 +83,9 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
-    tenant_role: {
+    role: {
       type: String,
-      enum: ["owner", "staff", "read_only", "none"],
+      enum: ["school_admin", "teacher", "staff", "student", "parent", "none"],
       default: "none",
       index: true,
     },

@@ -17,8 +17,7 @@ const transporter = nodemailer.createTransport({
   greetingTimeout: 10000,
 });
 
-console.log("EMAIL:", process.env.EMAIL_USER);
-console.log("PASS LENGTH:", process.env.EMAIL_PASS?.length);
+
 
 // Debug log for production initialization
 if (process.env.NODE_ENV === "production") {
