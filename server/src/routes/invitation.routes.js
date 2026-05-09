@@ -8,12 +8,14 @@ import {
 } from "../controller/invitation.controller.js";
 import authMiddleware from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js"
 
 const router = express.Router();
 
 const authManagement = [authMiddleware, requireRole("school_admin")];
+const schoolManagement = [requireVerifiedSchool];
 
-router.post("/invite", ...authManagement, inviteUser);
+router.post("/invite", ...authManagement, ...schoolManagement, inviteUser);
 router.get("/details/:token", authMiddleware, getInvitationDetails);
 router.post("/accept", authMiddleware, acceptInvitation);
 

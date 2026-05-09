@@ -14,22 +14,11 @@ export const inviteUserService = async ({
   role,
   frontendUrl,
 }) => {
-  // 1️⃣ Check school verification status
   logger.info(`Inviting user to school: ${school_id} email: ${email}`);
   const school = await School.findById(school_id);
 
   if (!school) {
     throw new Error("School not found");
-  }
-
-  if (school.verificationStatus !== "verified") {
-    throw new Error(
-      "Your school is not verified. You cannot add staff until verification is complete.",
-    );
-  }
-
-  if (!school.isActive) {
-    throw new Error("School is inactive");
   }
 
   // 1b Check if the inviter is the admin

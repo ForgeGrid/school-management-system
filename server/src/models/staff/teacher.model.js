@@ -34,9 +34,25 @@ const staffProfileSchema = new mongoose.Schema(
             sparse: true,
         },
 
-        joiningDate: {
+        employeeStatus: {
+            type: String,
+            enum: ["employed", "resigned", "terminated"],
+            default: null
+        },
+
+        resignedAt: {
             type: Date,
-            default:null
+            default: null,
+        },
+
+        resignationReason: {
+            type: String,
+            default: null,
+        },
+
+        rehiredAt: {
+            type: Date,
+            default: null,
         },
 
         // 📞 Contact
@@ -58,6 +74,11 @@ const staffProfileSchema = new mongoose.Schema(
         verifiedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+        },
+
+        rejection_reason: {
+            type: String,
+            default: null,
         },
     },
     { timestamps: true }

@@ -11,7 +11,7 @@ import {
   getAllStudentsService,
   getOneStudentService,
   deleteStudentService,
-} from "../services/student.services.js";
+} from "../services/student.service.js";
 
 export const createStudent = async (req, res) => {
   try {

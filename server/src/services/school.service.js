@@ -132,13 +132,13 @@ export const rejectSchoolService = async (schoolId, reason, adminId) => {
 };
 
 // --------------------------------------------------
-// 4️⃣ Re-appeal Tenant
+// 4️⃣ Re-appeal School
 // --------------------------------------------------
-export const reAppealTenantService = async (schoolId, userId, updates = {}) => {
+export const reAppealSchoolService = async (schoolId, userId, updates = {}) => {
   const school = await School.findById(schoolId);
 
   if (!school) {
-    throw new Error("Tenant not found");
+    throw new Error("School not found");
   }
 
   if (school.verificationStatus !== "rejected") {
@@ -146,7 +146,7 @@ export const reAppealTenantService = async (schoolId, userId, updates = {}) => {
   }
 
   // Optional: limit appeals
-  if (school.appealCount >= 3) {
+  if (school.appealCount >= 5) {
     throw new Error("Maximum appeal attempts reached");
   }
 
@@ -162,7 +162,7 @@ export const reAppealTenantService = async (schoolId, userId, updates = {}) => {
   if (updates.timezone) school.timezone = updates.timezone;
   if (updates.currency) school.currency = updates.currency;
   if (updates.address) school.address = updates.address;
-  
+
   school.verificationStatus = "pending";
   school.rejection_reason = null;
   school.appealCount += 1;

@@ -1,15 +1,7 @@
 // controllers/staffProfile.controller.js
-
-import crypto from "crypto";
-import { v2 as cloudinary } from "cloudinary";
-
 import logger from "../utils/logger.js";
-import sendEmail from "../utils/sendEmail.js";
-import { uploadBufferToCloud } from "../utils/cloudinary.js";
 
 import { User } from "../models/auth/user.model.js";
-import School from "../models/school_admin/school.model.js";
-import { StaffProfile } from "../models/staff/teacher.model.js";
 
 import {
   createStaffProfileService,
@@ -19,6 +11,8 @@ import {
   getOneTeacherService,
   approveStaffService,
   rejectStaffService,
+  resignStaffService,
+  requestRejoinStaffService
 } from "../services/staffProfile.service.js";
 
 
@@ -27,7 +21,7 @@ import {
 // --------------------------------------
 export const createProfile = async (req, res) => {
   try {
-    const profile = await createStaffProfileService(req.user, req.body);
+    const profile = await createStaffProfileService(req.user, req.body || {});
 
     return res.status(201).json({
       message: "Profile created successfully",
@@ -45,7 +39,7 @@ export const createProfile = async (req, res) => {
 // --------------------------------------
 export const updateProfile = async (req, res) => {
   try {
-    const { name, ...profileData } = req.body;
+    const { name, ...profileData } = req.body || {};
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -142,7 +136,7 @@ export const rejectStaff = async (req, res) => {
   try {
     const profile = await rejectStaffService(
       req.params.profileId,
-      req.body.reason,
+      (req.body || {}).reason,
       req.user
     );
 
@@ -153,5 +147,54 @@ export const rejectStaff = async (req, res) => {
   } catch (err) {
     logger.error("Reject staff error:", err);
     return res.status(400).json({ message: err.message });
+  }
+};
+
+// --------------------------------------
+// Resign Staff
+// --------------------------------------
+export const resignStaff = async (req, res) => {
+  try {
+    const profile = await resignStaffService(
+      req.params.profileId,
+      (req.body || {}).reason,
+      req.user
+    );
+
+    return res.json({
+      message: "Staff resigned successfully",
+      profile
+    });
+
+  } catch (err) {
+    logger.error("Resign staff error:", err);
+
+    return res.status(400).json({
+      message: err.message
+    });
+  }
+};
+
+// --------------------------------------
+// Request Rejoin
+// --------------------------------------
+export const requestRejoinStaff = async (req, res) => {
+  try {
+    const profile = await requestRejoinStaffService(
+      req.params.profileId,
+      req.user
+    );
+
+    return res.json({
+      message: "Rejoin request submitted successfully",
+      profile
+    });
+
+  } catch (err) {
+    logger.error("Request rejoin error:", err);
+
+    return res.status(400).json({
+      message: err.message
+    });
   }
 };

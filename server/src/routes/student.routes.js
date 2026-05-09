@@ -1,6 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 import {
   createStudent,
@@ -14,7 +15,7 @@ import {
 const router = express.Router();
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(authMiddleware, requireVerifiedSchool);
 
 // Student profile management
 router.post("/create", requireRole("school_admin", "staff"), createStudent);

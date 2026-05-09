@@ -39,12 +39,12 @@ export const createStudentService = async (adminUser, data) => {
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    throw new Error("A user with this email already exists");
+    throw new Error(`A user with the email "${email}" already exists`);
   }
 
-  const existingAdmission = await StudentProfile.findOne({ 
-    school_id: adminUser.school_id, 
-    admission_no 
+  const existingAdmission = await StudentProfile.findOne({
+    school_id: adminUser.school_id,
+    admission_no
   });
   if (existingAdmission) {
     throw new Error(`Admission number ${admission_no} already exists in this school`);

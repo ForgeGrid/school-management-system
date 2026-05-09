@@ -25,7 +25,7 @@ const authOwner = [authMiddleware, requireRole("owner", "school_admin")];
 const authStandard = [authMiddleware];
 
 // Create school 
-router.post("/create", authMiddleware, clearCacheMiddleware("v0/tenant"), upload.single("schoolLogo"), createSchool);
+router.post("/create", authMiddleware, clearCacheMiddleware("v0/school_admin"), upload.single("schoolLogo"), createSchool);
 
 
 // GET ALL schools (super-admin only)
@@ -43,18 +43,18 @@ router.get("/detail/:schoolId/staff", ...authSuperAdmin, getSchoolStaffAdmin);
 router.get("/pending", ...authSuperAdmin, getPendingSchools);
 
 // Approve / reject school (super-admin only)
-router.patch("/:schoolId/approve", ...authSuperAdmin, clearCacheMiddleware("v0/tenant"), approveSchool);
-router.patch("/:schoolId/reject", ...authSuperAdmin, clearCacheMiddleware("v0/tenant"), rejectSchool);
+router.patch("/:schoolId/approve", ...authSuperAdmin, clearCacheMiddleware("v0/school_admin"), approveSchool);
+router.patch("/:schoolId/reject", ...authSuperAdmin, clearCacheMiddleware("v0/school_admin"), rejectSchool);
 
 // Re-appeal school (owner/admin)
-router.patch("/re-appeal", ...authOwner, clearCacheMiddleware("v0/tenant"), reAppealSchool);
+router.patch("/re-appeal", ...authOwner, clearCacheMiddleware("v0/school_admin"), reAppealSchool);
 
 
 // Get school staff (owner and staff)
 router.get("/staff", ...authStandard, requireRole("owner", "school_admin", "staff"), cacheMiddleware(300), getSchoolStaff);
 
 // Remove user from school (owner/admin only)
-router.patch("/:userId/remove", ...authOwner, clearCacheMiddleware("v0/tenant"), removeUserFromSchool);
+router.patch("/:userId/remove", ...authOwner, clearCacheMiddleware("v0/school_admin"), removeUserFromSchool);
 
 
 export default router;

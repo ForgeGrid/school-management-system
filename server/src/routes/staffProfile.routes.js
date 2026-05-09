@@ -10,6 +10,8 @@ import {
   getOneTeacher,
   approveStaff,
   rejectStaff,
+  resignStaff,
+  requestRejoinStaff,
 } from "../controller/staffProfile.controller.js";
 
 const router = express.Router();
@@ -31,5 +33,10 @@ router.get("/teacher/:profileId", requireRole("school_admin"), getOneTeacher);
 // Staff approval (School Admin only)
 router.patch("/approve/:profileId", requireRole("school_admin"), approveStaff);
 router.patch("/reject/:profileId", requireRole("school_admin"), rejectStaff);
+
+router.patch("/staff/:profileId/resign", requireRole("school_admin"), resignStaff);
+
+router.patch("/staff/:profileId/request-rejoin", requireRole("teacher", "staff"), requestRejoinStaff);
+
 
 export default router;

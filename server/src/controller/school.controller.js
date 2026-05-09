@@ -3,7 +3,7 @@ import {
   fetchPendingSchools,
   approveSchoolService,
   rejectSchoolService,
-  reAppealTenantService,
+  reAppealSchoolService,
   fetchAllSchoolsService,
   fetchSchoolByIdService,
 } from "../services/school.service.js";
@@ -177,7 +177,7 @@ export const rejectSchool = async (req, res) => {
 };
 
 // --------------------------------------------------
-// 4️⃣ Re-appeal School/Tenant
+// 4️⃣ Re-appeal School
 // --------------------------------------------------
 export const reAppealSchool = async (req, res) => {
   try {
@@ -191,7 +191,7 @@ export const reAppealSchool = async (req, res) => {
 
     const { name, schoolEmail, schoolPhone, board, medium, timezone, currency, address } = req.body;
 
-    const school = await reAppealTenantService(user.school_id, user.id, {
+    const school = await reAppealSchoolService(user.school_id, user.id, {
       name,
       schoolEmail,
       schoolPhone,
