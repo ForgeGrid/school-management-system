@@ -3,20 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Camera, X } from "lucide-react";
 import { registerUser, clearAuthState } from "../../redux/slice/authslice";
-import PasswordStrengthBar from "../../components/Auth/PasswordStrengthbar";
-import OtpModal from "../../components/Auth/OtpModal"; 
+import PasswordStrengthBar from "../../components/auth/PasswordStrengthbar";
+import OtpModal from "../../components/auth/OtpModal";
 
 function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, success ,registered} = useSelector((state) => state.auth);
+  const { loading, error, success, registered } = useSelector((state) => state.auth);
 
   const fileRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm]   = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
-  const [avatarFile, setAvatarFile]       = useState(null);
-  const [showOtpModal, setShowOtpModal]   = useState(false); 
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     email: "",

@@ -9,7 +9,7 @@ import {
   clearAuthState,
   clearPreview,
 } from "../../redux/slice/authslice";
-import ForgotPasswordModal from "../../components/Auth/ForgotPasswordModal";
+import ForgotPasswordModal from "../../components/auth/ForgotPasswordModal";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
