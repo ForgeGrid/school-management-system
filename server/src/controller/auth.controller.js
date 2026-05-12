@@ -904,7 +904,7 @@ export const getMe = async (req, res) => {
     }
 
     // Use your existing verificationStatus field as the approval state
-    switch (admin.verificationStatus) {
+    switch (school.verificationStatus) {
       case "verified":
         return res.status(200).json({
           message: "User Active",

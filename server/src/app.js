@@ -51,7 +51,12 @@ const corsOptions = {
     const cleanOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
     const cleanAllowed = allowedOrigins.map((o) => (o.endsWith("/") ? o.slice(0, -1) : o));
 
-    if (cleanAllowed.includes(cleanOrigin)) return callback(null, true);
+    if (
+      cleanAllowed.includes(cleanOrigin) ||
+      cleanOrigin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
