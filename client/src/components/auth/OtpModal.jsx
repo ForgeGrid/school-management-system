@@ -1,300 +1,289 @@
-import React, { useEffect, useRef, useState } from "react";
-import warning from "../../assets/warning.svg";
-/**
- * Configuration
- */
-const OTP_LENGTH = 6;
-const OTP_EXPIRY_SECONDS = 5 * 60;
-const RESEND_LOCK_SECONDS = 30;
+import { useState, useRef, useEffect } from "react";
+import { X, ShieldCheck, RotateCcw, CheckCircle2 } from "lucide-react";
+import { BorderBeam } from "../ui/Borderbeam";
+import { useDispatch, useSelector } from "react-redux";
+import { verifyOtp, resendOtp, clearAuthState } from "../../redux/slice/authslice"; 
+const RESEND_SECONDS = 60;
 
+function OtpModal({ isOpen, onClose, email }) {
+  const [otp, setOtp] = useState(Array(6).fill(""));
+  const [timer, setTimer] = useState(RESEND_SECONDS);
+  const [canResend, setCanResend] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [resendFlash, setResendFlash] = useState(false);
 
-/**
- * OtpModal
- *
- * Modal component for email OTP verification.
- * Handles digit input, keyboard navigation, paste support,
- * and verification flow.
- */
-const OtpModal = ({
-  open,
-  onClose,
-  onVerify,
-  onResend,
-  email,
-  isLoading = false,
-  error = "",
-}) => {
-  /**
-   * OTP values and input refs
-   */
-  const [vals, setVals] = useState(Array(OTP_LENGTH).fill(""));
-  const inputsRef = useRef([]);
-  const hasAutoResentRef = useRef(false);
-  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
-  const [resendLock, setResendLock] = useState(RESEND_LOCK_SECONDS);
+  const inputRefs = useRef([]);
+  const dispatch = useDispatch();
 
+  const { loading, error, success, message } = useSelector(
+    (state) => state.auth
+  );
 
-  /**
-   * Reset OTP state and focus first input when modal opens
-   */
+  // RESET MODAL
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
-    setVals(Array(OTP_LENGTH).fill(""));
+    dispatch(clearAuthState()); 
+    setOtp(Array(6).fill(""));
+    setTimer(RESEND_SECONDS);
+    setCanResend(false);
+    setVerified(false);
+  }, [isOpen]);
 
-    const timer = setTimeout(() => {
-      inputsRef.current[0]?.focus();
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, [open]);
-
-  /**
-   * Do not close modal on ESC key
-   */
+  // TIMER
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-
-    setTimeLeft(OTP_EXPIRY_SECONDS);
-    setResendLock(RESEND_LOCK_SECONDS);
-    hasAutoResentRef.current = false;
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => Math.max(prev - 1, 0));
-      setResendLock((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [open]);
-
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    if (timeLeft === 0 && !hasAutoResentRef.current) {
-      hasAutoResentRef.current = true;
-
-      onResend();
-      setTimeLeft(OTP_EXPIRY_SECONDS);
-      setResendLock(RESEND_LOCK_SECONDS);
-    }
-  }, [timeLeft, open, onResend]);
-
-  if (!open) return null;
-
-  /**
-   * Handle single digit input and auto-focus next field
-   */
-  const handleChange = (index, e) => {
-    const digit = e.target.value.replace(/\D/g, "").slice(0, 1);
-    if (!digit) return;
-
-    const next = [...vals];
-    next[index] = digit;
-    setVals(next);
-
-    if (index < OTP_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  };
-
-  /**
-   * Handle backspace navigation and deletion
-   */
-  const handleKeyDown = (index, e) => {
-    if (e.key !== "Backspace") return;
-
-    e.preventDefault();
-    const next = [...vals];
-
-    if (next[index]) {
-      next[index] = "";
-      setVals(next);
+    if (!isOpen) return;
+    if (timer === 0) {
+      setCanResend(true);
       return;
     }
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timer, isOpen]);
 
-    if (index > 0) {
-      inputsRef.current[index - 1]?.focus();
-      next[index - 1] = "";
-      setVals(next);
+  // AUTO FOCUS
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  // SUCCESS
+  useEffect(() => {
+    if (success) {
+      setVerified(true);
+    }
+  }, [success]);
+
+  // OTP INPUT CHANGE
+  const handleChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
-  /**
-   * Handle full OTP paste
-   */
+  // BACKSPACE
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // PASTE OTP
   const handlePaste = (e) => {
-    const paste = e.clipboardData
+    e.preventDefault();
+    const pasted = e.clipboardData
       .getData("text")
       .replace(/\D/g, "")
-      .slice(0, OTP_LENGTH);
-
-    if (!paste) return;
-
-    const next = Array(OTP_LENGTH).fill("");
-    paste.split("").forEach((digit, i) => {
-      next[i] = digit;
+      .slice(0, 6);
+    if (!pasted) return;
+    const newOtp = Array(6).fill("");
+    pasted.split("").forEach((char, i) => {
+      newOtp[i] = char;
     });
-
-    setVals(next);
-
-    setTimeout(() => {
-      inputsRef.current[
-        Math.min(paste.length, OTP_LENGTH - 1)
-      ]?.focus();
-    }, 50);
-
-    e.preventDefault();
+    setOtp(newOtp);
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
 
-  /**
-   * Format time left as MM:SS
-   */
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  // VERIFY OTP
+  const handleVerify = async () => {
+    const code = otp.join("");
+    if (code.length < 6) return;
+    dispatch(verifyOtp({ email, otp: code }));
   };
 
+  // RESEND
+  const handleResend = () => {
+    if (!canResend) return;
 
-  /**
-   * Submit OTP for verification
-   */
-  const submit = () => {
-    const code = vals.join("");
-    if (code.length !== OTP_LENGTH) return;
-    onVerify(code);
+    setOtp(Array(6).fill(""));
+    setTimer(RESEND_SECONDS);
+    setCanResend(false);
+    setResendFlash(true);
+    setTimeout(() => setResendFlash(false), 1500);
+    inputRefs.current[0]?.focus();
+
+    dispatch(resendOtp({ email })); 
   };
+
+  // CLOSE
+  const handleClose = () => {
+    dispatch(clearAuthState()); 
+    setOtp(Array(6).fill(""));
+    setVerified(false);
+    onClose();
+  };
+
+  const isComplete = otp.every((digit) => digit !== "");
+
+  const formatTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+  // BORDER BEAM COLORS
+  const beam = error
+    ? { colorFrom: "#f87171", colorTo: "#ef4444", duration: 0.9 }
+    : verified
+    ? { colorFrom: "#34d399", colorTo: "#10b981", duration: 2.5 }
+    : { colorFrom: "#6366f1", colorTo: "#a855f7", duration: 2.5 };
+
+  if (!isOpen) return null;
 
   return (
     <div
-      className="otp-overlay"
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={handleClose}
     >
       <div
-        className="otp-modal"
-        onClick={(e) => { e.stopPropagation() }}
+        className="relative w-full max-w-sm mx-4 rounded-2xl overflow-hidden bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        <h3>Verify your email</h3>
+        <BorderBeam
+          colorFrom={beam.colorFrom}
+          colorTo={beam.colorTo}
+          duration={beam.duration}
+          size={300}
+        />
 
-        <p className="otp-timer">
-          Code expires in <strong>{formatTime(timeLeft)}</strong>
-        </p>
-
-
-        <p className="muted">
-          Enter the 6-digit code sent to <strong>{email}</strong>
-        </p>
-
-        {/* Error message */}
-        {error && (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        )}
-
-        {/* OTP input fields */}
-        <div className="otp-inputs" onPaste={handlePaste}>
-          {Array.from({ length: OTP_LENGTH }).map((_, index) => (
-            <input
-              key={index}
-              ref={(el) => (inputsRef.current[index] = el)}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={1}
-              className="otp-cell"
-              value={vals[index]}
-              onChange={(e) => handleChange(index, e)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              aria-label={`OTP digit ${index + 1}`}
-            />
-          ))}
-        </div>
-
-        <div className="otp-alert otp-alert--error" role="alert">
-          <div className="otp-alert__icon"><img src={warning} alt="Warning icon" /></div>
-          <div className="otp-alert__content">
-            <div className="otp-alert__title">Verification required</div>
-            <div className="otp-alert__message">
-              Do not close this tab. If verification is not completed,
-              <strong> you will need to restart the registration process</strong>.
-            </div>
-
-          </div>
-        </div>
-
-        <div className="row-between small-gap">
+        <div className="relative z-10 p-8 flex flex-col items-center gap-6">
+          {/* CLOSE BUTTON */}
           <button
-            type="button"
-            className="link-btn"
-            onClick={onResend}
-            disabled={isLoading || resendLock > 0}
+            onClick={handleClose}
+            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
-            {resendLock > 0
-              ? `Resend in ${resendLock}s`
-              : isLoading
-                ? "Sending..."
-                : "Resend code"}
+            <X className="w-3.5 h-3.5 text-gray-500" />
           </button>
 
-          <div className="otp-actions">
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
+          {verified ? (
+            // SUCCESS STATE
+            <div className="flex flex-col items-center gap-4 py-4 w-full">
+              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-gray-800">Verified!</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {message || "Your account has been successfully verified."}
+                </p>
+              </div>
+              <button
+                onClick={handleClose}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold text-sm py-3.5 rounded-xl transition-all duration-200"
+              >
+                Continue
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* ICON */}
+              <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
+                <ShieldCheck className="w-8 h-8 text-indigo-500" />
+              </div>
 
-            <button
-              type="button"
-              className="btn primary"
-              onClick={submit}
-              disabled={
-                vals.some((v) => !v) ||
-                isLoading ||
-                timeLeft === 0
-              }
-            >
-              {isLoading ? "Verifying..." : "Verify"}
-            </button>
-          </div>
+              {/* TITLE */}
+              <div className="text-center flex flex-col gap-1">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Verify your email
+                </h2>
+                <p className="text-sm text-gray-500">
+                  We sent a 6-digit code to{" "}
+                  <span className="font-semibold text-indigo-600">{email}</span>
+                </p>
+              </div>
+
+              {/* OTP INPUTS */}
+              <div className="flex gap-2.5">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={handlePaste}
+                    className={`w-11 h-12 text-center text-lg font-bold rounded-xl border-2 outline-none transition-all duration-200
+                      ${
+                        error
+                          ? "border-red-300 bg-red-50 text-red-600"
+                          : digit
+                          ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                          : "border-gray-200 bg-gray-50 text-gray-700"
+                      }
+                      focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100`}
+                  />
+                ))}
+              </div>
+
+              {/* ERROR */}
+              {error && (
+                <p className="text-xs text-center text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 w-full">
+                  {error}
+                </p>
+              )}
+
+              {/* VERIFY BUTTON */}
+              <button
+                type="button"
+                onClick={handleVerify}
+                disabled={!isComplete || loading}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-xl transition-all duration-200"
+              >
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                {loading ? "Verifying..." : "Verify OTP"}
+              </button>
+
+              {/* RESEND */}
+              <div className="flex items-center justify-between w-full px-1">
+                <span className="text-sm text-gray-500">
+                  {resendFlash
+                    ? "Code resent!"
+                    : canResend
+                    ? "Didn't receive the code?"
+                    : "Resend in "}
+                  {!canResend && !resendFlash && (
+                    <span className="font-semibold text-indigo-500 tabular-nums">
+                      {formatTime(timer)}
+                    </span>
+                  )}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={!canResend || loading}
+                  className={`flex items-center gap-1 text-sm font-semibold transition-all duration-200
+                    ${
+                      canResend && !loading
+                        ? "text-indigo-600 hover:text-indigo-700 cursor-pointer"
+                        : "text-gray-300 cursor-not-allowed"
+                    }`}
+                >
+                  <RotateCcw
+                    className={`w-3.5 h-3.5 ${canResend && !loading ? "" : "opacity-40"}`}
+                  />
+                  Resend
+                </button>
+              </div>
+            </>
+          )}
         </div>
-
       </div>
     </div>
   );
-};
+}
 
 export default OtpModal;
