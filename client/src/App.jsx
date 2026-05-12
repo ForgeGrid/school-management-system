@@ -3,10 +3,12 @@ import AuthMain from './page/Auth/Auth.Main'
 import ParentDashboard from './page/Parent/ParentDashboard'
 import TeacherDahboard from './page/Teacher/TeacherDahboard'
 import AdminDashboard from './page/Admin/AdminDashboard'
-
+import { Provider } from "react-redux";
+import store from "./redux/Store";
 function App() {
   return (
-    <BrowserRouter>
+         <Provider store={store}>
+            <BrowserRouter>
       <Routes>
        
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -20,6 +22,8 @@ function App() {
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
+     </Provider>
+ 
   )
 }
 
