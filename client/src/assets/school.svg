@@ -1,0 +1,124 @@
+ <svg width="100%" viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg">
+    {/* Sky / background */}
+    <rect x="0" y="0" width="500" height="260" fill="#f5f6ff" rx="12" />
+
+    {/* Clouds */}
+    <ellipse cx="60" cy="38" rx="28" ry="12" fill="#e8eaf6" />
+    <ellipse cx="82" cy="30" rx="22" ry="14" fill="#e8eaf6" />
+    <ellipse cx="44" cy="33" rx="18" ry="10" fill="#e8eaf6" />
+
+    <ellipse cx="420" cy="35" rx="28" ry="12" fill="#e8eaf6" />
+    <ellipse cx="442" cy="27" rx="22" ry="14" fill="#e8eaf6" />
+    <ellipse cx="404" cy="30" rx="18" ry="10" fill="#e8eaf6" />
+
+    {/* Birds */}
+    <path d="M360 55 Q363 51 366 55" fill="none" stroke="#c5cae9" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M372 48 Q375 44 378 48" fill="none" stroke="#c5cae9" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M384 58 Q387 54 390 58" fill="none" stroke="#c5cae9" strokeWidth="1.2" strokeLinecap="round" />
+
+    {/* Ground */}
+    <rect x="0" y="222" width="500" height="38" fill="#dce8c8" rx="0" />
+
+    {/* Left trees back */}
+    <rect x="62" y="170" width="8" height="54" fill="#b8c8a0" />
+    <ellipse cx="66" cy="158" rx="22" ry="28" fill="#c8d8b0" />
+    <ellipse cx="66" cy="150" rx="18" ry="22" fill="#b8cca0" />
+
+    <rect x="108" y="178" width="7" height="46" fill="#b8c8a0" />
+    <ellipse cx="111" cy="167" rx="18" ry="22" fill="#c8d8b0" />
+    <ellipse cx="111" cy="160" rx="15" ry="18" fill="#b8cca0" />
+
+    {/* Right trees back */}
+    <rect x="428" y="170" width="8" height="54" fill="#b8c8a0" />
+    <ellipse cx="432" cy="158" rx="22" ry="28" fill="#c8d8b0" />
+    <ellipse cx="432" cy="150" rx="18" ry="22" fill="#b8cca0" />
+
+    <rect x="376" y="178" width="7" height="46" fill="#b8c8a0" />
+    <ellipse cx="379" cy="167" rx="18" ry="22" fill="#c8d8b0" />
+    <ellipse cx="379" cy="160" rx="15" ry="18" fill="#b8cca0" />
+
+    {/* Left wing */}
+    <rect x="96" y="118" width="112" height="110" fill="#dde0f2" rx="2" />
+    <rect x="93" y="114" width="112" height="110" fill="#e8ebf8" rx="2" />
+    <polygon points="89,114 209,114 209,106 151,88 89,106" fill="#8b8fd4" />
+
+    {/* Right wing */}
+    <rect x="292" y="118" width="112" height="110" fill="#dde0f2" rx="2" />
+    <rect x="295" y="114" width="112" height="110" fill="#e8ebf8" rx="2" />
+    <polygon points="291,114 411,114 411,106 351,88 291,106" fill="#8b8fd4" />
+
+    {/* Main building */}
+    <rect x="168" y="110" width="164" height="118" fill="#dde0f2" rx="2" />
+    <rect x="165" y="106" width="170" height="118" fill="#eceef8" rx="2" />
+    <polygon points="158,106 342,106 342,96 250,74 158,96" fill="#8b8fd4" />
+
+    {/* Tower */}
+    <rect x="222" y="48" width="56" height="66" fill="#eceef8" />
+    <polygon points="216,48 284,48 284,40 250,22 216,40" fill="#7b80c8" />
+
+    {/* Flag pole + flag */}
+    <line x1="250" y1="8" x2="250" y2="28" stroke="#9095cc" strokeWidth="1.5" />
+    <polygon points="250,8 272,15 250,22" fill="#8b8fd4" />
+
+    {/* Clock */}
+    <circle cx="250" cy="76" r="16" fill="white" stroke="#c0c4e4" strokeWidth="1.5" />
+    <circle cx="250" cy="76" r="1.5" fill="#6068b4" />
+    <line x1="250" y1="76" x2="244" y2="66" stroke="#6068b4" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="250" y1="76" x2="250" y2="63" stroke="#6068b4" strokeWidth="1.5" strokeLinecap="round" />
+
+    {/* Tower windows */}
+    <rect x="236" y="86" width="11" height="17" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.8" rx="2" />
+    <rect x="253" y="86" width="11" height="17" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.8" rx="2" />
+
+    {/* Left wing windows row 1 */}
+    <rect x="108" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="140" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="172" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    {/* Left wing windows row 2 */}
+    <rect x="108" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="140" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="172" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+
+    {/* Right wing windows row 1 */}
+    <rect x="306" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="338" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="370" y="132" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    {/* Right wing windows row 2 */}
+    <rect x="306" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="338" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="370" y="164" width="22" height="20" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+
+    {/* Main building side windows */}
+    <rect x="180" y="126" width="26" height="24" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+    <rect x="294" y="126" width="26" height="24" fill="#c8cef0" stroke="#b0b8e8" strokeWidth="0.7" rx="2" />
+
+    {/* Pillars */}
+    <rect x="222" y="178" width="11" height="46" fill="#d8dbf0" stroke="#c4c8e8" strokeWidth="0.5" rx="1" />
+    <rect x="244" y="178" width="11" height="46" fill="#d8dbf0" stroke="#c4c8e8" strokeWidth="0.5" rx="1" />
+    <rect x="267" y="178" width="11" height="46" fill="#d8dbf0" stroke="#c4c8e8" strokeWidth="0.5" rx="1" />
+
+    {/* SCHOOL sign */}
+    <rect x="212" y="158" width="76" height="20" fill="#6b70c8" rx="4" />
+    <text x="250" y="172" textAnchor="middle" fill="white" fontSize="9" fontWeight="700" fontFamily="Arial, sans-serif" letterSpacing="1">SCHOOL</text>
+
+    {/* Doors */>}
+    <rect x="228" y="192" width="20" height="36" fill="#a0a8e8" stroke="#9098d8" strokeWidth="0.8" rx="2" />
+    <rect x="252" y="192" width="20" height="36" fill="#a0a8e8" stroke="#9098d8" strokeWidth="0.8" rx="2" />
+
+    {/* Steps */}
+    <rect x="210" y="224" width="80" height="5" fill="#c8cce8" rx="1" />
+    <rect x="204" y="228" width="92" height="4" fill="#bec3e4" rx="1" />
+
+    {/* Bushes */}
+    <ellipse cx="208" cy="222" rx="13" ry="9" fill="#88b878" />
+    <ellipse cx="292" cy="222" rx="13" ry="9" fill="#88b878" />
+
+    {/* Front trees */}
+    <rect x="130" y="192" width="7" height="32" fill="#b8c8a0" />
+    <ellipse cx="133" cy="180" rx="20" ry="25" fill="#c8d8b0" />
+    <ellipse cx="133" cy="173" rx="16" ry="20" fill="#b8cca0" />
+
+    <rect x="364" y="192" width="7" height="32" fill="#b8c8a0" />
+    <ellipse cx="367" cy="180" rx="20" ry="25" fill="#c8d8b0" />
+    <ellipse cx="367" cy="173" rx="16" ry="20" fill="#b8cca0" />
+  </svg>
