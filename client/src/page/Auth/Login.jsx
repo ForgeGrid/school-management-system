@@ -1,4 +1,3 @@
-// 
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,7 +12,7 @@ import ForgotPasswordModal from "../../components/auth/ForgotPasswordModal";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-function Login() {
+function Login({ onSwitchToRegister }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -43,16 +42,13 @@ function Login() {
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
-
     if (!isValidEmail(form.email)) {
       dispatch(clearPreview());
       return;
     }
-
     debounceRef.current = setTimeout(() => {
       dispatch(fetchUserPreview(form.email));
     }, 600);
-
     return () => clearTimeout(debounceRef.current);
   }, [form.email]);
 
@@ -82,7 +78,7 @@ function Login() {
           showPreviewCard ? "max-h-36 opacity-100 mb-1" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="flex flex-col items-center gap-2 py-3 px-4 rounded-2xl bg-gray-50 border border-gray-100">
+        <div className="flex flex-col items-center gap-2 py-3 px-4 rounded-2xl border-gray-100">
           {previewLoading ? (
             <>
               <div className="w-14 h-14 rounded-full bg-indigo-200 animate-pulse" />
@@ -196,11 +192,11 @@ function Login() {
         {loginLoading ? "Signing in..." : "Login"}
       </button>
 
-      {/* Register Link */}
+      {/* Register Link — now uses prop instead of navigate */}
       <p className="text-center text-sm text-gray-400 mt-1">
         Don't have an account?{" "}
         <button
-          onClick={() => navigate("/register")}
+          onClick={onSwitchToRegister}
           className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors"
         >
           Register
