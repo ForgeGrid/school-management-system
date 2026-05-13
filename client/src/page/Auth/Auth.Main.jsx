@@ -1,10 +1,10 @@
 import React from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import prd from './../../assets/prd.svg'
 import School from '../../assets/school.png'
 import Login from './Login'
 import Register from './Register'
-import { Sparkle, Users, BarChart2, ShieldCheck, BadgeCheck, Lock } from "lucide-react";
+import { Sparkle, Users, BarChart2, ShieldCheck, BadgeCheck, Lock, UserPlus } from "lucide-react";
 
 const features = [
   {
@@ -28,17 +28,16 @@ function AuthMain() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isLogin = location.pathname === '/login' || location.pathname === '/'
+  
+  const isLogin = location.pathname === '/' || location.pathname === '/login'
 
   return (
     <div className="h-screen overflow-hidden bg-linear-to-br from-white to-indigo-50">
-
       <div className="grid lg:grid-cols-[55%_45%] h-full">
 
         {/* LEFT SECTION */}
-       <div className="hidden lg:flex bg-white px-5 sm:px-8 lg:px-12 py-5 flex-col justify-between min-h-screen">
+        <div className="hidden lg:flex bg-white px-5 sm:px-8 lg:px-12 py-5 flex-col justify-between min-h-screen">
           <div>
-
             <div className="flex items-center gap-3 mb-7">
               <div className="bg-indigo-600 rounded-xl p-2 flex items-center justify-center shrink-0">
                 <img src={prd} alt="logo" className="w-5 h-5" />
@@ -64,7 +63,7 @@ function AuthMain() {
               </h1>
             </div>
 
-            <p className="text-sm sm:text-base lg:text-lg text-gray-500 leading-relaxed max-w-xl ">
+            <p className="text-sm sm:text-base lg:text-lg text-gray-500 leading-relaxed max-w-xl">
               A complete platform to manage students, teachers,
               classes, attendance, exams and more seamlessly.
             </p>
@@ -76,11 +75,9 @@ function AuthMain() {
                 className="w-full max-w-[420px] max-h-[200px] object-contain"
               />
             </div>
-
           </div>
 
           <div>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {features.map((f) => (
                 <div
@@ -100,52 +97,66 @@ function AuthMain() {
               <BadgeCheck className="w-4 h-4 text-indigo-400" />
               <span>Trusted by 1000+ schools worldwide</span>
             </div>
-
           </div>
-
         </div>
 
-        
         {/* RIGHT SECTION */}
         <div className="flex items-center justify-center p-6 xl:p-8 h-full">
           <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+
             {/* TABS */}
             <div className="grid grid-cols-2 border-b border-gray-200 mb-8">
               <button
                 onClick={() => navigate('/login')}
-                className={`py-3 text-sm font-semibold text-center rounded-xs transition-all duration-200 ${isLogin
-                  ? 'text-indigo-600 border-b-3 border-indigo-600 -mb-px'
-                  : 'text-gray-400 hover:text-gray-600 bg-indigo-50/70'
-                  }`}
+                className={`py-3 text-sm font-semibold text-center rounded-xs transition-all duration-200 ${
+                  isLogin
+                    ? 'text-indigo-600 border-b-3 border-indigo-600 -mb-px'
+                    : 'text-gray-400 hover:text-gray-600 bg-indigo-50/70'
+                }`}
               >
                 Login
               </button>
               <button
                 onClick={() => navigate('/register')}
-                className={`py-3 text-sm font-semibold text-center rounded-xs transition-all duration-200 ${!isLogin
-                  ? 'text-indigo-600 border-b-3  border-indigo-600 -mb-px'
-                  : 'text-gray-400 hover:text-gray-600 bg-indigo-50/70'
-                  }`}
+                className={`py-3 text-sm font-semibold text-center rounded-xs transition-all duration-200 ${
+                  !isLogin
+                    ? 'text-indigo-600 border-b-3 border-indigo-600 -mb-px'
+                    : 'text-gray-400 hover:text-gray-600 bg-indigo-50/70'
+                }`}
               >
                 Register
               </button>
             </div>
+
+            {/* Header */}
             <div className='flex items-center justify-center gap-4 mb-7'>
-              <div className='bg-indigo-50 rounded-full w-14 h-14 flex items-center justify-center '>
-                <Lock className="w-6 h-6 text-indigo-400" />
+              <div className='bg-indigo-50 rounded-full w-14 h-14 flex items-center justify-center'>
+                {isLogin
+                  ? <Lock className="w-6 h-6 text-indigo-400" />
+                  : <Lock className="w-6 h-6 text-indigo-400" />
+                }
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Welcome <span className="text-indigo-600">Back!</span>
+                  {isLogin
+                    ? <>Welcome <span className="text-indigo-600">Back!</span></>
+                    : <>Create <span className="text-indigo-600">Account</span></>
+                  }
                 </h2>
                 <p className="text-sm text-gray-400 mt-0.5">
-                  Login to continue to your account
+                  {isLogin
+                    ? 'Login to continue to your account'
+                    : 'Register to get started today'
+                  }
                 </p>
               </div>
-
             </div>
-            {isLogin ? <Login /> : <Register />}
 
+            {/* Render Login or Register based on URL */}
+            {isLogin
+              ? <Login onSwitchToRegister={() => navigate('/register')} />
+              : <Register onSwitchToLogin={() => navigate('/login')} />
+            }
 
           </div>
         </div>
