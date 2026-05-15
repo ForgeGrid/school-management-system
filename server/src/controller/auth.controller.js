@@ -178,6 +178,7 @@ export const registerUser = async (req, res) => {
     // Send Registration Welcome & Verification Email
     logger.info(`Registration: Sending OTP to ${email}`);
     await sendEmail({
+      from: `"FG ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Welcome to FG ERP! 🚀 — Verify your account",
       text: `Hello ${name}, welcome to the family! Your verification code is ${rawOtp}.`,
@@ -328,6 +329,7 @@ export const resendSignupOtp = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     await sendEmail({
+      from: `"FG ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your new verification code (resend)",
       text: `Your new verification code is ${otp}. It expires in 5 minutes.`,
@@ -427,6 +429,7 @@ export const forgotPasswordRequest = async (req, res) => {
 
     logger.info(`ForgotPassword: Sending OTP to ${email}`);
     await sendEmail({
+      from: `"FG ERP" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset OTP - FG ERP 🛡️",
       text: `Your password reset OTP is ${otp}. It expires in 10 minutes.`,
@@ -571,6 +574,7 @@ export const loginUser = async (req, res) => {
 
           try {
             await sendEmail({
+              from: `"FG ERP" <${process.env.EMAIL_USER}>`,
               to: user.email,
               subject: "Your account has been temporarily locked",
               text: `Your account has been temporarily locked due to multiple failed attempts. Reset your password here: ${resetLink}`,
@@ -681,6 +685,7 @@ export const loginUser = async (req, res) => {
 
       logger.info(`Login: Sending 1st login welcome email to ${user.email}`);
       await sendEmail({
+        from: `"FG ERP" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: "Welcome back! - FG ERP ✨",
         text: `Hello ${user.name}, welcome to your account! You have successfully logged in on ${loginTime}.`,
