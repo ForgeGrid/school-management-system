@@ -6,17 +6,16 @@ import compression from "compression";
 import authRoutes from "./routes/auth.routes.js";
 import schoolRoutes from "./routes/school.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
-// import clientRoutes from "./routes/client.routes.js";
-// import taskRoutes from "./routes/task.routes.js";
-// import receiptRoutes from "./routes/receipt.routes.js";
-// import expenseRoutes from "./routes/expense.routes.js";
-// import billingEntityRoutes from "./routes/billingEntity.routes.js";
-// import billingRoutes from "./routes/billing.routes.js";
+
 // import profileRoutes from "./routes/profile.routes.js";
 import staffProfileRoutes from "./routes/staffProfile.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import superAdminRoutes from "./routes/superadmin.routes.js";
+import busRouteRoutes from "./routes/busRoute.routes.js";
+import transportFeeStructureRoutes from "./routes/transportFeeStructure.routes.js";
+import studentFeePlanRoutes from "./routes/studentFeePlan.routes.js";
+import academicFeeStructureRoutes from "./routes/academicFeeStructure.routes.js";
 
 import { errorMiddleware } from "./middleware/error.middleware.js";
 
@@ -88,6 +87,10 @@ app.use("/api/v0/staff-profile", staffProfileRoutes);
 app.use("/api/v0/student-profile", studentRoutes);
 app.use("/api/v0/notifications", notificationRoutes);
 app.use("/api/v0/superadmin", superAdminRoutes);
+app.use("/api/v0/bus-route", busRouteRoutes);
+app.use("/api/v0/transport-fee-structure", transportFeeStructureRoutes);
+app.use("/api/v0/student-fee-plan", studentFeePlanRoutes);
+app.use("/api/v0/academic-fee-structure", academicFeeStructureRoutes);
 
 
 

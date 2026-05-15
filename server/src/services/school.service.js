@@ -43,7 +43,7 @@ export const createSchoolService = async (data) => {
   }
 
   // 3️⃣ Check if user already belongs to a tenant
-  if (user.tenant_id) {
+  if (user.school_id) {
     throw new Error(`User already belongs to a school`);
   }
 

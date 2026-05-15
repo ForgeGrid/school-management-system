@@ -45,7 +45,7 @@ export const createSchool = async (req, res) => {
     // Send Notification Email to Super Admin
     try {
       await sendEmail({
-        from: `"FGrow System" <${process.env.EMAIL_USER}>`,
+        from: `"FG ERP" <${process.env.EMAIL_USER}>`,
         to: "sukesh.official.2006@gmail.com",
         subject: `🚀 New School Alert: ${school.name}`,
         html: `

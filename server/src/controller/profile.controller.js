@@ -49,6 +49,7 @@ export const requestPasswordOTP = async (req, res) => {
 
         // Send Email
         await sendEmail({
+            from: `"FG ERP" <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: "Your School Portal Verification Code",
             html: `

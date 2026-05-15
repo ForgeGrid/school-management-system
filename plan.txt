@@ -1,0 +1,287 @@
+Yep — here’s a clean prompt/spec that explains your new **frontend-driven transport fee sync flow** clearly.
+
+---
+
+## Prompt / Feature Flow Specification
+
+We are redesigning the **Bus Route → Transport Fee synchronization flow** in our School ERP transport module.
+
+### Current Problem
+
+When a school admin updates a bus route:
+
+Example:
+
+```http id="u6h1px"
+PATCH /api/v0/bus-route/:routeId
+```
+
+They may change:
+
+* route stops
+* start point
+* end point
+* buses
+* route name
+
+Example old route stops:
+
+```text id="y9t4mc"
+Surveyor Colony
+K Pudur
+Uthangudi
+```
+
+Updated route stops:
+
+```text id="q2k8na"
+Virakanur Ring Road
+Kappalur
+Mandela Nagar
+Vaalangulam
+```
+
+But existing `TransportFeeStructure` records still point to old stops:
+
+```text id="m8x3vr"
+Surveyor Colony
+K Pudur
+Uthangudi
+```
+
+This creates invalid fee mappings.
+
+---
+
+# Why full backend auto-sync is not ideal
+
+Automatically creating/updating fee structures in backend can cause:
+
+### Hidden pricing changes
+
+Admin won’t know why fees changed automatically.
+
+---
+
+### Wrong fee assignments
+
+New stops may have different pricing logic.
+
+---
+
+### Financial audit issues
+
+Transport fees should not silently change.
+
+---
+
+### Over-engineered backend logic
+
+Trying to auto-map renamed stops creates unnecessary complexity.
+
+---
+
+# New Solution (Frontend Driven Step-by-Step Flow)
+
+---
+
+## Step 1: Admin updates bus route
+
+Endpoint:
+
+```http id="t7m2zk"
+PATCH /api/v0/bus-route/:routeId
+```
+
+Backend updates only:
+
+* routeName
+* buses
+* startPoint
+* endPoint
+* stops
+* distance
+
+---
+
+## Step 2: Backend compares transport fee mappings
+
+After route update:
+
+Backend checks:
+
+```javascript id="w5r8bn"
+updatedRoute.stops
+```
+
+against existing:
+
+```javascript id="r9k1xd"
+TransportFeeStructure.dropPoint
+```
+
+---
+
+## Step 3: Archive removed stops automatically
+
+If old fee stops no longer exist in updated route:
+
+Example:
+
+```text id="m2v7qp"
+K Pudur
+Uthangudi
+```
+
+Backend should:
+
+```javascript id="c6x4nf"
+status = "archived"
+```
+
+NOT delete them.
+
+This preserves:
+
+* old invoices
+* student fee plans
+* fee history
+* audit logs
+
+---
+
+## Step 4: Detect new stops requiring pricing
+
+Example:
+
+```text id="w8n3jm"
+Virakanur Ring Road
+Kappalur
+Mandela Nagar
+Vaalangulam
+```
+
+These stops need new transport fee setup.
+
+Backend should return them.
+
+---
+
+# Expected API Response
+
+```json id="g4z8ka"
+{
+  "message": "Bus route updated successfully",
+
+  "route": {
+    ...
+  },
+
+  "transportFeeSyncRequired": true,
+
+  "archivedStops": [
+    "K Pudur",
+    "Uthangudi"
+  ],
+
+  "newStopsNeedingFees": [
+    "Virakanur Ring Road",
+    "Kappalur",
+    "Mandela Nagar",
+    "Vaalangulam"
+  ]
+}
+```
+
+---
+
+# Step 5: Frontend handles next action
+
+Frontend shows modal:
+
+> Route updated successfully
+> 2 old stops were archived
+> 4 new stops need fee setup
+
+Options:
+
+```text id="m9c4qb"
+Update Fee Structure
+Later
+```
+
+---
+
+# Step 6: Admin manually updates transport pricing
+
+Frontend redirects:
+
+```text id="r2v8xp"
+/transport-fee/:routeId/edit
+```
+
+Admin manually assigns pricing for new stops.
+
+This keeps fee decisions human-controlled.
+
+---
+
+# Backend Responsibilities
+
+✅ Update route
+✅ Archive removed stop fee mappings
+✅ Detect new stops
+✅ Return response metadata
+
+---
+
+# Backend Should NOT
+
+❌ Auto-create new pricing
+❌ Auto-copy old fees
+❌ Auto-rename stop mappings
+❌ Modify financial values automatically
+
+---
+
+# Why this architecture is better
+
+### Transparent
+
+Admin knows exactly what changed.
+
+---
+
+### Safer
+
+Finance data doesn’t change silently.
+
+---
+
+### Easier to maintain
+
+Less backend complexity.
+
+---
+
+### Better audit trail
+
+Archived fees remain available historically.
+
+---
+
+# Final Flow Summary
+
+```text id="s6q1zw"
+Update Route
+      ↓
+Archive invalid fee mappings
+      ↓
+Return missing pricing stops
+      ↓
+Frontend alerts admin
+      ↓
+Admin manually updates fees
+```
+
+This approach prioritizes **financial safety + user transparency + simpler backend logic**, which is ideal for a school ERP.
