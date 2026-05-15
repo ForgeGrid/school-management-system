@@ -16,7 +16,7 @@ function Login({ onSwitchToRegister }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { loginLoading, loginError, success, preview, previewFound, previewLoading } =
+  const { loginLoading, loginError, success, preview, previewFound, previewLoading} =
     useSelector((state) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
