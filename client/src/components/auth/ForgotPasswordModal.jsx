@@ -127,20 +127,13 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     dispatch(resetPassword({ email, otp: otp.join(""), newPassword }));
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === overlayRef.current) onClose();
-  };
 
   if (!isOpen) return null;
 
   const otpComplete = otp.every((d) => d !== "");
 
   return (
-    <div
-      ref={overlayRef}
-      onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
 
         {/* Close button */}
