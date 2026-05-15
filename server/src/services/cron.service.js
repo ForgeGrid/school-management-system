@@ -79,6 +79,7 @@ const dailyWorkSummary = async () => {
                 // Optionally send email
                 try {
                     await sendEmail({
+                        
                         to: user.email,
                         subject: "Your Daily Work Summary - FGROW",
                         text: message,

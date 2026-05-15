@@ -70,6 +70,7 @@ export const inviteUserService = async ({
 
   // 4️⃣ Send email
   await sendEmail({
+    from: `"FG ERP" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `You're invited to join ${school.name} on Drona ERP 🎉`,
     html: `
