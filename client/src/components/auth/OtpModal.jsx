@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { verifyOtp, resendOtp, clearAuthState } from "../../redux/slice/authslice"; 
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 
 const RESEND_SECONDS = 300; 
 

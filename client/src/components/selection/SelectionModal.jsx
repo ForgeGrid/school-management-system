@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import RegisterInstitution from "./RegisterInstitution";
 import JoinStaff from "./JoinStaff";
 import PendingApproval from "./PendingApproval";

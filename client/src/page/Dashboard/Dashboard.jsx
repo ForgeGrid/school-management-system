@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 import { DotCursorBackground } from "../../components/ui/DotCursorBackground";
 import { CiLogout } from "react-icons/ci";
 import Schoolmanage from './../../assets/bus.jpeg';
