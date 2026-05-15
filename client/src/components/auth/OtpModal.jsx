@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { verifyOtp, resendOtp, clearAuthState } from "../../redux/slice/authslice"; 
-import { Button } from "../ui/button";
+import { verifyOtp, resendOtp, clearAuthState } from "../../redux/slice/authslice";
+import { Button } from "../ui/Button";
 
-const RESEND_SECONDS = 300; 
+const RESEND_SECONDS = 300;
 
 function OtpModal({ isOpen, onClose, email }) {
   const [otp, setOtp] = useState(Array(6).fill(""));
@@ -19,7 +19,7 @@ function OtpModal({ isOpen, onClose, email }) {
 
   useEffect(() => {
     if (!isOpen) return;
-    dispatch(clearAuthState()); 
+    dispatch(clearAuthState());
     setOtp(Array(6).fill(""));
     setTimer(RESEND_SECONDS);
     setCanResend(false);
@@ -47,7 +47,7 @@ function OtpModal({ isOpen, onClose, email }) {
 
   useEffect(() => {
     if (success) {
-      onClose(); 
+      onClose();
     }
   }, [success]);
 
@@ -91,11 +91,11 @@ function OtpModal({ isOpen, onClose, email }) {
     setResendFlash(true);
     setTimeout(() => setResendFlash(false), 1500);
     inputRefs.current[0]?.focus();
-    dispatch(resendOtp({ email })); 
+    dispatch(resendOtp({ email }));
   };
 
   const handleClose = () => {
-    dispatch(clearAuthState()); 
+    dispatch(clearAuthState());
     setOtp(Array(6).fill(""));
     onClose();
   };
@@ -107,11 +107,11 @@ function OtpModal({ isOpen, onClose, email }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div 
+      <div
         className="relative w-full max-w-[460px] rounded-2xl overflow-hidden bg-white shadow-2xl p-6 md:p-8 flex flex-col gap-6"
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* Header Texts */}
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
@@ -144,10 +144,9 @@ function OtpModal({ isOpen, onClose, email }) {
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
               className={`w-12 h-14 md:w-14 md:h-14 text-center text-xl font-bold rounded-xl border outline-none transition-all duration-200
-                ${
-                  error
-                    ? "border-red-300 bg-red-50 text-red-600 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                    : "border-slate-200 bg-white text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                ${error
+                  ? "border-red-300 bg-red-50 text-red-600 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                  : "border-slate-200 bg-white text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 }
               `}
             />
@@ -177,14 +176,14 @@ function OtpModal({ isOpen, onClose, email }) {
           </button>
 
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleClose}
               className="px-6 h-11 rounded-xl border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-[15px]"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleVerify}
               disabled={!isComplete || loading}
               className={`px-8 h-11 rounded-xl text-white font-semibold text-[15px] transition-colors border-0

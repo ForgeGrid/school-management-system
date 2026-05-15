@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Button } from "../../components/ui/button";
+import { Button } from "../../components/ui/Button";
 import { DotCursorBackground } from "../../components/ui/DotCursorBackground";
 import { CiLogout } from "react-icons/ci";
-import Schoolmanage from './../../assets/bus.jpeg';
+import Schoolmanage from './../../assets/Bus.jpeg';
 import { PlusCircle, UserPlus, Bell, GraduationCap } from "lucide-react";
 import { BorderBeam } from "../../components/ui/Borderbeam";
-import { Card, CardContent } from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/Card";
 import SelectionModal from "../../components/selection/SelectionModal";
 
 export default function TenantMain() {
@@ -20,7 +20,7 @@ export default function TenantMain() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-slate-50/50">
       <DotCursorBackground />
-      
+
       <div className="relative z-10 flex flex-col h-screen overflow-hidden">
         {/* Header */}
         <header className="w-full flex items-center justify-end px-4 md:px-6 py-3 md:py-4 bg-transparent z-50 shrink-0">
@@ -38,7 +38,7 @@ export default function TenantMain() {
         {/* Main Content */}
         <main className="flex-1 px-4 md:px-6 pb-4 overflow-y-auto flex flex-col justify-center">
           <div className="max-w-5xl mx-auto w-full flex flex-col items-center justify-center gap-6 md:gap-10">
-            
+
             {/* Top Section */}
             <div className="text-center space-y-3 md:space-y-5 max-w-3xl mx-auto flex flex-col items-center">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-sm border border-gray-100/80">
@@ -47,9 +47,9 @@ export default function TenantMain() {
                 </div>
                 <span className="text-xs font-bold text-slate-800 tracking-wide uppercase">Education Hub</span>
               </div>
-              
+
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-800 tracking-tight leading-[1.1]">
-                Manage your school <br className="hidden md:block"/> operations effortlessly
+                Manage your school <br className="hidden md:block" /> operations effortlessly
               </h1>
               <p className="text-slate-500 text-sm md:text-base lg:text-lg font-medium max-w-xl mx-auto leading-relaxed">
                 Streamline administration, student records, and staff management in one unified platform.
@@ -58,12 +58,12 @@ export default function TenantMain() {
 
             {/* Content Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12 w-full items-stretch lg:items-center">
-              
+
               {/* Left Image Section - Premium Glassmorphic Frame */}
               <div className="relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[2.5rem] border border-indigo-100/50 bg-white/40 shadow-2xl shadow-indigo-100/40 h-full min-h-[250px] md:min-h-[320px]">
                 {/* Grid Background Pattern */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-size-[24px_24px]"></div>
-                
+
                 {/* Glowing Orbs */}
                 <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-linear-to-bl from-indigo-400/40 via-purple-300/40 to-pink-200/40 rounded-full blur-[80px] animate-pulse" style={{ animationDuration: '6s' }}></div>
                 <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-linear-to-tr from-blue-400/30 to-indigo-300/30 rounded-full blur-[60px] animate-pulse" style={{ animationDuration: '4s' }}></div>
@@ -73,7 +73,7 @@ export default function TenantMain() {
                   <div className="bg-white rounded-2xl p-6">
                     <img src={Schoolmanage} alt="School Management" className="w-full h-auto max-w-[160px] md:max-w-[220px] lg:max-w-[260px] object-contain mix-blend-multiply drop-shadow-sm" />
                   </div>
-                  
+
                   {/* Decorative Badges */}
                   <div className="absolute -top-4 -right-4 bg-linear-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-3 shadow-xl shadow-indigo-200 animate-bounce" style={{ animationDuration: '3s' }}>
                     <GraduationCap size={22} className="stroke-2" />
@@ -88,9 +88,9 @@ export default function TenantMain() {
 
               {/* Right Cards Section */}
               <div className="flex flex-col gap-4 justify-center">
-                
+
                 {/* Create Tenant Card */}
-                <Card 
+                <Card
                   onClick={() => openModal('register')}
                   className="relative overflow-hidden group cursor-pointer border-indigo-100/80 hover:border-indigo-300 transition-all duration-300 shadow-sm bg-white hover:shadow-md"
                 >
@@ -107,7 +107,7 @@ export default function TenantMain() {
                 </Card>
 
                 {/* Join as Staff Card */}
-                <Card 
+                <Card
                   onClick={() => openModal('join')}
                   className="relative overflow-hidden group cursor-pointer border-indigo-100/80 hover:border-indigo-300 transition-all duration-300 shadow-sm bg-white hover:shadow-md"
                 >
@@ -130,10 +130,10 @@ export default function TenantMain() {
         </main>
       </div>
 
-      <SelectionModal 
-        isOpen={isModalOpen} 
-        onClose={setIsModalOpen} 
-        type={modalType} 
+      <SelectionModal
+        isOpen={isModalOpen}
+        onClose={setIsModalOpen}
+        type={modalType}
       />
     </div>
   );
