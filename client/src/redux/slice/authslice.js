@@ -36,7 +36,8 @@ export const verifyOtp = createAsyncThunk(
     try {
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/auth/verify-signup-otp`,
-        { email, otp }
+        { email, otp },
+        { withCredentials: true }  // store the auth_token cookie the server sets
       );
 
       return data;
@@ -92,13 +93,32 @@ export const loginUser = createAsyncThunk(
     try {
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/auth/login`,
-        { email, password }
+        { email, password },
+        { withCredentials: true }  // store the auth_token cookie the server sets
       );
 
       return data;
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data?.message || "Login failed"
+      );
+    }
+  }
+);
+
+export const logoutUserThunk = createAsyncThunk(
+  "auth/logoutUser",
+  async (_, thunkAPI) => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+      return true;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Logout failed"
       );
     }
   }
@@ -357,6 +377,13 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.loginLoading = false;
         state.loginError = action.payload;
+      })
+
+      // LOGOUT THUNK
+      .addCase(logoutUserThunk.fulfilled, (state) => {
+        state.user = null;
+        state.success = false;
+        localStorage.removeItem("userInfo");
       })
 
       // FORGOT PASSWORD

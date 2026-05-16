@@ -7,7 +7,7 @@ import {
   LogOut
 } from "lucide-react";
 
-export default function PendingApproval({ onLogout, onRefresh }) {
+export default function PendingApproval({ onLogout, onRefresh, schoolName }) {
   return (
     <div className="w-full bg-white p-6 md:p-10 rounded-2xl flex flex-col items-center relative">
 
@@ -40,7 +40,7 @@ export default function PendingApproval({ onLogout, onRefresh }) {
 
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">Organization Name</span>
-            <span className="text-sm font-bold text-slate-700">CEOA School</span>
+            <span className="text-sm font-bold text-slate-700">{schoolName || 'Your School'}</span>
           </div>
 
           <div className="flex flex-col gap-1">

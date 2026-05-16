@@ -3,18 +3,17 @@ import axios from "axios";
 
 export const createSchool = createAsyncThunk(
   "school/createSchool",
-  async (formData, { rejectWithValue, getState }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      // Get token from Redux state
-      const token = getState().auth.token; 
-
+      // The server issues auth via an httpOnly cookie (auth_token).
+      // withCredentials: true tells the browser to send that cookie automatically.
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/school/create`,
         formData,
         {
+          withCredentials: true,
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${token}`,
           },
         }
       );

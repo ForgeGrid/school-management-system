@@ -1,35 +1,93 @@
 import React, { useState, useRef } from "react";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/input";
-import {
-  ArrowLeft,
-  Hash,
-  Home,
-  Mail,
-  Phone,
-  MapPin,
-  FileText,
-  Camera
-} from "lucide-react";
+import { ArrowLeft, Hash, Home, Mail, Phone, MapPin, FileText, Camera } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { createSchool } from "../../redux/slice/schoolThunks";
+import { toast } from "sonner";
 
 export default function RegisterInstitution({ onClose, onSuccess }) {
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
+  // Get logged-in user's email — the service uses this to find & link the user
+  const userEmail = useSelector((state) => state.auth?.user?.email)
+    || JSON.parse(localStorage.getItem('userInfo') || '{}')?.email;
+
   const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [form, setForm] = useState({
+    name: "",
+    schoolEmail: "",
+    phone: "",
+    board: "",
+    medium: "",
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  });
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = () => {
-    // Here you would typically make an API call to submit the form data
-    // For now, we simulate a successful submission
-    if (onSuccess) {
-      onSuccess();
+    // Frontend Validation
+    if (!form.name.trim()) {
+      return toast.error("School Name is required");
     }
+    if (!form.schoolEmail.trim()) {
+      return toast.error("School Email is required");
+    }
+    if (!form.phone.trim()) {
+      return toast.error("School Phone is required");
+    }
+
+    const formData = new FormData();
+
+    // Map form fields to the exact names createSchoolService expects
+    formData.append("email", userEmail);
+    formData.append("schoolName", form.name.trim());
+    formData.append("schoolEmail", form.schoolEmail.trim());
+    formData.append("schoolPhone", form.phone.trim());
+    formData.append("schoolBoard", form.board.trim());
+    formData.append("schoolMedium", form.medium.trim());
+
+    // Combine address fields into officialAddress string
+    const address = [form.street, form.city, form.state, form.postalCode, form.country]
+      .filter(Boolean).join(", ");
+    formData.append("officialAddress", address);
+
+    // Append file — key must match upload.single("schoolLogo")
+    if (logoFile) {
+      formData.append("schoolLogo", logoFile);
+    }
+
+    setLoading(true);
+    dispatch(createSchool(formData))
+      .unwrap()
+      .then(() => {
+        toast.success("School registered successfully!");
+        onSuccess?.();
+      })
+
+      .catch((err) => {
+        toast.error(err || "Failed to register school");
+      })
+      .finally(() => setLoading(false));
   };
+
 
   return (
     <div className="w-full bg-white p-6 md:p-8 rounded-2xl flex flex-col h-full max-h-[90vh] overflow-y-auto">
@@ -43,6 +101,8 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
           <ArrowLeft size={16} />
           Back
         </button>
+
+      
 
         <div className="text-center">
           <h2 className="text-2xl md:text-[28px] font-bold text-slate-800 tracking-tight">Register Institution</h2>
@@ -63,8 +123,11 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
               School Name <span className="text-red-500">*</span>
             </label>
             <Input
+              name="name"
               placeholder="CEOA School"
               className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+              value={form.name}
+              onChange={handleChange}
             />
           </div>
 
@@ -76,8 +139,11 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
                 School Email <span className="text-red-500">*</span>
               </label>
               <Input
+                name="schoolEmail"
                 placeholder="jjjaiganesh@gmail.com"
                 className="h-12 rounded-xl border-transparent bg-slate-100 focus-visible:ring-purple-500 text-base shadow-none"
+                value={form.schoolEmail}
+                onChange={handleChange}
               />
             </div>
 
@@ -87,8 +153,11 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
                 School Phone <span className="text-red-500">*</span>
               </label>
               <Input
+                name="phone"
                 placeholder="8220278419"
                 className="h-12 rounded-xl border-transparent bg-slate-100 focus-visible:ring-purple-500 text-base shadow-none"
+                value={form.phone}
+                onChange={handleChange}
               />
             </div>
           </div>
@@ -101,8 +170,11 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
                 School Board
               </label>
               <Input
+                name="board"
                 placeholder="CBSE"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.board}
+                onChange={handleChange}
               />
             </div>
 
@@ -112,8 +184,11 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
                 School Medium
               </label>
               <Input
+                name="medium"
                 placeholder="English"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.medium}
+                onChange={handleChange}
               />
             </div>
           </div>
@@ -126,29 +201,44 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
             </label>
 
             <Input
+              name="street"
               placeholder="Street (e.g. Kosakulam)"
               className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+              value={form.street}
+              onChange={handleChange}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
+                name="city"
                 placeholder="City (e.g. Madurai)"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.city}
+                onChange={handleChange}
               />
               <Input
+                name="state"
                 placeholder="State (e.g. Tamil Nadu)"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.state}
+                onChange={handleChange}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
+                name="postalCode"
                 placeholder="Postal Code (e.g. 625016)"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.postalCode}
+                onChange={handleChange}
               />
               <Input
+                name="country"
                 placeholder="Country (e.g. India)"
                 className="h-12 rounded-xl border-slate-200 bg-white shadow-sm text-base"
+                value={form.country}
+                onChange={handleChange}
               />
             </div>
           </div>
@@ -189,7 +279,7 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
                 Owner Account
               </h3>
               <p className="text-sm font-semibold text-slate-700">
-                prithivi.coder76@gmail.com
+                {userEmail}
               </p>
             </div>
           </div>
@@ -203,9 +293,10 @@ export default function RegisterInstitution({ onClose, onSuccess }) {
             </Button>
             <Button
               onClick={handleSubmit}
+              disabled={loading}
               className="h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base shadow-md shadow-indigo-200"
             >
-              Submit Profile
+              {loading ? "Submitting..." : "Submit Profile"}
             </Button>
           </div>
 
