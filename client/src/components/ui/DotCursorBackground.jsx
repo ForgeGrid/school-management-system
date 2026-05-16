@@ -17,6 +17,8 @@ export function DotCursorBackground({
   const frameRef = useRef(0);
   const rafRef = useRef();
 
+  const autoMiceRef = useRef([]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -41,6 +43,15 @@ export function DotCursorBackground({
           });
         }
       }
+
+      // Initialize auto mice
+      if (autoMiceRef.current.length === 0) {
+        autoMiceRef.current = [
+          { x: canvas.width * 0.2, y: canvas.height * 0.2, vx: 1.5, vy: 1.2 },
+          { x: canvas.width * 0.8, y: canvas.height * 0.8, vx: -1.2, vy: -1.5 },
+          { x: canvas.width * 0.5, y: canvas.height * 0.5, vx: 1.8, vy: -1.1 },
+        ];
+      }
     };
 
     const lerp = (a, b, t) => a + (b - a) * t;
@@ -57,28 +68,51 @@ export function DotCursorBackground({
 
       frameRef.current++;
 
+      // Update automated moving cursors (bouncing off walls)
+      autoMiceRef.current.forEach(mouse => {
+        mouse.x += mouse.vx;
+        mouse.y += mouse.vy;
+
+        if (mouse.x <= 0 || mouse.x >= canvas.width) mouse.vx *= -1;
+        if (mouse.y <= 0 || mouse.y >= canvas.height) mouse.vy *= -1;
+      });
+
+      // Randomly spawn a ripple to animate itself (about once every 120 frames)
+      if (ripple && Math.random() < 0.008 && dots.length > 0) {
+        const randomDot = dots[Math.floor(Math.random() * dots.length)];
+        ripplesRef.current.push({
+          x: randomDot.x,
+          y: randomDot.y,
+          t: 0,
+        });
+      }
+
       ripplesRef.current = ripplesRef.current.filter((r) => r.t < 70);
 
       ripplesRef.current.forEach((r) => r.t++);
 
+      const glowingPoints = [mouseRef.current, ...autoMiceRef.current];
+
       for (const d of dots) {
-        const dx = d.x - mouseRef.current.x;
-        const dy = d.y - mouseRef.current.y;
-
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
         let alpha = 0.13;
         let r = radius;
         let isGlow = false;
 
-        // Cursor proximity glow
-        if (dist < cursorRadius) {
-          const t = easeOut(1 - dist / cursorRadius);
+        // Proximity glow for all active points (real mouse + auto mice)
+        for (const pt of glowingPoints) {
+          const dx = d.x - pt.x;
+          const dy = d.y - pt.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-          alpha = lerp(0.13, 1, t);
-          r = lerp(radius, radius * 2.6, t * 0.65);
-
-          isGlow = true;
+          if (dist < cursorRadius) {
+            const t = easeOut(1 - dist / cursorRadius);
+            const newAlpha = lerp(0.13, 1, t);
+            const newR = lerp(radius, radius * 2.6, t * 0.65);
+            
+            if (newAlpha > alpha) alpha = newAlpha;
+            if (newR > r) r = newR;
+            isGlow = true;
+          }
         }
 
         // Ripple wave effect
@@ -123,11 +157,23 @@ export function DotCursorBackground({
     buildGrid();
     draw();
 
+    let lastRippleTime = 0;
     const onMove = (e) => {
       mouseRef.current = {
         x: e.clientX,
         y: e.clientY,
       };
+
+      const now = performance.now();
+      // Spawn a ripple while cursor goes anywhere (throttled to 100ms)
+      if (ripple && now - lastRippleTime > 100) {
+        ripplesRef.current.push({
+          x: e.clientX,
+          y: e.clientY,
+          t: 0,
+        });
+        lastRippleTime = now;
+      }
     };
 
     const onClick = (e) => {

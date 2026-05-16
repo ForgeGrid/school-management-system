@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { fetchMe } from "../../redux/slice/getmeslice";
 import {
   Dialog,
   DialogContent,
@@ -10,39 +12,30 @@ import JoinStaff from "./JoinStaff";
 import PendingApproval from "./PendingApproval";
 
 export default function SelectionModal({ isOpen, onClose, type }) {
-  const [isPending, setIsPending] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsPending(false);
-    }
-  }, [isOpen]);
-
-  const handleClose = () => {
-    onClose(false);
-  };
-
-  const showRegister = type === 'register' && !isPending;
-  const showJoin = type === 'join' && !isPending;
-  const showPending = isPending;
-
-  let maxWidthClass = 'sm:max-w-md';
-  if (showRegister) maxWidthClass = 'sm:max-w-4xl';
-  else if (showPending) maxWidthClass = 'sm:max-w-md md:sm:max-w-lg'; // slightly wider for pending
+  const dispatch = useDispatch();
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
-        className={`w-full bg-white border-0 ring-0 shadow-2xl p-0 overflow-hidden ${maxWidthClass} transition-all duration-300`}
+    <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
+      <DialogContent
+        className={`w-full bg-white border-0 shadow-2xl p-0 overflow-hidden ${
+          type === 'register' ? 'sm:max-w-4xl' : 'sm:max-w-md'
+        }`}
         onInteractOutside={(e) => e.preventDefault()}
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">Selection Modal</DialogTitle>
-        <DialogDescription className="sr-only">Please select or enter the required information.</DialogDescription>
-        
-        {showRegister && <RegisterInstitution onClose={handleClose} onSuccess={() => setIsPending(true)} />}
-        {showJoin && <JoinStaff onClose={handleClose} />}
-        {showPending && <PendingApproval onLogout={handleClose} onRefresh={() => console.log('refreshing status...')} />}
+        <DialogDescription className="sr-only">Enter required information.</DialogDescription>
+
+        {type === 'register' && (
+          <RegisterInstitution
+            onClose={() => onClose(false)}
+            onSuccess={() => {
+              onClose(false);         // close modal
+              dispatch(fetchMe());    // AppGate handles the rest
+            }}
+          />
+        )}
+        {type === 'join' && <JoinStaff onClose={() => onClose(false)} />}
       </DialogContent>
     </Dialog>
   );
