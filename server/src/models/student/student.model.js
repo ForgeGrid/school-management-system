@@ -41,45 +41,12 @@ const studentProfileSchema = new mongoose.Schema(
             default: null,
         },
 
-        age: {
-            type: Number,
+        requestedGrade: {
+            type: String,
+            trim: true,
             default: null,
+            index: true,
         },
-
-        class_name: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-
-        section: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        roll_no: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        roll_history: [
-            {
-                roll_no: String,
-                class_name: String,
-                section: String,
-                academic_year: String,
-                updatedBy: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: "User",
-                },
-                updatedAt: {
-                    type: Date,
-                    default: Date.now,
-                },
-            },
-        ],
 
         parent_name: {
             type: String,
@@ -123,12 +90,6 @@ const studentProfileSchema = new mongoose.Schema(
         transport_required: {
             type: Boolean,
             default: false,
-        },
-
-        bus_route: {
-            type: String,
-            default: "",
-            trim: true,
         },
 
         status: {
