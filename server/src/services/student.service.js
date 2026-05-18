@@ -17,12 +17,8 @@ export const createStudentService = async (adminUser, data) => {
     email,
     password,
     admission_no,
-    class_name,
-    section,
     gender,
     dob,
-    age,
-    roll_no,
     parent_name,
     parent_email,
     parent_phone,
@@ -30,11 +26,11 @@ export const createStudentService = async (adminUser, data) => {
     guardian_relation,
     address,
     transport_required,
-    bus_route,
+    requestedGrade,
   } = data;
 
-  if (!student_name || !email || !password || !admission_no || !class_name) {
-    throw new Error("student_name, email, password, admission_no and class_name are required");
+  if (!student_name || !email || !password || !admission_no ) {
+    throw new Error("student_name, email, password and admission_no are required");
   }
 
   const existingUser = await User.findOne({ email });
@@ -74,10 +70,6 @@ export const createStudentService = async (adminUser, data) => {
       student_name,
       gender,
       dob: dob || null,
-      age: age || null,
-      class_name,
-      section: section || "",
-      roll_no: roll_no || "",
       parent_name: parent_name || "",
       parent_email: parent_email || "",
       parent_phone: parent_phone || "",
@@ -85,7 +77,7 @@ export const createStudentService = async (adminUser, data) => {
       guardian_relation: guardian_relation || "",
       address: address || {},
       transport_required: !!transport_required,
-      bus_route: bus_route || "",
+      requestedGrade: requestedGrade || null,
       createdBy: adminUser.id,
       updatedBy: adminUser.id,
     });
