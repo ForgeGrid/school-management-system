@@ -4,11 +4,11 @@ import { logout } from "../../redux/slice/getmeslice";
 import { logoutUserThunk } from "../../redux/slice/authslice";
 import { selectAppState, selectUser, selectSchool } from "../../redux/slice/getmeSelector";
 import { Button } from "../../components/ui/Button";
-import { DotCursorBackground } from "../../components/ui/DotCursorBackground";
+import { DotCursorBackground } from "../../components/ui/dot-cursor-background";
 import { CiLogout } from "react-icons/ci";
 import Schoolmanage from './../../assets/Bus.jpeg';
 import { PlusCircle, UserPlus, Bell, GraduationCap } from "lucide-react";
-import { BorderBeam } from "../../components/ui/Borderbeam";
+import { BorderBeam } from "../../components/ui/border-beam";
 import { Card, CardContent } from "../../components/ui/Card";
 import SelectionModal from "../../components/selection/SelectionModal";
 
@@ -32,12 +32,12 @@ export default function TenantMain() {
       <div className="relative z-10 flex flex-col h-screen overflow-hidden">
         {/* Header */}
         <header className="w-full flex items-center justify-end px-4 md:px-6 py-3 md:py-4 bg-transparent z-50 shrink-0">
-         
+
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 md:gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 dispatch(logoutUserThunk());
                 dispatch(logout());

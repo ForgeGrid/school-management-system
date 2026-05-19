@@ -2,13 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, LogIn, UserCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   loginUser,
   fetchUserPreview,
   clearAuthState,
   clearPreview,
+  resendOtp,
 } from "../../redux/slice/authslice";
 import ForgotPasswordModal from "../../components/auth/ForgotPasswordModal";
+import OtpModal from "../../components/auth/OtpModal";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -16,13 +19,14 @@ function Login({ onSwitchToRegister }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { loginLoading, loginError, success, preview, previewFound, previewLoading} =
+  const { loginLoading, loginError, success, preview, previewFound, previewLoading, resendLoading, resendError } =
     useSelector((state) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [emailBlurred, setEmailBlurred] = useState(false);
   const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [isOtpOpen, setIsOtpOpen] = useState(false);
 
   const debounceRef = useRef(null);
 
@@ -41,6 +45,20 @@ function Login({ onSwitchToRegister }) {
   }, []);
 
   useEffect(() => {
+    if (loginError) {
+      toast.error(loginError);
+    }
+  }, [loginError]);
+
+  useEffect(() => {
+    if (resendError) {
+      toast.error(resendError);
+    }
+  }, [resendError]);
+
+
+
+  useEffect(() => {
     clearTimeout(debounceRef.current);
     if (!isValidEmail(form.email)) {
       dispatch(clearPreview());
@@ -55,14 +73,22 @@ function Login({ onSwitchToRegister }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (loginError) dispatch(clearAuthState());
     if (name === "email") {
       setEmailBlurred(false);
       if (!value) dispatch(clearPreview());
     }
   };
 
+  const needsVerification = loginError && loginError.toLowerCase().includes("verify your email");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (needsVerification) {
+      setIsOtpOpen(true);
+      dispatch(resendOtp({ email: form.email }));
+      return;
+    }
     if (!form.email || !form.password) return;
     dispatch(loginUser({ email: form.email, password: form.password }));
   };
@@ -74,9 +100,8 @@ function Login({ onSwitchToRegister }) {
 
       {/* Avatar Preview Card */}
       <div
-        className={`transition-all duration-500 ease-in-out overflow-hidden ${
-          showPreviewCard ? "max-h-36 opacity-100 mb-1" : "max-h-0 opacity-0"
-        }`}
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${showPreviewCard ? "max-h-36 opacity-100 mb-1" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="flex flex-col items-center gap-2 py-3 px-4 rounded-2xl border-gray-100">
           {previewLoading ? (
@@ -115,12 +140,6 @@ function Login({ onSwitchToRegister }) {
         </div>
       </div>
 
-      {/* Login Error */}
-      {loginError && (
-        <p className="text-xs text-center text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {loginError}
-        </p>
-      )}
 
       {/* Email */}
       <div className="flex flex-col gap-1.5">
@@ -181,15 +200,15 @@ function Login({ onSwitchToRegister }) {
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={loginLoading || !form.email || !form.password}
+        disabled={loginLoading || resendLoading || !form.email || !form.password}
         className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98]"
       >
-        {loginLoading ? (
+        {loginLoading || resendLoading ? (
           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : (
           <LogIn className="w-4 h-4" />
         )}
-        {loginLoading ? "Signing in..." : "Login"}
+        {loginLoading || resendLoading ? "Processing..." : (needsVerification ? "Verify Email" : "Login")}
       </button>
 
       {/* Register Link — now uses prop instead of navigate */}
@@ -207,6 +226,13 @@ function Login({ onSwitchToRegister }) {
       <ForgotPasswordModal
         isOpen={isForgotOpen}
         onClose={() => setIsForgotOpen(false)}
+      />
+
+      {/* OTP Modal */}
+      <OtpModal
+        isOpen={isOtpOpen}
+        onClose={() => setIsOtpOpen(false)}
+        email={form.email}
       />
     </div>
   );

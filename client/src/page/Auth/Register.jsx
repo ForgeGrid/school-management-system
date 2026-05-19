@@ -2,14 +2,15 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Camera, X } from "lucide-react";
-import { registerUser } from "../../redux/slice/authslice";
-import PasswordStrengthBar from "../../components/auth/PasswordStrengthbar";
+import { toast } from "sonner";
+import { registerUser, resendOtp, clearAuthState } from "../../redux/slice/authslice";
+import PasswordStrengthBar from "../../components/auth/PasswordStrengthBar";
 import OtpModal from "../../components/auth/OtpModal";
 
 function Register({ onSwitchToLogin }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, registered } = useSelector((state) => state.auth);
+  const { loading, error, registered, resendLoading, resendError } = useSelector((state) => state.auth);
 
   const fileRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,18 @@ function Register({ onSwitchToLogin }) {
   }, [registered]);
 
   useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (resendError) {
+      toast.error(resendError);
+    }
+  }, [resendError]);
+
+  useEffect(() => {
     const hasData = Object.values(form).some((val) => val.trim() !== "") || avatarFile;
     const handleBeforeUnload = (e) => {
       if (hasData) { e.preventDefault(); e.returnValue = ""; }
@@ -37,7 +50,10 @@ function Register({ onSwitchToLogin }) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [form, avatarFile]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) dispatch(clearAuthState());
+  };
 
   const handleAvatar = (e) => {
     const file = e.target.files[0];
@@ -47,8 +63,19 @@ function Register({ onSwitchToLogin }) {
     }
   };
 
+  const needsVerification = error && error.toLowerCase().includes("already exists");
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (needsVerification) {
+      // resendOtp will succeed if unverified, or fail with "already verified" if verified
+      dispatch(resendOtp({ email: form.email })).then((res) => {
+        if (res.meta.requestStatus === "fulfilled") {
+          setShowOtpModal(true);
+        }
+      });
+      return;
+    }
     if (!form.fullName || !form.email || !form.password) return;
     if (form.password !== form.confirmPassword) return;
     const payload = new FormData();
@@ -77,9 +104,9 @@ function Register({ onSwitchToLogin }) {
               {avatarPreview
                 ? <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover rounded-full" />
                 : <div className="flex flex-col items-center gap-0.5">
-                    <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
-                    <span className="text-[9px] sm:text-[10px] text-indigo-400 font-medium leading-none">Upload</span>
-                  </div>
+                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+                  <span className="text-[9px] sm:text-[10px] text-indigo-400 font-medium leading-none">Upload</span>
+                </div>
               }
             </div>
             {avatarPreview && (
@@ -100,12 +127,7 @@ function Register({ onSwitchToLogin }) {
           <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
         </div>
 
-        {/* API Error */}
-        {error && (
-          <p className="text-xs text-center text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-            {error}
-          </p>
-        )}
+
 
         {/* Full Name */}
         <div className="flex flex-col gap-1">
@@ -158,11 +180,10 @@ function Register({ onSwitchToLogin }) {
           {/* Confirm */}
           <div className="flex flex-col gap-1">
             <label className="text-xs sm:text-sm font-semibold text-gray-700">Confirm Password</label>
-            <div className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 sm:py-3 bg-white focus-within:ring-2 transition-all ${
-              passwordMismatch
-                ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
-                : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-indigo-50"
-            }`}>
+            <div className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 sm:py-3 bg-white focus-within:ring-2 transition-all ${passwordMismatch
+              ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
+              : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-indigo-50"
+              }`}>
               <Lock className="w-4 h-4 text-gray-400 shrink-0" />
               <input
                 type={showConfirm ? "text" : "password"} name="confirmPassword"
@@ -184,13 +205,13 @@ function Register({ onSwitchToLogin }) {
         {/* Submit */}
         <button
           type="button" onClick={handleSubmit}
-          disabled={loading || !!passwordMismatch}
+          disabled={loading || resendLoading || !!passwordMismatch}
           className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 sm:py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98]"
         >
-          {loading
+          {loading || resendLoading
             ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             : <UserPlus className="w-4 h-4" />}
-          {loading ? "Creating account..." : "Create Account"}
+          {loading || resendLoading ? "Processing..." : (needsVerification ? "Verify Email" : "Create Account")}
         </button>
 
         {/* Login link */}
