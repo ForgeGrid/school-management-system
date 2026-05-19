@@ -11,9 +11,7 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from "../ui/sidebar";
 import {
   LayoutDashboard,
   UserPlus,
