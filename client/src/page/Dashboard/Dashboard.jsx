@@ -4,12 +4,12 @@ import { logout } from "../../redux/slice/getmeslice";
 import { logoutUserThunk } from "../../redux/slice/authslice";
 import { selectAppState, selectUser, selectSchool } from "../../redux/slice/getmeSelector";
 import { Button } from "../../components/ui/button";
-import { DotCursorBackground } from "../../components/ui/DotCursorBackground";
+import { DotCursorBackground } from "../../components/ui/dot-cursor-background";
 import { CiLogout } from "react-icons/ci";
 import Schoolmanage from './../../assets/Bus.jpeg';
 import { PlusCircle, UserPlus, Bell, GraduationCap } from "lucide-react";
-import { BorderBeam } from "../../components/ui/Borderbeam";
-import { Card, CardContent } from "../../components/ui/Card";
+import { BorderBeam } from "../../components/ui/border-beam";
+import { Card, CardContent } from "../../components/ui/card";
 import SelectionModal from "../../components/selection/SelectionModal";
 
 export default function TenantMain() {

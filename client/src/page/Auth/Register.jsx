@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import { registerUser, resendOtp, clearAuthState } from "../../redux/slice/authslice";
-import PasswordStrengthBar from "../../components/Auth/PasswordStrengthbar";
+import PasswordStrengthBar from "../../components/Auth/PasswordStrengthBar";
 import OtpModal from "../../components/Auth/OtpModal";
 
 function Register({ onSwitchToLogin }) {
@@ -181,8 +181,8 @@ function Register({ onSwitchToLogin }) {
           <div className="flex flex-col gap-1">
             <label className="text-xs sm:text-sm font-semibold text-gray-700">Confirm Password</label>
             <div className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 sm:py-3 bg-white focus-within:ring-2 transition-all ${passwordMismatch
-                ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
-                : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-indigo-50"
+              ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
+              : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-indigo-50"
               }`}>
               <Lock className="w-4 h-4 text-gray-400 shrink-0" />
               <input

@@ -100,9 +100,8 @@ function Login({ onSwitchToRegister }) {
 
       {/* Avatar Preview Card */}
       <div
-        className={`transition-all duration-500 ease-in-out overflow-hidden ${
-          showPreviewCard ? "max-h-36 opacity-100 mb-1" : "max-h-0 opacity-0"
-        }`}
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${showPreviewCard ? "max-h-36 opacity-100 mb-1" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="flex flex-col items-center gap-2 py-3 px-4 rounded-2xl border-gray-100">
           {previewLoading ? (
