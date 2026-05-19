@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import { registerUser, resendOtp, clearAuthState } from "../../redux/slice/authslice";
-import PasswordStrengthBar from "../../components/Auth/PasswordStrengthbar";
-import OtpModal from "../../components/Auth/OtpModal";
+import PasswordStrengthBar from "../../components/auth/PasswordStrengthBar";
+import OtpModal from "../../components/auth/OtpModal";
 
 function Register({ onSwitchToLogin }) {
   const navigate = useNavigate();

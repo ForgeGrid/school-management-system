@@ -10,8 +10,8 @@ import {
   clearPreview,
   resendOtp,
 } from "../../redux/slice/authslice";
-import ForgotPasswordModal from "../../components/Auth/ForgotPasswordModal";
-import OtpModal from "../../components/Auth/OtpModal";
+import ForgotPasswordModal from "../../components/auth/ForgotPasswordModal";
+import OtpModal from "../../components/auth/OtpModal";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
