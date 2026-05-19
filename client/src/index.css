@@ -2,6 +2,26 @@
 
 @theme {
   --animate-border-beam: border-beam calc(var(--duration)*1s) infinite linear;
+  
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --sidebar: #ffffff;
+  --sidebar-foreground: #475569; /* Slate 600 */
+  --sidebar-primary: #06b6d4; /* Vibrant Cyan matching wireframe */
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9; /* Slate 100 */
+  --sidebar-accent-foreground: #0f172a; /* Slate 900 */
+  --sidebar-border: #e2e8f0; /* Slate 200 */
+  --sidebar-ring: #06b6d4;
 }
 
 @keyframes border-beam {
@@ -15,4 +35,36 @@ body,
 #root {
   height: 100%;
   overflow: hidden;
+  background-color: #f8fafc; /* light background */
 }
+
+/* Custom scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Premium sleek slim scrollbar for all browsers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* slate-400 */
+}
+
+/* Firefox scrollbar compatibility */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}

@@ -4,11 +4,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { verifyOtp, resendOtp, clearAuthState } from "../../redux/slice/authslice";
 import { Button } from "../ui/Button";
 
-const RESEND_SECONDS = 300;
+const EXPIRE_SECONDS = 300;
+const RESEND_SECONDS = 60;
 
 function OtpModal({ isOpen, onClose, email }) {
   const [otp, setOtp] = useState(Array(6).fill(""));
-  const [timer, setTimer] = useState(RESEND_SECONDS);
+  const [expireTimer, setExpireTimer] = useState(EXPIRE_SECONDS);
+  const [resendTimer, setResendTimer] = useState(RESEND_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const [resendFlash, setResendFlash] = useState(false);
 
@@ -21,21 +23,22 @@ function OtpModal({ isOpen, onClose, email }) {
     if (!isOpen) return;
     dispatch(clearAuthState());
     setOtp(Array(6).fill(""));
-    setTimer(RESEND_SECONDS);
+    setExpireTimer(EXPIRE_SECONDS);
+    setResendTimer(RESEND_SECONDS);
     setCanResend(false);
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
-    if (timer === 0) {
+    if (resendTimer === 0) {
       setCanResend(true);
-      return;
     }
     const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
+      setExpireTimer((prev) => Math.max(prev - 1, 0));
+      setResendTimer((prev) => Math.max(prev - 1, 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [timer, isOpen]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,7 +89,8 @@ function OtpModal({ isOpen, onClose, email }) {
   const handleResend = () => {
     if (!canResend) return;
     setOtp(Array(6).fill(""));
-    setTimer(RESEND_SECONDS);
+    setExpireTimer(EXPIRE_SECONDS);
+    setResendTimer(RESEND_SECONDS);
     setCanResend(false);
     setResendFlash(true);
     setTimeout(() => setResendFlash(false), 1500);
@@ -118,7 +122,7 @@ function OtpModal({ isOpen, onClose, email }) {
             Verify your email
           </h2>
           <p className="text-[15px] text-slate-600 mt-2">
-            Code expires in <span className="font-bold text-slate-800">{formatTime(timer)}</span>
+            Code expires in <span className="font-bold text-slate-800">{formatTime(expireTimer)}</span>
           </p>
           <p className="text-[15px] text-slate-500">
             Enter the 6-digit code sent to <span className="font-semibold text-slate-600">{email}</span>
@@ -166,14 +170,21 @@ function OtpModal({ isOpen, onClose, email }) {
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between mt-2">
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={!canResend || loading}
-            className={`text-[15px] font-bold transition-all duration-200 ${canResend && !loading ? "text-[#8b5cf6] hover:text-[#7c3aed]" : "text-[#8b5cf6] opacity-70 cursor-not-allowed"}`}
-          >
-            {resendFlash ? "Code resent!" : "Resend code"}
-          </button>
+          <div className="flex flex-col items-start gap-1">
+            {!canResend && (
+              <span className="text-xs text-slate-400 font-medium ml-0.5">
+                in {formatTime(resendTimer)}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={!canResend || loading}
+              className={`text-[15px] font-bold transition-all duration-200 ${canResend && !loading ? "text-[#8b5cf6] hover:text-[#7c3aed]" : "text-[#8b5cf6] opacity-70 cursor-not-allowed"}`}
+            >
+              {resendFlash ? "Code resent!" : "Resend code"}
+            </button>
+          </div>
 
           <div className="flex gap-3">
             <Button
