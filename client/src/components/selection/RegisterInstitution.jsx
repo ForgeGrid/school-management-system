@@ -5,13 +5,14 @@ import { ArrowLeft, Hash, Home, Mail, Phone, MapPin, FileText, Camera } from "lu
 import { useDispatch, useSelector } from "react-redux";
 import { createSchool } from "../../redux/slice/schoolThunks";
 import { toast } from "sonner";
+import { selectUser } from "../../redux/slice/getmeSelector";
 
 export default function RegisterInstitution({ onClose, onSuccess }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  // Get logged-in user's email — the service uses this to find & link the user
-  const userEmail = useSelector((state) => state.auth?.user?.email)
-    || JSON.parse(localStorage.getItem('userInfo') || '{}')?.email;
+  // Get logged-in user's email dynamically using selectUser selector
+  const user = useSelector(selectUser);
+  const userEmail = user?.email;
 
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);

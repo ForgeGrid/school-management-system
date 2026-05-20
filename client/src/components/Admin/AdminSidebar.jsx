@@ -53,12 +53,13 @@ export default function AdminSidebar({
     { name: "Bus routes", icon: Bus },
     { name: "Fees", icon: DollarSign },
     { name: "Live tracking", icon: MapPin },
+    { name: "Reports", icon: BarChart3 },
     { name: "Alerts", icon: Bell, badge: alertsCount }
   ];
 
   const secondaryMenuItems = [
     { name: "Settings", icon: Settings },
-    { name: "Reports", icon: BarChart3 },
+    { name: "Report issue", icon: BarChart3 },
     { name: "Feedback", icon: Smile }
   ];
 
@@ -94,11 +95,10 @@ export default function AdminSidebar({
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setActiveTab(item.name)}
-                      className={`group/navItem w-[calc(100%-24px)] mx-3 flex items-center justify-between px-4 py-2.5 transition-colors duration-200 rounded-xl font-medium ${
-                        isActive
+                      className={`group/navItem w-[calc(100%-24px)] mx-3 flex items-center justify-between px-4 py-2.5 transition-colors duration-200 rounded-xl font-medium ${isActive
                           ? "bg-indigo-50 text-indigo-700 font-bold shadow-sm"
                           : "bg-transparent text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-4">
                         <motion.div
@@ -124,7 +124,7 @@ export default function AdminSidebar({
         </SidebarGroup>
 
         {/* Divider line pushed to the bottom, separating top and bottom menus */}
-        <div className="h-1px w-full bg-slate-200 mt-auto mb-3"></div>
+        <div className="h-px w-full bg-slate-200 mt-auto mb-3"></div>
 
         {/* Secondary Navigation Group (Reports, Feedback, Settings) */}
         <SidebarGroup>
@@ -138,11 +138,10 @@ export default function AdminSidebar({
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setActiveTab(item.name)}
-                      className={`group/navItem w-[calc(100%-24px)] mx-3 flex items-center justify-between px-4 py-2.5 transition-colors duration-200 rounded-xl font-medium ${
-                        isActive
+                      className={`group/navItem w-[calc(100%-24px)] mx-3 flex items-center justify-between px-4 py-2.5 transition-colors duration-200 rounded-xl font-medium ${isActive
                           ? "bg-indigo-50 text-indigo-700 font-bold shadow-sm"
                           : "bg-transparent text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-4">
                         <motion.div
@@ -171,12 +170,19 @@ export default function AdminSidebar({
             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-lg font-black uppercase shrink-0">
               {user?.name?.slice(0, 1) || "V"}
             </div>
-            
+
             {/* User Info */}
             <div className="flex flex-col min-w-0">
-              <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide truncate">
-                {user?.name || "V MANOJ KUMAR"}
-              </span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-[13px] font-bold text-slate-800 uppercase tracking-wide truncate">
+                  {user?.name || "V MANOJ KUMAR"}
+                </span>
+                {(user?.platform_role === "super_admin" || user?.platformRole === "super_admin") && (
+                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-indigo-650 text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md tracking-wider uppercase shrink-0">
+                    Super
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] font-medium text-slate-400 truncate">
                 {user?.email || "admin@school.com"}
               </span>

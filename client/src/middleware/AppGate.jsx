@@ -11,6 +11,7 @@ import {
   selectUser,
 } from "../redux/slice/getmeSelector";
 import PendingApproval from "../components/selection/PendingApproval";
+import AutoJoinInvitation from "../components/selection/AutoJoinInvitation";
 
 export default function AppGate({ children }) {
   const dispatch = useDispatch();
@@ -22,8 +23,10 @@ export default function AppGate({ children }) {
   const user = useSelector(selectUser);
 
   useEffect(() => {
-    dispatch(fetchMe());
-  }, [dispatch]);
+    if (status === "idle") {
+      dispatch(fetchMe());
+    }
+  }, [dispatch, status]);
 
   // Loading
   if (status === "idle" || status === "loading") {
@@ -54,11 +57,16 @@ export default function AppGate({ children }) {
     );
   }
 
+  // INVITED / USER_INVITED — render the automatic invitation join transition
+  if (appState === "INVITED" || appState === "USER_INVITED") {
+    if (location.pathname !== "/dashboard") {
+      return <Navigate to="/dashboard" replace />;
+    }
+    return <AutoJoinInvitation />;
+  }
+
   // NO_SCHOOL — let TenantMain render (Register / Join cards)
-  // if (appState === "NO_SCHOOL" || appState === "INVITED") {
-  //   return <>{children}</>;
-  // }
-  if (appState === "NO_SCHOOL" || appState === "INVITED") {
+  if (appState === "NO_SCHOOL") {
     if (location.pathname !== "/dashboard") {
       return <Navigate to="/dashboard" replace />;
     }
@@ -73,10 +81,14 @@ export default function AppGate({ children }) {
           <PendingApproval
             schoolName={school?.name}
             onRefresh={() => dispatch(fetchMe())}
-            onLogout={() => { 
-              dispatch(logoutUserThunk());
-              dispatch(logout()); 
-              navigate("/login"); 
+            onLogout={async () => { 
+              try {
+                await dispatch(logoutUserThunk()).unwrap();
+                dispatch(logout()); 
+                navigate("/login"); 
+              } catch (e) {
+                console.error("Logout failed", e);
+              }
             }}
           />
         </div>
@@ -103,10 +115,14 @@ export default function AppGate({ children }) {
               Please contact support or register a new institution if you believe this is an error.
             </p>
             <button
-              onClick={() => { 
-                dispatch(logoutUserThunk());
-                dispatch(logout()); 
-                navigate("/login"); 
+              onClick={async () => { 
+                try {
+                  await dispatch(logoutUserThunk()).unwrap();
+                  dispatch(logout()); 
+                  navigate("/login"); 
+                } catch (e) {
+                  console.error("Logout failed", e);
+                }
               }}
               className="w-full h-11 bg-slate-800 text-white rounded-xl text-sm font-semibold mt-4"
             >
@@ -134,10 +150,14 @@ export default function AppGate({ children }) {
               Your school account has been disabled. Please contact your administrator or support.
             </p>
             <button
-              onClick={() => { 
-                dispatch(logoutUserThunk());
-                dispatch(logout()); 
-                navigate("/login"); 
+              onClick={async () => { 
+                try {
+                  await dispatch(logoutUserThunk()).unwrap();
+                  dispatch(logout()); 
+                  navigate("/login"); 
+                } catch (e) {
+                  console.error("Logout failed", e);
+                }
               }}
               className="w-full h-11 bg-slate-800 text-white rounded-xl text-sm font-semibold mt-4"
             >
@@ -152,11 +172,10 @@ export default function AppGate({ children }) {
   // ACTIVE — redirect to correct portal based on role
   if (appState === "ACTIVE") {
     const role = user?.role; // "school_admin" | "teacher" | "student" etc.
-    // const isAdmin = role === "admin" || user?.platformRole === "super_admin";
-    const isAdmin = role === "school_admin" || role === "admin" || user?.platformRole === "super_admin";
+    const isAdmin = role === "school_admin" || role === "admin" || role === "teacher" || role === "staff" || user?.platformRole === "super_admin";
 
     // If already on the right page, render it
-    if (isAdmin && location.pathname.startsWith("/admin")) {
+    if (isAdmin && location.pathname.startsWith("/dashboard/admin")) {
       return <>{children}</>;
     }
     if (!isAdmin && location.pathname.startsWith("/portal")) {
@@ -172,7 +191,7 @@ export default function AppGate({ children }) {
     // return null;
     
     if (isAdmin) {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/dashboard/admin" replace />;
     } else {
       return <Navigate to="/portal" replace />;
     }

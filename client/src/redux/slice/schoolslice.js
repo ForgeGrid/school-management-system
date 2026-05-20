@@ -32,9 +32,6 @@ const schoolSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.successMessage = action.payload.message;
-
-        // Optionally persist token
-        localStorage.setItem("token", action.payload.token);
       })
       .addCase(createSchool.rejected, (state, action) => {
         state.loading = false;

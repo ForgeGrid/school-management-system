@@ -28,7 +28,17 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const school = useSelector(selectSchool);
-  
+
+  const isSuperAdmin = user?.platform_role === "super_admin" || user?.platformRole === "super_admin";
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      document.title = "Super Admin Dashboard | S-Cool";
+    } else {
+      document.title = "School Admin Dashboard | S-Cool";
+    }
+  }, [isSuperAdmin]);
+
   // Navigation State
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,7 +46,7 @@ export default function AdminDashboard() {
   // ==========================================
   // SHARED INTERACTIVE LIFTS (LIFTED STATE)
   // ==========================================
-  
+
   // 1. Students State
   const [students, setStudents] = useState([
     { id: 1, firstName: "Aarav", lastName: "Sharma", class: "Grade 10", rollNo: "1001", email: "aarav@gmail.com", status: "Active" },
@@ -89,7 +99,7 @@ export default function AdminDashboard() {
   const activeBusesCount = buses.filter(b => b.status === "Running").length;
   const stoppedBusesCount = buses.filter(b => b.status === "Stopped").length;
   const pendingProfilesCount = pendingApprovals.length;
-  
+
   const attendanceVals = Object.values(attendance);
   const presentCount = attendanceVals.filter(v => v === "present" || v === "late").length;
   const todayAttendancePct = Math.round((presentCount / attendanceVals.length) * 100);
@@ -97,7 +107,7 @@ export default function AdminDashboard() {
   // Simulation effect for bus movement
   useEffect(() => {
     const interval = setInterval(() => {
-      setBuses(prevBuses => 
+      setBuses(prevBuses =>
         prevBuses.map(bus => {
           if (bus.status === "Running") {
             const dx = (Math.random() - 0.5) * 4;
@@ -118,18 +128,22 @@ export default function AdminDashboard() {
   }, []);
 
   // Handle Logout
-  const handleLogout = () => {
-    dispatch(logoutUserThunk());
-    dispatch(logout());
-    toast.success("Successfully logged out");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserThunk()).unwrap();
+      dispatch(logout());
+      toast.success("Successfully logged out");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Logout failed, please try again");
+    }
   };
 
   return (
     <TooltipProvider>
       <SidebarProvider defaultOpen={true}>
         <div className="flex h-screen w-full overflow-hidden bg-slate-50/50 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] bg-size-[16px_16px]">
-          
+
           {/* Custom Modular Sidebar */}
           <AdminSidebar
             activeTab={activeTab}
@@ -143,17 +157,17 @@ export default function AdminDashboard() {
 
           {/* Main content viewport */}
           <SidebarInset className="flex-1 flex flex-col overflow-hidden bg-transparent">
-            
+
             {/* Top Toolbar */}
             <header className="h-14 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 sticky top-0 z-40">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-slate-600 hover:bg-slate-100 rounded-lg p-1.5 cursor-pointer" />
                 <div className="h-5 w-px bg-slate-200 hidden md:block" />
                 <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider hidden md:inline-block">
-                  School Admin Portal
+                  {isSuperAdmin ? "Super Admin Portal" : "School Admin Portal"}
                 </span>
               </div>
-              
+
               {/* Wireframe Search Bar */}
               <div className="relative w-full max-w-xs md:max-w-sm">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -252,6 +266,10 @@ export default function AdminDashboard() {
 
                   {activeTab === "Feedback" && (
                     <AdminFeedback />
+                  )}
+
+                  {activeTab === "Report issue" && (
+                    <AdminFeedback isIssue={true} />
                   )}
 
                   {activeTab === "Settings" && (
