@@ -38,10 +38,14 @@ export default function TenantMain() {
           <div className="flex items-center gap-2 md:gap-3">
             <Button
               variant="outline"
-              onClick={() => {
-                dispatch(logoutUserThunk());
-                dispatch(logout());
-                window.location.href = "/login";
+              onClick={async () => {
+                try {
+                  await dispatch(logoutUserThunk()).unwrap();
+                  dispatch(logout());
+                  window.location.href = "/login";
+                } catch (error) {
+                  console.error("Logout failed", error);
+                }
               }}
               className="flex items-center gap-2 bg-white/90 hover:bg-slate-50 shadow-sm border border-gray-200 rounded-full px-3 md:px-4 py-2 md:py-2.5 transition-all text-slate-700 hover:text-red-600"
             >

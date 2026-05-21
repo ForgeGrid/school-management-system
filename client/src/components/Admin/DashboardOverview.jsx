@@ -1,4 +1,6 @@
 import React from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../redux/slice/getmeSelector";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -20,13 +22,16 @@ export default function DashboardOverview({
   setBuses,
   setActiveTab,
 }) {
+  const user = useSelector(selectUser);
+  const isSuperAdmin = user?.platform_role === "super_admin" || user?.platformRole === "super_admin";
+
   return (
     <div className="h-full flex flex-col gap-6 overflow-hidden">
       {/* Greeting Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight capitalize leading-none">
-            Admin dashboard
+            {isSuperAdmin ? "Super admin dashboard" : "Admin dashboard"}
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium">
             Manage institution metrics, bus fleet, and alerts in real-time.
@@ -43,7 +48,7 @@ export default function DashboardOverview({
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
+
         {/* Card 1: Total Students */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500" />
@@ -132,7 +137,7 @@ export default function DashboardOverview({
 
       {/* Main Split Columns: Transport map & Quick Actions */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 overflow-hidden">
-        
+
         {/* Live Transport Card (ColSpan 2) */}
         <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-full lg:col-span-2 overflow-hidden relative group">
           <div className="flex items-center justify-between mb-4 shrink-0">
@@ -153,7 +158,7 @@ export default function DashboardOverview({
           {/* Map Representation Box */}
           <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden relative shadow-inner">
             {/* Dotted paths representing streets */}
-            <svg 
+            <svg
               className="absolute inset-0 w-full h-full stroke-slate-200 pointer-events-none"
               strokeWidth={2}
               strokeDasharray="6,6"
@@ -183,14 +188,13 @@ export default function DashboardOverview({
                 {bus.status === "Running" && (
                   <span className="absolute -inset-2.5 rounded-full bg-cyan-500/20 animate-ping opacity-75" />
                 )}
-                <div className={`p-2 rounded-xl text-white shadow-lg ${
-                  bus.status === "Running" 
-                    ? "bg-cyan-500 ring-2 ring-white" 
+                <div className={`p-2 rounded-xl text-white shadow-lg ${bus.status === "Running"
+                    ? "bg-cyan-500 ring-2 ring-white"
                     : "bg-slate-400 ring-2 ring-white"
-                }`}>
+                  }`}>
                   <Bus className="w-5 h-5" />
                 </div>
-                
+
                 {/* Hover Label */}
                 <div className="absolute bottom-full mb-1.5 opacity-0 group-hover/bus:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap shadow-md pointer-events-none">
                   {bus.routeName.split(" ")[0]} ({bus.speed})
@@ -226,8 +230,8 @@ export default function DashboardOverview({
           {/* Bus list with custom scrollbar */}
           <div className="flex-1 mt-4 space-y-3 overflow-y-auto pr-1">
             {buses.map((bus) => (
-              <div 
-                key={bus.id} 
+              <div
+                key={bus.id}
                 className="p-3.5 bg-slate-50/50 border border-slate-200/40 rounded-2xl space-y-2 hover:shadow-xs transition-shadow cursor-pointer group/item"
                 onClick={() => {
                   toast.info(`Opening GPS telemetry for ${bus.routeName}`);
@@ -236,16 +240,15 @@ export default function DashboardOverview({
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800 text-xs group-hover/item:text-indigo-600 transition-colors">{bus.routeName.split(" - ")[0]}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                    bus.status === "Running" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-slate-100 text-slate-500"
-                  }`}>{bus.status}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${bus.status === "Running" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-slate-100 text-slate-500"
+                    }`}>{bus.status}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                   <span>Driver: {bus.driver}</span>
                   <span className="text-slate-800 font-black">{bus.speed}</span>
                 </div>
-                
+
                 <div className="text-[10px] text-slate-400 font-medium">
                   Next station: <span className="text-indigo-600 font-bold">{bus.nextStop}</span>
                 </div>

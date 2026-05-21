@@ -1,10 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// LOAD USER FROM LOCAL STORAGE
-const userFromStorage = localStorage.getItem("userInfo")
-  ? JSON.parse(localStorage.getItem("userInfo"))
-  : null;
 
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
@@ -183,7 +179,7 @@ const authSlice = createSlice({
   name: "auth",
 
   initialState: {
-    user: userFromStorage,
+    user: null,
 
     loading: false,
     error: null,
@@ -265,8 +261,6 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.success = false;
-
-      localStorage.removeItem("userInfo");
     },
   },
 
@@ -302,12 +296,6 @@ const authSlice = createSlice({
         state.success = true;
         state.user = action.payload.user;
         state.message = action.payload.message;
-
-        // SAVE TO LOCAL STORAGE
-        localStorage.setItem(
-          "userInfo",
-          JSON.stringify(action.payload.user)
-        );
       })
 
       .addCase(verifyOtp.rejected, (state, action) => {
@@ -366,12 +354,6 @@ const authSlice = createSlice({
         state.loginError = null;
         state.user = action.payload.user;
         state.success = true;
-
-        // SAVE USER
-        localStorage.setItem(
-          "userInfo",
-          JSON.stringify(action.payload.user)
-        );
       })
 
       .addCase(loginUser.rejected, (state, action) => {
@@ -383,7 +365,6 @@ const authSlice = createSlice({
       .addCase(logoutUserThunk.fulfilled, (state) => {
         state.user = null;
         state.success = false;
-        localStorage.removeItem("userInfo");
       })
 
       // FORGOT PASSWORD
