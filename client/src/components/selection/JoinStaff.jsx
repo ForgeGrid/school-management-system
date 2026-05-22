@@ -20,7 +20,7 @@ export default function JoinOrganization({ onClose }) {
   useEffect(() => {
     return () => dispatch(clearInvitationStatus());
   }, [dispatch]);
-
+  console.log("invitation", invitation);
   const handleJoin = async () => {
     if (!invitation?.token) return;
 
