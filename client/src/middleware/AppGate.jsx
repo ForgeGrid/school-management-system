@@ -57,6 +57,21 @@ export default function AppGate({ children }) {
     );
   }
 
+  // ── SUPER ADMIN FAST-LANE ──────────────────────────────────────────────────
+  // Super admins bypass ALL intermediate screens (pending, rejected, no-school,
+  // invited, inactive) and go straight to their dashboard.
+  const isSuperAdmin =
+    user?.platform_role === "super_admin" ||
+    user?.platformRole === "super_admin";
+
+  if (isSuperAdmin) {
+    if (location.pathname.startsWith("/dashboard/superadmin")) {
+      return <>{children}</>;
+    }
+    return <Navigate to="/dashboard/superadmin" replace />;
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   // INVITED / USER_INVITED — render the automatic invitation join transition
   if (appState === "INVITED" || appState === "USER_INVITED") {
     if (location.pathname !== "/dashboard") {
@@ -170,11 +185,12 @@ export default function AppGate({ children }) {
   }
 
   // ACTIVE — redirect to correct portal based on role
+  // (super admins are already handled by the fast-lane above)
   if (appState === "ACTIVE") {
-    const role = user?.role; // "school_admin" | "teacher" | "student" etc.
-    const isAdmin = role === "school_admin" || role === "admin" || role === "teacher" || role === "staff" || user?.platformRole === "super_admin";
+    const role = user?.role;
+    const isAdmin = role === "school_admin" || role === "admin" || role === "teacher" || role === "staff";
 
-    // If already on the right page, render it
+    // Already on the right page
     if (isAdmin && location.pathname.startsWith("/dashboard/admin")) {
       return <>{children}</>;
     }
@@ -183,13 +199,6 @@ export default function AppGate({ children }) {
     }
 
     // Redirect to correct portal
-    // if (isAdmin) {
-    //   navigate("/admin", { replace: true });
-    // } else {
-    //   navigate("/portal", { replace: true });
-    // }
-    // return null;
-    
     if (isAdmin) {
       return <Navigate to="/dashboard/admin" replace />;
     } else {

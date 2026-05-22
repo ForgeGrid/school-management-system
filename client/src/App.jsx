@@ -70,6 +70,17 @@ function App() {
               </AuthProtectRoute>
             }
           />
+
+          <Route
+            path="/dashboard/superadmin"
+            element={
+              <AuthProtectRoute>
+                <AppGate>
+                  <AdminDashboard />
+                </AppGate>
+              </AuthProtectRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </Provider>
