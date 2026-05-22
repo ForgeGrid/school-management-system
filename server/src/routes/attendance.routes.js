@@ -10,7 +10,6 @@ import {
   getAttendanceSummary,
   notifyAbsentParents,
   submitAbsentReason,
-  adminUpdateAbsentReason,
   getMyAttendance,
   getStudentAttendanceHistory,
 } from "../controller/attendance.controller.js";
@@ -93,16 +92,7 @@ router.post(
   submitAbsentReason
 );
 
-/**
- * 7) Admin updates an existing absent reason
- * Params: attendanceId
- * Body: { text }
- */
-router.patch(
-  "/:attendanceId/reason",
-  requireRole("school_admin"),
-  adminUpdateAbsentReason
-);
+
 
 /**
  * 8) Student/Parent view their own/child's attendance

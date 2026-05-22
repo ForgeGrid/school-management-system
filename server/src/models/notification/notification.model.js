@@ -1,57 +1,161 @@
 import mongoose from "mongoose";
 
-const { Schema } = mongoose;
-
-const notificationSchema = new Schema(
-    {
-        tenant_id: {
-            type: Schema.Types.ObjectId,
-            ref: "Tenant",
-            required: true,
-            index: true,
-        },
-        recipient: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: true,
-            index: true,
-        },
-        sender: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            default: null,
-        },
-        type: {
-            type: String,
-            enum: ["task_assigned", "todo_created", "daily_summary", "task_reminder", "general"],
-            required: true,
-        },
-        title: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        message: {
-            type: String,
-            required: true,
-        },
-        link: {
-            type: String,
-            default: null,
-        },
-        metadata: {
-            type: Schema.Types.Mixed,
-            default: {},
-        },
-        is_read: {
-            type: Boolean,
-            default: false,
-            index: true,
-        },
+const notificationSchema = new mongoose.Schema(
+  {
+    school_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "School",
+      required: true,
+      index: true,
     },
-    { timestamps: true }
+
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
+    },
+
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 2000,
+    },
+
+    type: {
+      type: String,
+      enum: [
+        "announcement",
+        "event",
+        "attendance_absent",
+        "attendance_reason_submitted",
+        "fee_reminder",
+        "transport_update",
+        "homework",
+        "timetable",
+        "chat_notice",
+        "emergency",
+        "custom",
+      ],
+      default: "custom",
+      index: true,
+    },
+
+    scope: {
+      type: String,
+      enum: ["all", "roles", "users", "students", "class_sections", "custom"],
+      required: true,
+      index: true,
+    },
+
+    audience: {
+      roles: {
+        type: [String],
+        default: [],
+      },
+      user_ids: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
+      student_ids: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "StudentProfile",
+        },
+      ],
+      classSection_ids: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "ClassSection",
+        },
+      ],
+    },
+
+    relatedModule: {
+      type: String,
+      enum: ["attendance", "fees", "transport", "student", "staff", "chat", "timetable", "general"],
+      default: "general",
+      index: true,
+    },
+
+    relatedRefId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+
+    sender_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+
+    publishAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+
+
+    readBy: [
+      {
+        user_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        role: {
+          type: String,
+          required: true,
+        },
+        readAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    readCount: {
+      type: Number,
+      default: 0,
+    },
+
+  },
+  {
+    timestamps: true,
+  }
 );
 
-notificationSchema.index({ recipient: 1, is_read: 1, createdAt: -1 });
+notificationSchema.index({
+  school_id: 1,
+  scope: 1,
+  type: 1,
+  publishAt: -1,
+});
 
-export default mongoose.model("Notification", notificationSchema);
+notificationSchema.index({
+  school_id: 1,
+  createdAt: -1,
+});
+
+notificationSchema.index({
+  "audience.user_ids": 1,
+});
+
+notificationSchema.index({
+  "audience.roles": 1,
+});
+
+notificationSchema.index({
+  "audience.student_ids": 1,
+});
+
+notificationSchema.index({
+  "audience.classSection_ids": 1,
+});
+
+export const Notification = mongoose.model("Notification", notificationSchema);
+export default Notification;

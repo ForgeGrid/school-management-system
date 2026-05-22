@@ -4,8 +4,18 @@ const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Custom log format for development/console
 const devFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
-    return `${timestamp} [${level}]: ${stack || message} ${Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
-        }`;
+    const safeStringify = (obj) => {
+        const cache = new Set();
+        return JSON.stringify(obj, (key, value) => {
+            if (typeof value === "object" && value !== null) {
+                if (cache.has(value)) return "[Circular]";
+                cache.add(value);
+            }
+            return value;
+        }, 2);
+    };
+
+    return `${timestamp} [${level}]: ${stack || message} ${Object.keys(meta).length ? safeStringify(meta) : ""}`;
 });
 
 const logger = winston.createLogger({

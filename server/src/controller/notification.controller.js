@@ -1,29 +1,61 @@
-import Notification from "../models/notification/notification.model.js";
+import { scanAndSendFeeReminders } from "../services/cron.service.js";
 import logger from "../utils/logger.js";
+import Notification from "../models/notification/notification.model.js";
+import { buildNotificationMatch, resolveNotificationUserContext } from "../utils/notificationHelper.js";
+
+
 
 /**
- * Get all notifications for the current user
+ * Trigger Fee Reminder Scan manually (Admin only)
+ */
+export const triggerFeeReminderScan = async (req, res) => {
+    try {
+        const { role } = req.user;
+
+        if (role !== "school_admin") {
+            return res.status(403).json({ message: "Unauthorized. Admin only." });
+        }
+
+        logger.info(`Manual Fee Reminder Scan triggered via API by user ${req.user.id}.`);
+        await scanAndSendFeeReminders(req.user.id);
+
+        res.status(200).json({ message: "Fee reminder scan initiated successfully." });
+    } catch (err) {
+        logger.error("Error triggering fee reminder scan:", err);
+        res.status(500).json({ message: "Error triggering fee reminder scan" });
+    }
+};
+
+/**
+ * Get all notifications for the current user (with pagination)
  */
 export const getNotifications = async (req, res) => {
     try {
-        const { id: userId, tenant_id } = req.user;
+        const page = Math.max(parseInt(req.query.page ?? "1", 10), 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit ?? "50", 10), 1), 100);
+        const skip = (page - 1) * limit;
 
-        const notifications = await Notification.find({
-            recipient: userId,
-            tenant_id
-        })
-            .sort({ createdAt: -1 })
-            .limit(50);
+        const userContext = await resolveNotificationUserContext(req.user);
+        const baseMatch = buildNotificationMatch(userContext);
 
-        const unreadCount = await Notification.countDocuments({
-            recipient: userId,
-            tenant_id,
-            is_read: false
-        });
+        const [notifications, unreadCount] = await Promise.all([
+            Notification.find(baseMatch)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+
+            Notification.countDocuments({
+                ...baseMatch,
+                readBy: { $not: { $elemMatch: { user_id: req.user.id } } },
+            }),
+        ]);
 
         res.status(200).json({
             notifications,
-            unreadCount
+            unreadCount,
+            page,
+            limit,
         });
     } catch (err) {
         logger.error("Error fetching notifications:", err);
@@ -37,19 +69,42 @@ export const getNotifications = async (req, res) => {
 export const markAsRead = async (req, res) => {
     try {
         const { id } = req.params;
-        const { id: userId } = req.user;
+        const { id: userId, role } = req.user;
+        const userContext = await resolveNotificationUserContext(req.user);
 
-        const notification = await Notification.findOneAndUpdate(
-            { _id: id, recipient: userId },
-            { is_read: true },
-            { returnDocument: "after" }
+        const updated = await Notification.findOneAndUpdate(
+            {
+                _id: id,
+                ...buildNotificationMatch(userContext),
+                readBy: { $not: { $elemMatch: { user_id: userId } } },
+            },
+            {
+                $addToSet: {
+                    readBy: {
+                        user_id: userId,
+                        role,
+                        readAt: new Date(),
+                    },
+                },
+                $inc: { readCount: 1 },
+            },
+            { new: true }
         );
+
+        if (updated) {
+            return res.status(200).json(updated);
+        }
+
+        const notification = await Notification.findOne({
+            _id: id,
+            ...buildNotificationMatch(userContext),
+        });
 
         if (!notification) {
             return res.status(404).json({ message: "Notification not found" });
         }
 
-        res.status(200).json(notification);
+        return res.status(200).json(notification);
     } catch (err) {
         logger.error("Error marking notification as read:", err);
         res.status(500).json({ message: "Error marking notification as read" });
@@ -61,11 +116,25 @@ export const markAsRead = async (req, res) => {
  */
 export const markAllAsRead = async (req, res) => {
     try {
-        const { id: userId, tenant_id } = req.user;
+        const { id: userId, role } = req.user;
+        const userContext = await resolveNotificationUserContext(req.user);
+        const baseMatch = buildNotificationMatch(userContext);
 
         await Notification.updateMany(
-            { recipient: userId, tenant_id, is_read: false },
-            { is_read: true }
+            {
+                ...baseMatch,
+                readBy: { $not: { $elemMatch: { user_id: userId } } },
+            },
+            {
+                $addToSet: {
+                    readBy: {
+                        user_id: userId,
+                        role,
+                        readAt: new Date(),
+                    },
+                },
+                $inc: { readCount: 1 },
+            }
         );
 
         res.status(200).json({ message: "All notifications marked as read" });
@@ -76,18 +145,26 @@ export const markAllAsRead = async (req, res) => {
 };
 
 /**
- * Delete a notification
+ * Delete a notification (Archive for the user if we wanted personal delete, but model is global)
+ * For now, we'll just implement simple delete if the user is an admin or the creator
  */
 export const deleteNotification = async (req, res) => {
     try {
         const { id } = req.params;
-        const { id: userId } = req.user;
+        const { id: userId, role } = req.user;
 
-        const notification = await Notification.findOneAndDelete({ _id: id, recipient: userId });
+        const notification = await Notification.findById(id);
 
         if (!notification) {
             return res.status(404).json({ message: "Notification not found" });
         }
+
+        // Only sender or school admin can delete
+        if (notification.sender_id?.toString() !== userId.toString() && role !== "school_admin") {
+            return res.status(403).json({ message: "Unauthorized to delete this notification" });
+        }
+
+        await Notification.findByIdAndDelete(id);
 
         res.status(200).json({ message: "Notification deleted" });
     } catch (err) {
