@@ -7,7 +7,6 @@ import {
   getAttendanceSummaryService,
   notifyAbsentParentsService,
   submitAbsentReasonService,
-  adminUpdateAbsentReasonService,
   getMyAttendanceService,
   getStudentAttendanceService,
 } from "../services/attendance.service.js";
@@ -130,9 +129,6 @@ export const notifyAbsentParents = async (req, res) => {
   }
 };
 
-// --------------------------------------
-// 6) Parent submits absent reason
-// --------------------------------------
 export const submitAbsentReason = async (req, res) => {
   try {
     const attendance = await submitAbsentReasonService(req.user, req.body || {});
@@ -147,25 +143,8 @@ export const submitAbsentReason = async (req, res) => {
   }
 };
 
-// --------------------------------------
-// 7) Admin updates absent reason
-// --------------------------------------
-export const adminUpdateAbsentReason = async (req, res) => {
-  try {
-    const attendance = await adminUpdateAbsentReasonService(req.user, {
-      attendanceId: req.params.attendanceId,
-      text: (req.body || {}).text,
-    });
 
-    return res.json({
-      message: "Absent reason updated successfully",
-      attendance,
-    });
-  } catch (err) {
-    logger.error("Admin absent reason update error:", err);
-    return res.status(400).json({ message: err.message });
-  }
-};
+
 
 // --------------------------------------
 // 8) Student/Parent view their own/child's attendance

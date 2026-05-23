@@ -1,204 +1,136 @@
 import cron from "node-cron";
-import { User } from "../models/auth/user.model.js";
-// import Task from "../models/task/task.model.js";
-// import Todo from "../models/todo/todo.model.js";
-import Notification from "../models/notification/notification.model.js";
-// import { LaunchSubscriber } from "../models/launch/LaunchSubscriber.model.js";
-
+import mongoose from "mongoose";
 import logger from "../utils/logger.js";
-import sendEmail from "../utils/sendEmail.js";
+
+import { StudentFeePlan } from "../models/fees/studentFeePlan.model.js";
+import { Notification } from "../models/notification/notification.model.js";
+import { User } from "../models/auth/user.model.js";
+import { notify } from "../utils/notificationHelper.js";
 
 /**
- * 6:00 PM Daily Summary
-
- * Aggregates work done today and sends a notification to each user.
+ * Scans all active StudentFeePlans and sends reminders based on offsets.
+ * @param {String} triggeredBy - Optional User ID who triggered the scan
  */
-const dailyWorkSummary = async () => {
+export const scanAndSendFeeReminders = async (triggeredBy = null) => {
     try {
-        logger.info("Running Daily Work Summary cron job...");
+        // node-cron passes the current date as the first argument to the scheduled task.
+        // We only want to use it if it's a valid User ID string from a manual trigger.
+        let actualSenderId = null;
+        if (triggeredBy && typeof triggeredBy === "string" && mongoose.Types.ObjectId.isValid(triggeredBy)) {
+            actualSenderId = triggeredBy;
+        }
 
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        logger.info("Starting Fee Reminder Scan...");
 
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
+        // 1. Get current date (starting of the day for calculation)
+        const today = new Date();
+        today.setHours(today.getHours() + 5); // Add 5 hours to match IST potentially if server is UTC
+        today.setMinutes(today.getMinutes() + 30);
+        today.setHours(0, 0, 0, 0);
 
-        const users = await User.find({ status: "active" });
+        // 2. Query StudentFeePlans that need scanning
+        // - status is active
+        // - paymentStatus is not paid
+        // - reminderEnabled is true
+        const feePlans = await StudentFeePlan.find({
+            status: "active",
+            "feeReminder.reminderEnabled": true,
+            "feeReminder.paymentStatus": { $ne: "paid" },
+            "feeReminder.feeDueDate": { $ne: null }
+        }).populate("student_id", "student_name");
 
-        for (const user of users) {
-            // 1. Get timelogs for today
-            const tasksWithTimelogs = await Task.find({
-                tenant_id: user.tenant_id,
-                "timelogs.user": user._id,
-                "timelogs.end_time": { $gte: startOfDay, $lte: endOfDay }
-            });
+        logger.info(`Found ${feePlans.length} active fee plans to check.`);
 
-            let totalMinutes = 0;
-            tasksWithTimelogs.forEach(task => {
-                task.timelogs.forEach(log => {
-                    if (log.user.toString() === user._id.toString() &&
-                        log.end_time >= startOfDay && log.end_time <= endOfDay) {
-                        totalMinutes += log.duration_minutes || 0;
+        let remindersSent = 0;
+
+        for (const plan of feePlans) {
+            const dueDate = new Date(plan.feeReminder.feeDueDate);
+            dueDate.setHours(0, 0, 0, 0);
+
+            // Calculate daysLeft = dueDate - today
+            // Difference in milliseconds
+            const diffTime = dueDate.getTime() - today.getTime();
+            const daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            // 3. Check if daysLeft matches any reminderOffsets
+            const offsets = plan.feeReminder.reminderOffsets || [7, 3, 1, 0];
+
+            if (offsets.includes(daysLeft)) {
+                // Determine stage
+                let stage = "upcoming";
+                if (daysLeft === 0) stage = "due_today";
+                else if (daysLeft < 0) stage = "overdue";
+                else if (daysLeft <= 3) stage = "due_soon";
+
+                // Prevent sending the same reminder twice on the same day
+                const lastReminder = plan.feeReminder.lastReminderAt ? new Date(plan.feeReminder.lastReminderAt) : null;
+                if (lastReminder) {
+                    lastReminder.setHours(0, 0, 0, 0);
+                    if (lastReminder.getTime() === today.getTime()) {
+                        logger.debug(`Skipping already sent reminder for plan ${plan._id} today.`);
+                        continue;
                     }
-                });
-            });
+                }
 
-            // 2. Get completed tasks today
-            const completedTasks = await Task.countDocuments({
-                tenant_id: user.tenant_id,
-                users: user._id,
-                status: "completed",
-                completed_at: { $gte: startOfDay, $lte: endOfDay }
-            });
+                // 4. Create Notification
+                const studentName = plan.student_id?.student_name || "Student";
+                const amount = plan.feeReminder.feePendingAmount || plan.finalPayableAmount;
 
-            // 3. Get completed todos today
-            const completedTodos = await Todo.countDocuments({
-                tenant_id: user.tenant_id,
-                user: user._id,
-                status: "completed",
-                completed_at: { $gte: startOfDay, $lte: endOfDay }
-            });
+                const title = stage === "overdue" ? "🚨 Fee Overdue Alert" : "📅 Fee Payment Reminder";
+                const message = stage === "overdue"
+                    ? `Fee payment for ${studentName} is overdue. Pending amount: ₹${amount}. Please clear the dues immediately.`
+                    : `Fee payment for ${studentName} is due by ${dueDate.toLocaleDateString()}. Pending amount: ₹${amount}.`;
 
-            if (totalMinutes > 0 || completedTasks > 0 || completedTodos > 0) {
-                const hours = Math.floor(totalMinutes / 60);
-                const mins = totalMinutes % 60;
-                const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                const audience = {
+                    student_ids: [plan.student_id._id],
+                    roles: ["school_admin"] // Admins also get a copy
+                };
 
-                const message = `Today you logged ${timeStr} of work, completed ${completedTasks} tasks and ${completedTodos} todos. Keep it up!`;
+                let sender_id = actualSenderId;
 
-                // Create In-App Notification
-                await Notification.create({
-                    tenant_id: user.tenant_id,
-                    recipient: user._id,
-                    type: "daily_summary",
-                    title: "Daily Work Summary",
+                // Fallback: If automated run, find the first active admin of this school
+                if (!sender_id) {
+                    const fallbackAdmin = await User.findOne({
+                        school_id: plan.school_id,
+                        role: "school_admin",
+                        status: "active"
+                    }).select("_id");
+                    if (fallbackAdmin) sender_id = fallbackAdmin._id;
+                }
+
+                await notify({
+                    school_id: plan.school_id,
+                    audience,
+                    sender_id,
+                    type: "fee_reminder",
+                    title,
                     message,
-                    link: "/dashboard" // Or a specific report link
+                    message,
+                    scope: "students",
+                    relatedModule: "fees",
+                    relatedRefId: plan._id
                 });
 
-                // Optionally send email
-                try {
-                    await sendEmail({
-                        
-                        to: user.email,
-                        subject: "Your Daily Work Summary - FGROW",
-                        text: message,
-                        html: `<p>${message}</p>`
-                    });
-                } catch (emailErr) {
-                    logger.error(`Failed to send summary email to ${user.email}:`, emailErr);
-                }
+                // 5. Update plan state
+                plan.feeReminder.lastReminderAt = new Date();
+                plan.feeReminder.reminderCount += 1;
+                plan.feeReminder.reminderStage = stage;
+                await plan.save();
+
+                remindersSent++;
             }
         }
 
-        logger.info("Daily Work Summary cron job completed.");
+        logger.info(`Fee Reminder Scan Completed. Sent ${remindersSent} notifications.`);
     } catch (err) {
-        logger.error("Error in dailyWorkSummary cron:", err);
-    }
-};
-
-/**
- * Task Reminders
- * Checks for tasks/todos due in the next 24 hours.
- */
-const taskReminders = async () => {
-    try {
-        logger.info("Running Task Reminders cron job...");
-
-        const now = new Date();
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        // Find tasks due within 24 hours that are not completed/cancelled
-        const upcomingTasks = await Task.find({
-            due_date: { $gt: now, $lte: tomorrow },
-            status: { $nin: ["completed", "cancelled"] },
-            archived: false
-        });
-
-        for (const task of upcomingTasks) {
-            for (const userId of task.users) {
-                const existingRemind = await Notification.findOne({
-                    recipient: userId,
-                    type: "task_reminder",
-                    "metadata.taskId": task._id,
-                    createdAt: { $gt: new Date(Date.now() - 12 * 60 * 60 * 1000) } // Don't spam, once every 12h
-                });
-
-                if (!existingRemind) {
-                    await Notification.create({
-                        tenant_id: task.tenant_id,
-                        recipient: userId,
-                        type: "task_reminder",
-                        title: "Task Reminder",
-                        message: `Task "${task.title}" is due by ${task.due_date.toLocaleString()}`,
-                        link: `/tasks/${task._id}`,
-                        metadata: { taskId: task._id }
-                    });
-                }
-            }
-        }
-
-        // Similar for Todos
-        const upcomingTodos = await Todo.find({
-            due_date: { $gt: now, $lte: tomorrow },
-            status: { $nin: ["completed", "cancelled"] },
-            archived: false
-        });
-
-        for (const todo of upcomingTodos) {
-            if (todo.user) {
-                const existingRemind = await Notification.findOne({
-                    recipient: todo.user,
-                    type: "task_reminder",
-                    "metadata.todoId": todo._id,
-                    createdAt: { $gt: new Date(Date.now() - 12 * 60 * 60 * 1000) }
-                });
-
-                if (!existingRemind) {
-                    await Notification.create({
-                        tenant_id: todo.tenant_id,
-                        recipient: todo.user,
-                        type: "task_reminder",
-                        title: "Todo Reminder",
-                        message: `Todo "${todo.title}" is due by ${todo.due_date.toLocaleString()}`,
-                        link: "/todos",
-                        metadata: { todoId: todo._id }
-                    });
-                }
-            }
-        }
-
-        logger.info("Task Reminders cron job completed.");
-    } catch (err) {
-        logger.error("Error in taskReminders cron:", err);
-    }
-};
-
-/**
- * Launch Day Announcement
- * Fires at 18:00 IST on April 20.
- */
-const launchAnnouncement = async () => {
-    try {
-        await LaunchService.runLaunchAnnouncement();
-    } catch (err) {
-        logger.error("Error in launchAnnouncement cron:", err);
+        logger.error("Error in scanAndSendFeeReminders:", err);
     }
 };
 
 
 export const initCron = () => {
-    // Daily Summary at 6:00 PM (18:00)
-    cron.schedule("0 18 * * *", dailyWorkSummary);
-
-    // Task Reminders every hour
-    cron.schedule("0 * * * *", taskReminders);
-
-    // Launch Announcement: April 20 at 18:00 IST
-    // (IST is UTC+5:30. 18:00 IST = 12:30 UTC)
-    // Format: 'minute hour day month dayOfWeek'
-    cron.schedule("00 18 20 4 *", launchAnnouncement, {
+    // Fee Reminder Scan at 9:00 AM IST daily
+    cron.schedule("0 9 * * *", scanAndSendFeeReminders, {
         timezone: "Asia/Kolkata"
     });
 

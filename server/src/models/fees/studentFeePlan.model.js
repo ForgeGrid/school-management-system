@@ -69,7 +69,7 @@ const studentFeePlanSchema = new mongoose.Schema(
       default: null
     },
 
-     discounts: {
+    discounts: {
       type: [discountSchema],
       default: []
     },
@@ -119,6 +119,65 @@ const studentFeePlanSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null
+    },
+
+    feeReminder: {
+      feeDueDate: {
+        type: Date,
+        default: null
+      },
+      paymentStatus: {
+        type: String,
+        enum: ["unpaid", "partial", "paid", "overdue"],
+        default: "unpaid"
+      },
+      feePaidAmount: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      feePendingAmount: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      reminderEnabled: {
+        type: Boolean,
+        default: true
+      },
+      reminderOffsets: {
+        type: [Number],
+        default: [7, 3, 1, 0]
+      },
+      lastReminderAt: {
+        type: Date,
+        default: null
+      },
+      nextReminderAt: {
+        type: Date,
+        default: null
+      },
+      reminderStage: {
+        type: String,
+        enum: ["upcoming", "due_soon", "due_today", "overdue", "none"],
+        default: "none"
+      },
+      reminderCount: {
+        type: Number,
+        default: 0
+      },
+      reminderLocked: {
+        type: Boolean,
+        default: false
+      },
+      reminderMetadata: {
+        type: Object,
+        default: {}
+      },
+      paymentUpdatedAt: {
+        type: Date,
+        default: Date.now
+      }
     }
   },
   {

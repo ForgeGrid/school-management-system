@@ -5,12 +5,15 @@ import http from "http";
 import app from "./app.js";
 import connectDB from "./config/initDb.js";
 import logger from "./utils/logger.js";
-// import { initCron } from "./services/cron.service.js";
+import { initCron } from "./services/cron.service.js";
 
 
 const start = async () => {
   try {
     await connectDB();
+
+    // Initialize Cron Services
+    initCron();
 
     const server = http.createServer(app);
     const PORT = process.env.PORT || 5000;

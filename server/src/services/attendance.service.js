@@ -4,6 +4,8 @@ import { ClassSection } from "../models/academic/classSection.model.js";
 import { StudentProfile } from "../models/student/student.model.js";
 import { StudentEnrollment } from "../models/student/studentEnrollment.model.js";
 import { StaffProfile } from "../models/staff/teacher.model.js";
+import { notify } from "../utils/notificationHelper.js";
+import logger from "../utils/logger.js";
 
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "half_day", "excused"];
 const SOURCE_TYPES = ["manual", "bulk_upload", "biometric"];
@@ -573,21 +575,51 @@ export const notifyAbsentParentsService = async (user, { academicYear, attendanc
     .populate("student_id", "admission_no student_name parent_name parent_phone parent_email")
     .populate("classSection_id", "academicYear standard section classCode");
 
-  // Hook this into SMS / WhatsApp / email service later.
-  const notifications = absentees.map((record) => ({
-    student_id: record.student_id?._id,
-    student_name: record.student_id?.student_name,
-    parent_name: record.student_id?.parent_name,
-    parent_phone: record.student_id?.parent_phone,
-    parent_email: record.student_id?.parent_email,
-    attendanceDate: record.attendanceDate,
-    classSection: record.classSection_id,
-    message: `${record.student_id?.student_name} was marked absent on ${start.toDateString()}.`,
-  }));
+  const sentNotifications = [];
+
+  for (const record of absentees) {
+    if (!record.student_id) continue;
+
+    const studentName = record.student_id.student_name || "Student";
+    const title = "Attendance Alert: Absent";
+    const message = `${studentName} was marked absent on ${start.toDateString()}. If this was unplanned, please contact the school office.`;
+
+    const audience = {
+      student_ids: [record.student_id._id],
+      roles: ["school_admin"]
+    };
+
+    // Trigger in-app and potentially email/SMS notification
+    await notify({
+      school_id: user.school_id,
+      audience,
+      sender_id: user.id,
+      type: "attendance_absent",
+      title,
+      message,
+      scope: "students",
+      metadata: {
+        relatedModule: "attendance",
+        relatedRefId: record._id,
+        priority: "high"
+      },
+      sendEmailFlag: true, // Optionally notify parents via email if configured
+      recipientEmail: record.student_id.parent_email
+    });
+
+    sentNotifications.push({
+      student_id: record.student_id._id,
+      student_name: studentName,
+      parent_email: record.student_id.parent_email,
+      status: "notified"
+    });
+  }
+
+  logger.info(`Attendance Notification: Sent ${sentNotifications.length} absence alerts for school ${user.school_id} on ${start.toDateString()}`);
 
   return {
-    count: notifications.length,
-    notifications,
+    count: sentNotifications.length,
+    notifications: sentNotifications,
   };
 };
 
@@ -613,67 +645,40 @@ const assertStudentOrAdminAccess = async (user, studentId) => {
   }
 };
 
-export const submitAbsentReasonService = async (user, { student_id, attendanceDate, text }) => {
+export const submitAbsentReasonService = async (user, { attendanceId, student_id, attendanceDate, text }) => {
   assertSchoolBoundUser(user);
 
-  if (!student_id) throw new Error("student_id is required");
-  if (!attendanceDate) throw new Error("attendanceDate is required");
   if (!text || !String(text).trim()) throw new Error("Reason text is required");
 
-  await assertStudentOrAdminAccess(user, student_id);
-
-  const { start, end } = dayBounds(attendanceDate);
-
-  const attendance = await Attendance.findOne({
-    school_id: user.school_id,
-    student_id,
-    attendanceDate: { $gte: start, $lte: end },
-  });
-
-  if (!attendance) {
-    throw new Error("Attendance record not found for this student and date");
+  let attendance;
+  if (attendanceId) {
+    if (!mongoose.Types.ObjectId.isValid(attendanceId)) {
+      throw new Error("Invalid attendance id");
+    }
+    attendance = await Attendance.findOne({
+      _id: attendanceId,
+      school_id: user.school_id,
+    });
+  } else {
+    if (!student_id) throw new Error("student_id is required");
+    if (!attendanceDate) throw new Error("attendanceDate is required");
+    const { start, end } = dayBounds(attendanceDate);
+    attendance = await Attendance.findOne({
+      school_id: user.school_id,
+      student_id,
+      attendanceDate: { $gte: start, $lte: end },
+    });
   }
-
-  if (attendance.status !== "absent") {
-    throw new Error("Student was not absent on this date");
-  }
-
-  attendance.absentReason = {
-    text: String(text).trim(),
-    submittedBy: user.id,
-    submittedByModel: "User",
-    submittedAt: new Date(),
-  };
-
-  attendance.updatedBy = user.id;
-  await attendance.save();
-
-  return attendance;
-};
-
-// --------------------------------------
-// 7) Admin can update absent reason too
-// --------------------------------------
-export const adminUpdateAbsentReasonService = async (user, { attendanceId, text }) => {
-  assertAdminOnly(user);
-
-  if (!mongoose.Types.ObjectId.isValid(attendanceId)) {
-    throw new Error("Invalid attendance id");
-  }
-
-  if (!text || !String(text).trim()) {
-    throw new Error("Reason text is required");
-  }
-
-  const attendance = await Attendance.findOne({
-    _id: attendanceId,
-    school_id: user.school_id,
-  });
 
   if (!attendance) {
     throw new Error("Attendance record not found");
   }
 
+  // Access control: Admin can update any, Student can only update their own
+  if (user.role !== "school_admin") {
+    await assertStudentOrAdminAccess(user, attendance.student_id);
+  }
+
   if (attendance.status !== "absent") {
     throw new Error("Student was not absent on this date");
   }
@@ -691,9 +696,8 @@ export const adminUpdateAbsentReasonService = async (user, { attendanceId, text 
   return attendance;
 };
 
-
 // --------------------------------------
-// 8) Student/Parent views their own/child's attendance
+// 7) Student/Parent views their own/child's attendance
 // --------------------------------------
 export const getMyAttendanceService = async (user, filters = {}) => {
   assertSchoolBoundUser(user);
