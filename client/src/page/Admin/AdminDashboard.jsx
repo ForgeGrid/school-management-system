@@ -16,13 +16,20 @@ import DashboardOverview from "@/components/Admin/DashboardOverview";
 import StudentAdmissionForm from "@/components/Admin/StudentAdmissionForm";
 import AttendanceManager from "@/components/Admin/AttendanceManager";
 import ProfileApprovalQueue from "@/components/Admin/ProfileApprovalQueue";
-import BusRoutesManager from "@/components/Admin/BusRoutesManager";
 import FeesCollection from "@/components/Admin/FeesCollection";
 import LiveTrackingHUD from "@/components/Admin/LiveTrackingHUD";
 import AlertsBroadcast from "@/components/Admin/AlertsBroadcast";
 import AdminReports from "@/components/Admin/AdminReports";
 import AdminFeedback from "@/components/Admin/AdminFeedback";
 import AdminSettings from "@/components/Admin/AdminSettings";
+import SuperAdminInsights from "@/components/Admin/SuperAdminInsights";
+// Transport sub-components
+import TransportOverview from "@/components/Admin/Transport/TransportOverview";
+import BusRoutes from "@/components/Admin/Transport/BusRoutes";
+import TransportFees from "@/components/Admin/Transport/TransportFees";
+import Vehicles from "@/components/Admin/Transport/Vehicles";
+import Drivers from "@/components/Admin/Transport/Drivers";
+
 export default function AdminDashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -40,7 +47,14 @@ export default function AdminDashboard() {
   }, [isSuperAdmin]);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState("Dashboard");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("activeTab") || "Dashboard";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("activeTab", activeTab);
+  }, [activeTab]);
+
   const [searchQuery, setSearchQuery] = useState("");
 
   // ==========================================
@@ -168,18 +182,41 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              {/* Wireframe Search Bar */}
-              <div className="relative w-full max-w-xs md:max-w-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Search className="h-4.5 w-4.5 text-slate-400" />
+              {/* Premium User Profile Dropdown */}
+              <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-slate-50/60 active:bg-slate-100/60 transition-all duration-200 cursor-pointer select-none border border-transparent">
+                {/* Avatar Icon */}
+                <div className="relative w-9 h-9 rounded-full overflow-hidden bg-sky-100 border border-sky-200 flex items-center justify-center shrink-0 shadow-2xs">
+                  {(user?.profile_avatar?.secure_url || user?.avatarUrl) ? (
+                    <img
+                      src={user?.profile_avatar?.secure_url || user?.avatarUrl}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-sky-100 text-sky-700 font-extrabold text-sm uppercase">
+                      {(() => {
+                        const name = user?.name || "V MANOJ KUMAR";
+                        const clean = name.trim();
+                        return clean.charAt(0);
+                      })()}
+                    </div>
+                  )}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Student, teacher, bus..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium placeholder-slate-400 shadow-inner"
-                />
+
+                {/* User Details (Always visible on all screens) */}
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-700 leading-tight">
+                    {user?.name || "V MANOJ KUMAR"}
+                  </p>
+                  <p className="text-[11px] font-semibold text-slate-450 leading-tight mt-0.5">
+                    {isSuperAdmin ? "Super Admin" : "School Admin"}
+                  </p>
+                </div>
+
+                {/* Dropdown Chevron */}
+                <svg className="h-4 w-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
             </header>
 
@@ -238,6 +275,23 @@ export default function AdminDashboard() {
                     />
                   )}
 
+                  {/* Transport sub-tabs */}
+                  {activeTab === "Transport › Overview" && (
+                    <TransportOverview buses={buses} setActiveTab={setActiveTab} />
+                  )}
+                  {activeTab === "Transport › Bus Routes" && (
+                    <BusRoutes buses={buses} setBuses={setBuses} />
+                  )}
+                  {activeTab === "Transport › Transport Fees" && (
+                    <TransportFees />
+                  )}
+                  {activeTab === "Transport › Vehicles" && (
+                    <Vehicles />
+                  )}
+                  {activeTab === "Transport › Drivers" && (
+                    <Drivers />
+                  )}
+
                   {activeTab === "Fees" && (
                     <FeesCollection
                       feeRecords={feeRecords}
@@ -274,6 +328,10 @@ export default function AdminDashboard() {
 
                   {activeTab === "Settings" && (
                     <AdminSettings school={school} />
+                  )}
+
+                  {activeTab === "Platform Insights" && (
+                    <SuperAdminInsights />
                   )}
                 </motion.div>
               </AnimatePresence>
