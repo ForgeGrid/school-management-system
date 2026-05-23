@@ -9,8 +9,7 @@ const SuperAdminRoute = ({ children }) => {
 
   // Only allow super admins to proceed
   const isSuperAdmin = user?.platform_role === "super_admin" || 
-                       user?.platformRole === "super_admin" ||
-                       ["yogomanojbro@gmail.com", "admin@example.com"].includes(user?.email?.toLowerCase());
+                       user?.platformRole === "super_admin" 
   if (isSuperAdmin) {
     return children;
   }
