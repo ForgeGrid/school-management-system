@@ -117,7 +117,7 @@ export default function AdminSidebar({
                 const Icon = item.icon;
                 const isActive = activeTab === item.name;
                 return (
-                  <SidebarMenuItem key={item.name} className="mb-1">
+                  <SidebarMenuItem key={item.name} className="mb-3">
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setActiveTab(item.name)}
@@ -137,7 +137,7 @@ export default function AdminSidebar({
               })}
 
               {/* Transport expandable group */}
-              <SidebarMenuItem className="mb-1">
+              <SidebarMenuItem className="mb-3">
                 <SidebarMenuButton
                   onClick={() => {
                     const next = !transportOpen;
@@ -167,9 +167,9 @@ export default function AdminSidebar({
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
+                      className="overflow-hidden "
                     >
-                      <div className="ml-8 mt-1 space-y-0.5 border-l-2 border-indigo-100 pl-3">
+                      <div className="ml-8 mt-3 space-y-0.9 border-l-2 border-indigo-100 pl-3 ">
                         {transportSubItems.map(sub => {
                           const label = sub.split(" › ")[1];
                           const isSubActive = activeTab === sub;
@@ -177,7 +177,7 @@ export default function AdminSidebar({
                             <button
                               key={sub}
                               onClick={() => setActiveTab(sub)}
-                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 mb-2 cursor-pointer ${
                                 isSubActive ? "text-indigo-700 bg-indigo-50/80" : "text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50"
                               }`}
                             >
@@ -197,7 +197,7 @@ export default function AdminSidebar({
                 const Icon = item.icon;
                 const isActive = activeTab === item.name;
                 return (
-                  <SidebarMenuItem key={item.name} className="mb-1">
+                  <SidebarMenuItem key={item.name} className="mb-3">
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setActiveTab(item.name)}

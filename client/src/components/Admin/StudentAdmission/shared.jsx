@@ -31,7 +31,7 @@ export function Section({ icon, title, children }) {
     <div className="border border-slate-200 rounded-2xl p-6 mb-4 bg-white">
       <div className="flex items-center gap-2.5 mb-5">
         <span className="text-blue-500">{icon}</span>
-        <span className="text-lg font-semibold text-slate-800">{title}</span>
+        <span className="text-lg font-semibold text-blue-500">{title}</span>
       </div>
       {children}
     </div>

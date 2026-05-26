@@ -2,7 +2,7 @@ import { STEPS } from "./shared";
 
 export function StepperSidebar({ activeStep, onStepClick }) {
   return (
-    <nav className="flex flex-col gap-1 w-full p-1.5">
+    <nav className="flex flex-col gap-1 w-full p-1 bg-indigo-100/20 rounded-2xl">
       {STEPS.map((step, idx) => {
         const isActive = step.id === activeStep;
         const isDone   = step.id < activeStep;
@@ -11,9 +11,9 @@ export function StepperSidebar({ activeStep, onStepClick }) {
             <button
               type="button"
               onClick={() => onStepClick(step.id)}
-              className={`w-full flex items-start gap-3.5 px-3 py-3.5 rounded-2xl text-left transition-all border ${
+              className={`w-full flex items-start gap-6 px-3 py-3.5 rounded-2xl text-left transition-all border ${
                 isActive
-                  ? "bg-blue-50/60 border-blue-500 shadow-sm shadow-blue-100/40"
+                  ? "bg-blue-200/50 border-blue-500/40 shadow-sm shadow-blue-100/40"
                   : "bg-transparent border-transparent hover:bg-blue-50/30 hover:border-blue-100/30"
               }`}
             >
@@ -23,7 +23,7 @@ export function StepperSidebar({ activeStep, onStepClick }) {
                   ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
                   : isDone
                   ? "bg-green-500 text-white"
-                  : "bg-slate-200 text-slate-500"
+                  : "bg-purple-200/50 text-slate-900"
               }`}>
                 {isDone ? (
                   <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
@@ -47,9 +47,9 @@ export function StepperSidebar({ activeStep, onStepClick }) {
 
             {/* Connector line between steps */}
             {idx < STEPS.length - 1 && (
-              <div className="flex justify-start pl-[31px] my-1">
-                <div className={`w-0 h-8 border-l-2 ${
-                  isDone ? "border-green-500 border-solid" : "border-slate-300 border-dashed"
+              <div className="flex justify-center my-0.5">
+                <div className={`w-0 h-18 border-l-2 ${
+                  isDone ? "border-purple-300/80 border-solid" : "border-slate-300 border-dashed"
                 }`} />
               </div>
             )}
