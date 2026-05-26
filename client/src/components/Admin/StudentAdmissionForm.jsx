@@ -91,19 +91,6 @@ export default function StudentAdmissionForm({ setStudents, setAttendance, setAc
         <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-sm">
           <StepperSidebar activeStep={activeStep} onStepClick={setActiveStep} />
         </div>
-
-        {/* Need Help? Box */}
-        <div className="bg-blue-50/50 border border-blue-100/80 rounded-2xl p-4.5 mb-1.5 shadow-sm shadow-blue-50/20">
-          <div className="flex items-center gap-2 mb-1.5 text-blue-600">
-            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path d="M3 18v-6a9 9 0 0118 0v6M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3M3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-sm font-bold">Need Help?</span>
-          </div>
-          <p className="text-xs text-slate-500 leading-normal">
-            If you face any issues during admission, please contact your system administrator.
-          </p>
-        </div>
       </aside>
 
       {/* ── RIGHT — Form content ── */}

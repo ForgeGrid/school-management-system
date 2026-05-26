@@ -1,42 +1,10 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
+import { selectStructures } from "../../../redux/slice/academicFeeStructureSlice";
 import {
   CheckCircle2, Edit2, ArrowLeft, ArrowRight, Save,
   User, GraduationCap, Bus, Receipt, FileText, Info, MapPin
 } from "lucide-react";
-
-const PLAN_LABELS = {
-  basic:    "Grade 8 - Basic Academic Plan",
-  standard: "Grade 8 - Standard Academic Plan",
-  premium:  "Grade 8 - Premium Academic Plan",
-};
-
-const PLAN_FEE_HEADS = {
-  basic: [
-    { name: "Tuition Fee",      period: "Monthly", amount: 9000,  type: "Mandatory" },
-    { name: "Exam Fee",         period: "Term",    amount: 1500,  type: "Mandatory" },
-    { name: "Library Fee",      period: "Yearly",  amount: 1000,  type: "Mandatory" },
-    { name: "Annual Fee",       period: "Yearly",  amount: 4000,  type: "Mandatory" },
-    { name: "Miscellaneous Fee",period: "Yearly",  amount: 1000,  type: "Optional"  },
-  ],
-  standard: [
-    { name: "Tuition Fee",      period: "Monthly", amount: 12000, type: "Mandatory" },
-    { name: "Exam Fee",         period: "Term",    amount: 2000,  type: "Mandatory" },
-    { name: "Lab Fee",          period: "Term",    amount: 1500,  type: "Optional"  },
-    { name: "Library Fee",      period: "Yearly",  amount: 1000,  type: "Mandatory" },
-    { name: "Annual Fee",       period: "Yearly",  amount: 5000,  type: "Mandatory" },
-    { name: "Development Fee",  period: "Yearly",  amount: 2500,  type: "Optional"  },
-    { name: "Miscellaneous Fee",period: "Yearly",  amount: 1000,  type: "Optional"  },
-  ],
-  premium: [
-    { name: "Tuition Fee",      period: "Monthly", amount: 18000, type: "Mandatory" },
-    { name: "Exam Fee",         period: "Term",    amount: 3000,  type: "Mandatory" },
-    { name: "Lab Fee",          period: "Term",    amount: 3000,  type: "Mandatory" },
-    { name: "Library Fee",      period: "Yearly",  amount: 2000,  type: "Mandatory" },
-    { name: "Annual Fee",       period: "Yearly",  amount: 6000,  type: "Mandatory" },
-    { name: "Development Fee",  period: "Yearly",  amount: 4000,  type: "Mandatory" },
-    { name: "Miscellaneous Fee",period: "Yearly",  amount: 2000,  type: "Optional"  },
-  ],
-};
 
 function SectionCard({ icon, title, onEdit, children }) {
   return (
@@ -74,32 +42,41 @@ function InfoGrid({ items }) {
   );
 }
 
-export function Step4ReviewSave({ form, goBack, onSubmit }) {
+export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
   const [confirmed, setConfirmed] = useState(false);
 
-  const plan      = form.academicPlan || "standard";
-  const heads     = PLAN_FEE_HEADS[plan] || [];
-  const acadTotal = heads.reduce((s, h) => s + h.amount, 0);
-  const transTotal = form.transportRequired ? 4800 : 0;
-  const discounts = [
+  const structures = useSelector(selectStructures);
+  const selectedStructure = structures.find((s) => s._id === form.academicPlanId) || null;
+  const heads = selectedStructure?.feeHeads || [];
+
+  const acadTotal = heads.reduce((s, h) => s + (h.amount || 0), 0);
+  const transTotal = form.transportRequired ? (Number(form.transportFee) || 4800) : 0;
+  
+  const discounts = form.discounts || [
     { type: "Scholarship",     amount: 2000 },
     { type: "Sibling Discount",amount: 1000 },
   ];
-  const charges = [
+  const charges = form.additionalCharges || [
     { name: "Late Admission Fee", amount: 600 },
     { name: "Activity Fee",       amount: 400 },
   ];
-  const discountsTotal       = discounts.reduce((s, d) => s + d.amount, 0);
-  const additionalChargesTotal = charges.reduce((s, c) => s + c.amount, 0);
+  const discountsTotal       = discounts.reduce((s, d) => s + (d.amount || 0), 0);
+  const additionalChargesTotal = charges.reduce((s, c) => s + (c.amount || 0), 0);
   const finalTotal = acadTotal + transTotal + additionalChargesTotal - discountsTotal;
 
   const fmt = (n) => `₹ ${n.toLocaleString("en-IN")}`;
+
+  const getFrequencyLabel = (freq) => {
+    if (!freq) return "";
+    if (freq === "one-time") return "One-time";
+    return freq.charAt(0).toUpperCase() + freq.slice(1);
+  };
 
   const address = [form.street, form.city, form.state, form.postal ? `- ${form.postal}` : "", form.country]
     .filter(Boolean).join(", ");
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="flex flex-col h-full bg-blue-100/30 rounded-xl">
 
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto px-5 py-5">
@@ -245,7 +222,7 @@ export function Step4ReviewSave({ form, goBack, onSubmit }) {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div>
                   <p className="text-[11px] text-slate-400 font-semibold mb-0.5">Academic Year</p>
-                  <p className="text-sm font-semibold text-slate-700">2025 - 2026</p>
+                  <p className="text-sm font-semibold text-slate-700">{form.academicYear || "2025 - 2026"}</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-slate-400 font-semibold mb-0.5">Standard / Grade</p>
@@ -254,8 +231,14 @@ export function Step4ReviewSave({ form, goBack, onSubmit }) {
                 <div>
                   <p className="text-[11px] text-slate-400 font-semibold mb-0.5">Fee Structure</p>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-bold text-slate-700 leading-snug">{PLAN_LABELS[plan]}</p>
-                    <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-bold rounded bg-green-50 text-green-600 border border-green-100">Active</span>
+                    <p className="text-xs font-bold text-slate-700 leading-snug">
+                      {form.academicPlan || "No structure selected"}
+                    </p>
+                    {(selectedStructure?.status === "active" || selectedStructure?.isActive) && (
+                      <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-bold rounded bg-green-50 text-green-600 border border-green-100">
+                        Active
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -270,24 +253,29 @@ export function Step4ReviewSave({ form, goBack, onSubmit }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/60">
-                  {heads.map((h, i) => (
-                    <tr key={i} className="hover:bg-slate-50/40">
-                      <td className="py-2.5">
-                        <div className="text-sm font-semibold text-slate-700">{h.name}</div>
-                        <div className="text-xs text-slate-400 font-semibold">{h.period}</div>
-                      </td>
-                      <td className="py-2.5 text-right font-bold text-slate-700 text-sm pr-4">
-                        ₹ {h.amount.toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-2.5 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                          h.type === "Mandatory"
-                            ? "bg-green-50 text-green-700 border-green-100"
-                            : "bg-blue-50 text-blue-600 border-blue-100"
-                        }`}>{h.type}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {heads.map((h, i) => {
+                    const isMandatory = h.mandatory !== false;
+                    return (
+                      <tr key={i} className="hover:bg-slate-50/40">
+                        <td className="py-2.5">
+                          <div className="text-sm font-semibold text-slate-700">{h.name}</div>
+                          <div className="text-xs text-slate-400 font-semibold">{getFrequencyLabel(h.frequency)}</div>
+                        </td>
+                        <td className="py-2.5 text-right font-bold text-slate-700 text-sm pr-4">
+                          ₹ {(h.amount || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                            isMandatory
+                              ? "bg-green-50 text-green-700 border-green-100"
+                              : "bg-blue-50 text-blue-600 border-blue-100"
+                          }`}>
+                            {isMandatory ? "Mandatory" : "Optional"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -432,16 +420,27 @@ export function Step4ReviewSave({ form, goBack, onSubmit }) {
           <button
             type="button"
             onClick={onSubmit}
-            disabled={!confirmed}
+            disabled={!confirmed || isLoading}
             className={`flex items-center gap-2 h-10 px-6 text-sm font-black text-white rounded-xl transition active:scale-95 cursor-pointer shadow-md ${
-              confirmed
+              confirmed && !isLoading
                 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
                 : "bg-slate-300 cursor-not-allowed"
             }`}
           >
-            <CheckCircle2 className="w-4.5 h-4.5" />
-            Confirm Admission
-            <ArrowRight className="w-4 h-4" />
+            {isLoading ? (
+              <>
+                <svg className="w-4.5 h-4.5 animate-spin" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                Submitting...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4.5 h-4.5" />
+                Confirm Admission
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </div>
       </div>
