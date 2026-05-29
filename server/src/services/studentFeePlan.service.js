@@ -97,14 +97,22 @@ export const createStudentFeePlanService = async (user, data) => {
     totalAdditionalCharges -
     totalDiscount;
 
+  const { paymentSummary, ...sanitizedData } = data;
+
   return await StudentFeePlan.create({
-    ...data,
+    ...sanitizedData,
     school_id: user.school_id,
     totalAcademicFee,
     totalTransportFee,
     totalDiscount,
     totalAdditionalCharges,
     finalPayableAmount,
+    paymentSummary: {
+      paidAmount: 0,
+      pendingAmount: finalPayableAmount,
+      paymentStatus: "unpaid",
+      paymentUpdatedAt: new Date(),
+    },
     createdBy: user.id
   });
 };
@@ -140,7 +148,7 @@ export const updateStudentFeePlanService = async (
       const nextRouteId = data.currentRoute_id || plan.currentRoute_id;
 
       if (!nextStructureId || !nextRouteId) {
-         throw new Error("Both transport structure and route are required");
+        throw new Error("Both transport structure and route are required");
       }
 
       const transportStructure = await TransportFeeStructure.findById(nextStructureId);
@@ -185,9 +193,14 @@ export const updateStudentFeePlanService = async (
     plan.totalAdditionalCharges -
     plan.totalDiscount;
 
+  // Sync pending amount ONLY if no payments have been made yet (initial state protection)
+  if (plan.paymentSummary && plan.paymentSummary.paidAmount === 0) {
+    plan.paymentSummary.pendingAmount = plan.finalPayableAmount;
+  }
+
   plan.updatedBy = user.id;
   await plan.save();
-  
+
   return plan;
 };
 
