@@ -19,6 +19,8 @@ import academicFeeStructureRoutes from "./routes/academicFeeStructure.routes.js"
 import attendanceRoutes from "./routes/attendance.routes.js";
 import classSectionRoutes from "./routes/classSection.routes.js";
 import studentEnrollmentRoutes from "./routes/studentEnrollment.routes.js";
+import feeReminderRoutes from "./routes/feeReminder.routes.js";
+import feeReceiptRoutes from "./routes/feeReceipt.routes.js";
 
 import { errorMiddleware } from "./middleware/error.middleware.js";
 
@@ -88,6 +90,8 @@ app.use("/api/v0/academic-fee-structure", academicFeeStructureRoutes);
 app.use("/api/v0/attendance", attendanceRoutes);
 app.use("/api/v0/class-section", classSectionRoutes);
 app.use("/api/v0/student-enrollment", studentEnrollmentRoutes);
+app.use("/api/v0/fee-reminder", feeReminderRoutes);
+app.use("/api/v0/fee-receipt", feeReceiptRoutes);
 
 
 

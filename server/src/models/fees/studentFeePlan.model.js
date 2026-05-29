@@ -104,6 +104,54 @@ const studentFeePlanSchema = new mongoose.Schema(
       required: true
     },
 
+    /**
+     * @property {Object} paymentSummary
+     * System-managed financial state. 
+     * DO NOT edit manually via creation or update APIs.
+     * Managed exclusively by the ledger/receipt and recalculation services.
+     */
+    paymentSummary: {
+      paidAmount: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+
+      pendingAmount: {
+        type: Number,
+        required: true,
+        min: 0
+      },
+
+      paymentStatus: {
+        type: String,
+        enum: [
+          "unpaid",
+          "partial",
+          "paid",
+          "overdue"
+        ],
+        default: "unpaid",
+        index: true
+      },
+
+      lastPaymentAt: {
+        type: Date,
+        default: null
+      },
+
+      lastReceipt_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "FeePayment",
+        default: null
+      },
+
+      paymentUpdatedAt: {
+        type: Date,
+        default: Date.now
+      }
+    },
+
     status: {
       type: String,
       enum: ["active", "cancelled", "completed"],
@@ -121,64 +169,6 @@ const studentFeePlanSchema = new mongoose.Schema(
       default: null
     },
 
-    feeReminder: {
-      feeDueDate: {
-        type: Date,
-        default: null
-      },
-      paymentStatus: {
-        type: String,
-        enum: ["unpaid", "partial", "paid", "overdue"],
-        default: "unpaid"
-      },
-      feePaidAmount: {
-        type: Number,
-        default: 0,
-        min: 0
-      },
-      feePendingAmount: {
-        type: Number,
-        default: 0,
-        min: 0
-      },
-      reminderEnabled: {
-        type: Boolean,
-        default: true
-      },
-      reminderOffsets: {
-        type: [Number],
-        default: [7, 3, 1, 0]
-      },
-      lastReminderAt: {
-        type: Date,
-        default: null
-      },
-      nextReminderAt: {
-        type: Date,
-        default: null
-      },
-      reminderStage: {
-        type: String,
-        enum: ["upcoming", "due_soon", "due_today", "overdue", "none"],
-        default: "none"
-      },
-      reminderCount: {
-        type: Number,
-        default: 0
-      },
-      reminderLocked: {
-        type: Boolean,
-        default: false
-      },
-      reminderMetadata: {
-        type: Object,
-        default: {}
-      },
-      paymentUpdatedAt: {
-        type: Date,
-        default: Date.now
-      }
-    }
   },
   {
     timestamps: true

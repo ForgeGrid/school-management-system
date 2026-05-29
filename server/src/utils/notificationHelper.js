@@ -29,6 +29,7 @@ export const notify = async ({
     link = null,
     relatedModule = "general",
     relatedRefId = null,
+    metadata = null,
     sendEmailFlag = false,
     recipientEmail = null,
 }) => {
@@ -44,6 +45,7 @@ export const notify = async ({
             scope,
             relatedModule,
             relatedRefId,
+            metadata,
             readBy: [],
             readCount: 0,
         });

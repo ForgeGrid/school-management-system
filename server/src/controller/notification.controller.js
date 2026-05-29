@@ -1,30 +1,10 @@
-import { scanAndSendFeeReminders } from "../services/cron.service.js";
 import logger from "../utils/logger.js";
 import Notification from "../models/notification/notification.model.js";
 import { buildNotificationMatch, resolveNotificationUserContext } from "../utils/notificationHelper.js";
 
 
 
-/**
- * Trigger Fee Reminder Scan manually (Admin only)
- */
-export const triggerFeeReminderScan = async (req, res) => {
-    try {
-        const { role } = req.user;
 
-        if (role !== "school_admin") {
-            return res.status(403).json({ message: "Unauthorized. Admin only." });
-        }
-
-        logger.info(`Manual Fee Reminder Scan triggered via API by user ${req.user.id}.`);
-        await scanAndSendFeeReminders(req.user.id);
-
-        res.status(200).json({ message: "Fee reminder scan initiated successfully." });
-    } catch (err) {
-        logger.error("Error triggering fee reminder scan:", err);
-        res.status(500).json({ message: "Error triggering fee reminder scan" });
-    }
-};
 
 /**
  * Get all notifications for the current user (with pagination)

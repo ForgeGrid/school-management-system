@@ -31,6 +31,8 @@ const notificationSchema = new mongoose.Schema(
         "attendance_absent",
         "attendance_reason_submitted",
         "fee_reminder",
+        "fee_payment_success",
+        "fee_payment_reversed",
         "transport_update",
         "homework",
         "timetable",
@@ -121,6 +123,27 @@ const notificationSchema = new mongoose.Schema(
     readCount: {
       type: Number,
       default: 0,
+    },
+
+    metadata: {
+      reminderConfig_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "FeeReminder",
+        default: null,
+      },
+      reminderStage: {
+        type: String,
+        default: null,
+      },
+      reminderDate: {
+        type: String,
+        default: null,
+      },
+      dedupeKey: {
+        type: String,
+        default: null,
+        index: true,
+      },
     },
 
   },
