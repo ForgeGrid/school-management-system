@@ -6,9 +6,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// ---------------------------------------------------------------------------
-// THUNKS
-// ---------------------------------------------------------------------------
 
 export const createBusRoute = createAsyncThunk(
   "busRoute/createBusRoute",
@@ -120,9 +117,7 @@ export const removeStopFromRoute = createAsyncThunk(
   }
 );
 
-// ---------------------------------------------------------------------------
-// SLICE
-// ---------------------------------------------------------------------------
+
 
 const initialState = {
   routes: [],          // full list from getAllBusRoutes

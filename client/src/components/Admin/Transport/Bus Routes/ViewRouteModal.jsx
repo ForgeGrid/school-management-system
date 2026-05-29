@@ -70,7 +70,7 @@ export default function ViewRouteModal({ viewRoute, onClose }) {
 
                   {/* Start */}
                   <div className="relative">
-                    <div className="absolute -left-[23px] top-0.5 w-[20px] h-[20px] rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center">
+                    <div className="absolute left-[-23px] top-0.5 w-[20px] h-[20px] rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div>
@@ -82,7 +82,7 @@ export default function ViewRouteModal({ viewRoute, onClose }) {
                   {/* Intermediate Stops */}
                   {Array.from({ length: Math.max(1, viewRoute.stops - 2) }).map((_, idx) => (
                     <div key={idx} className="relative">
-                      <div className="absolute -left-[23px] top-0.5 w-[20px] h-[20px] rounded-full bg-indigo-50 border-2 border-indigo-300 flex items-center justify-center">
+                      <div className="absolute left-[-23px] top-0.5 w-[20px] h-[20px] rounded-full bg-indigo-50 border-2 border-indigo-300 flex items-center justify-center">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                       </div>
                       <div>
@@ -94,7 +94,7 @@ export default function ViewRouteModal({ viewRoute, onClose }) {
 
                   {/* End */}
                   <div className="relative">
-                    <div className="absolute -left-[23px] top-0.5 w-[20px] h-[20px] rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center">
+                    <div className="absolute left-[-23px] top-0.5 w-[20px] h-[20px] rounded-full bg-blue-100 border-2 border-blue-500 flex items-center justify-center">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     </div>
                     <div>

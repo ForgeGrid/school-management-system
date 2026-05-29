@@ -61,7 +61,7 @@ function App() {
           />
 
           <Route
-            path="/dashboard/admin"
+            path="/dashboard/admin/*"
             element={
               <AuthProtectRoute>
                 <AppGate>
@@ -72,7 +72,7 @@ function App() {
           />
 
           <Route
-            path="/dashboard/superadmin"
+            path="/dashboard/superadmin/*"
             element={
               <AuthProtectRoute>
                 <AppGate>

@@ -42,37 +42,30 @@ const statCardColors = {
 
 const ITEMS_PER_PAGE = 6;
 
-
-
 export default function BusRoutes() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.getme?.user);
 
-  const routes      = useSelector(selectAllBusRoutes);
+  const routes       = useSelector(selectAllBusRoutes);
   const notification = useSelector(selectBusRouteNotif);
   const isFetching   = useSelector(selectBusRouteLoading("getAllBusRoutes"));
   const isArchiving  = useSelector(selectBusRouteLoading("archiveBusRoute"));
   const isActivating = useSelector(selectBusRouteLoading("activateBusRoute"));
   const isUpdating   = useSelector(selectBusRouteLoading("updateBusRoute"));
 
-  // ── Local UI state ────────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery]     = useState("");
-  const [statusFilter, setStatusFilter]   = useState("All");
-  const [sortBy, setSortBy]               = useState("Newest");
-  const [currentPage, setCurrentPage]     = useState(1);
+  const [searchQuery, setSearchQuery]               = useState("");
+  const [statusFilter, setStatusFilter]             = useState("All");
+  const [sortBy, setSortBy]                         = useState("Newest");
+  const [currentPage, setCurrentPage]               = useState(1);
   const [activeActionMenuId, setActiveActionMenuId] = useState(null);
-  const [viewRoute, setViewRoute]         = useState(null);
-  const [editingRoute, setEditingRoute]   = useState(null);
-  const [isCreating, setIsCreating]       = useState(false);
+  const [viewRoute, setViewRoute]                   = useState(null);
+  const [editingRoute, setEditingRoute]             = useState(null);
+  const [isCreating, setIsCreating]                 = useState(false);
 
-  // ── Fetch on mount ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (user?.school_id) {
-      dispatch(getAllBusRoutes());
-    }
+    if (user?.school_id) dispatch(getAllBusRoutes());
   }, [dispatch, user?.school_id]);
 
-  // ── Sync Redux notifications → sonner toasts ──────────────────────────────
   useEffect(() => {
     if (!notification) return;
     if (notification.type === "success") toast.success(notification.message);
@@ -80,7 +73,6 @@ export default function BusRoutes() {
     dispatch(clearNotification());
   }, [notification, dispatch]);
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = useMemo(() => ({
     totalRoutes:   routes.length,
     activeRoutes:  routes.filter(r => r.status === "active").length,
@@ -88,7 +80,6 @@ export default function BusRoutes() {
     assignedBuses: routes.reduce((s, r) => s + (r.buses?.length ?? 0), 0),
   }), [routes]);
 
-  // ── Filter + Sort ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return routes
       .filter(r => {
@@ -112,7 +103,6 @@ export default function BusRoutes() {
       });
   }, [routes, searchQuery, statusFilter, sortBy]);
 
-  // ── Pagination ─────────────────────────────────────────────────────────────
   const totalItems = filtered.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
   const paginated  = useMemo(() => {
@@ -123,7 +113,6 @@ export default function BusRoutes() {
   const startRange = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endRange   = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSearchChange = (val) => { setSearchQuery(val); setCurrentPage(1); };
   const handleStatusChange = (val) => { setStatusFilter(val); setCurrentPage(1); };
   const handleResetFilters = () => {
@@ -131,7 +120,6 @@ export default function BusRoutes() {
     setSearchQuery(""); setCurrentPage(1);
   };
 
-  // Edit — calls PATCH /update/:routeId
   const handleEditRoute = useCallback(async (e) => {
     e.preventDefault();
     if (!editingRoute.routeName || !editingRoute.startPoint || !editingRoute.endPoint || !editingRoute.distanceKm) {
@@ -151,34 +139,29 @@ export default function BusRoutes() {
     if (updateBusRoute.fulfilled.match(result)) setEditingRoute(null);
   }, [dispatch, editingRoute]);
 
-  // Archive — calls PATCH /:routeId/archive
   const handleArchiveRoute = useCallback(async (routeId) => {
     await dispatch(archiveBusRoute(routeId));
     setActiveActionMenuId(null);
   }, [dispatch]);
 
-  // Activate — calls PATCH /:routeId/activate
   const handleActivateRoute = useCallback(async (routeId) => {
     await dispatch(activateBusRoute(routeId));
     setActiveActionMenuId(null);
   }, [dispatch]);
 
-  // CreateRoute's onSave — after success the slice already added it to the list
   const handleRouteCreated = useCallback(() => {
     setIsCreating(false);
   }, []);
 
-  // ── Create view ───────────────────────────────────────────────────────────
   if (isCreating) {
     return (
       <CreateRoute
         onCancel={() => setIsCreating(false)}
-        onSave={handleRouteCreated}
+        onSaved={handleRouteCreated}
       />
     );
   }
 
-  // ── Missing School Fallback ───────────────────────────────────────────────
   if (!user?.school_id) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm text-center">
@@ -193,15 +176,14 @@ export default function BusRoutes() {
     );
   }
 
-  // ── Main render ───────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col gap-6 overflow-hidden min-h-0 bg-transparent text-slate-800">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shrink-0">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bus Routes</h1>
-          <p className="text-sm text-slate-450 font-semibold mt-1">
+          <h1 className="text-4xl font-bold text-slate-900 ">Bus Routes</h1>
+          <p className="text-md text-gray-400 font-semibold mt-1">
             Create and manage school transport routes with stops, buses, and route details.
           </p>
         </div>
@@ -216,7 +198,7 @@ export default function BusRoutes() {
         </motion.button>
       </div>
 
-      {/* ── Stat Cards ── */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 shrink-0">
         {[
           { label: "Total Routes",   value: stats.totalRoutes,   sub: "All routes in system", icon: Map,    color: "blue"    },
@@ -239,7 +221,7 @@ export default function BusRoutes() {
         ))}
       </div>
 
-      {/* ── Search / Filter Bar ── */}
+      {/* Search / Filter Bar */}
       <SearchFilterBar
         searchQuery={searchQuery}
         setSearchQuery={handleSearchChange}
@@ -250,10 +232,9 @@ export default function BusRoutes() {
         onResetFilters={handleResetFilters}
       />
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div className="flex-1 bg-white border border-indigo-200 rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-0 relative">
 
-        {/* Full-table loading overlay */}
         {isFetching && (
           <div className="absolute inset-0 z-30 bg-white/70 flex items-center justify-center rounded-2xl">
             <svg className="w-8 h-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -276,21 +257,35 @@ export default function BusRoutes() {
             </thead>
             <tbody className="divide-y divide-slate-100/80">
               {paginated.length > 0 ? paginated.map((route) => {
-                const stopCount = route.stops?.length ?? 0;
-                const status    = route.status ?? "inactive";
+                const stopCount  = route.stops?.length ?? 0;
+                const status     = route.status ?? "inactive";
+                const isArchived = status === "archived";
 
                 return (
                   <tr key={route._id} className="hover:bg-slate-50/40 transition-colors group/row">
 
-                    {/* Route Name */}
+                    {/* Route Name — icon badge added */}
                     <td className="py-4 px-5 whitespace-nowrap overflow-hidden text-ellipsis">
-                      <div className="flex flex-col">
-                        <button onClick={() => setViewRoute(route)} className="text-[13.5px] font-extrabold text-blue-600 hover:text-blue-800 transition-colors text-left hover:underline select-none">
-                          {route.routeName}
-                        </button>
-                        <span className="text-[10.5px] font-bold text-slate-400 mt-0.5 tracking-wide">
-                          {route.startPoint} → {route.endPoint}
-                        </span>
+                      <div className="flex items-center gap-2.5">
+                        {/* Icon badge — blue for active, slate for archived */}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          isArchived
+                            ? "bg-slate-100 border border-slate-200 text-slate-400"
+                            : "bg-blue-50 border border-blue-100 text-[#0061FF]"
+                        }`}>
+                          <Bus className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <button
+                            onClick={() => setViewRoute(route)}
+                            className="text-[13.5px] font-extrabold text-blue-600 hover:text-blue-800 transition-colors text-left hover:underline select-none truncate"
+                          >
+                            {route.routeName}
+                          </button>
+                          <span className="text-[10.5px] font-bold text-slate-400 mt-0.5 tracking-wide truncate">
+                            {route.startPoint} → {route.endPoint}
+                          </span>
+                        </div>
                       </div>
                     </td>
 
@@ -351,7 +346,6 @@ export default function BusRoutes() {
                                   transition={{ duration: 0.12 }}
                                   className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-150 rounded-xl shadow-xl z-20 overflow-hidden py-1"
                                 >
-                                  {/* Activate — only when archived or inactive */}
                                   {status !== "active" && (
                                     <button
                                       onClick={() => handleActivateRoute(route._id)}
@@ -362,8 +356,6 @@ export default function BusRoutes() {
                                       {isActivating ? "Activating…" : "Activate Route"}
                                     </button>
                                   )}
-
-                                  {/* Archive — only when active */}
                                   {status === "active" && (
                                     <button
                                       onClick={() => handleArchiveRoute(route._id)}
@@ -403,7 +395,7 @@ export default function BusRoutes() {
           </table>
         </div>
 
-        {/* ── Pagination ── */}
+        {/* Pagination */}
         <div className="py-4 px-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 select-none shrink-0 bg-white">
           <span className="text-[13px] font-bold text-slate-400">
             Showing <span className="text-slate-700 font-extrabold">{startRange}</span> to{" "}
@@ -432,10 +424,8 @@ export default function BusRoutes() {
         </div>
       </div>
 
-      {/* ── View Modal ── */}
+      {/* Modals */}
       <ViewRouteModal viewRoute={viewRoute} onClose={() => setViewRoute(null)} />
-
-      {/* ── Edit Modal ── */}
       <EditModal
         editingRoute={editingRoute}
         setEditingRoute={setEditingRoute}

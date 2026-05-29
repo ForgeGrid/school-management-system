@@ -1,12 +1,8 @@
-// features/academicFeeStructure/academicFeeStructureSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/academic-fee-structure`;
 
-// --------------------------------------
-// Thunks
-// --------------------------------------
 
 export const createAcademicFeeStructure = createAsyncThunk(
   "academicFeeStructure/create",
@@ -108,9 +104,7 @@ export const archiveAcademicFeeStructure = createAsyncThunk(
   }
 );
 
-// --------------------------------------
-// Slice
-// --------------------------------------
+
 
 const initialState = {
   structures: [],
@@ -198,8 +192,6 @@ const academicFeeStructureSlice = createSlice({
         state.activeStructure = action.payload.structure;
       })
       .addCase(getActiveAcademicFeeStructure.rejected, (state) => {
-        // Not a hard error — just means no active structure exists for this
-        // academicYear + standard yet. Silently clear, let UI show fallback.
         state.loading.getActive = false;
         state.activeStructure = null;
       });
