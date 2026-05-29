@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { logout } from "../../redux/slice/getmeslice";
 import { logoutUserThunk } from "../../redux/slice/authslice";
@@ -29,6 +29,9 @@ import BusRoutes from "@/components/Admin/Transport/BusRoutes";
 import TransportFees from "@/components/Admin/Transport/TransportFees";
 import Vehicles from "@/components/Admin/Transport/Vehicles";
 import Drivers from "@/components/Admin/Transport/Drivers";
+// Fee sub-components
+import FeeCollection from "@/components/Admin/Fee/FeeCollection";
+import FeeReports from "@/components/Admin/Fee/FeeReports";
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
@@ -37,6 +40,7 @@ export default function AdminDashboard() {
   const school = useSelector(selectSchool);
 
   const isSuperAdmin = user?.platform_role === "super_admin" || user?.platformRole === "super_admin";
+  const baseUrl = isSuperAdmin ? "/dashboard/superadmin" : "/dashboard/admin";
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -46,14 +50,55 @@ export default function AdminDashboard() {
     }
   }, [isSuperAdmin]);
 
-  // Navigation State
-  const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem("activeTab") || "Dashboard";
-  });
+  // ── URL ↔ Tab mapping ─────────────────────────────────────────────────────
+  const location = useLocation();
 
+  const TAB_TO_URL = {
+    "Dashboard":                   "",
+    "Student admission":           "/admission",
+    "Attendance":                  "/attendance",
+    "Profile Approval":            "/profile-approval",
+    "Transport › Overview":        "/transport/overview",
+    "Transport › Bus Routes":      "/transport/bus-routes",
+    "Transport › Transport Fees":  "/transport/fees",
+    "Transport › Vehicles":        "/transport/vehicles",
+    "Transport › Drivers":         "/transport/drivers",
+    "Fees › Fee Collection":       "/fee/collection",
+    "Fees › Fee Reports":          "/fee/reports",
+    "Live tracking":               "/live-tracking",
+    "Alerts":                      "/alerts",
+    "Reports":                     "/reports",
+    "Feedback":                    "/feedback",
+    "Report issue":                "/report-issue",
+    "Settings":                    "/settings",
+    "Admin Dashboard":             "/platform-insights",
+  };
+
+  // Reverse map: url suffix → tab name
+  const URL_TO_TAB = Object.fromEntries(
+    Object.entries(TAB_TO_URL).map(([tab, url]) => [url, tab])
+  );
+
+  // Derive active tab from current pathname
+  const getActiveTabFromPath = useCallback(() => {
+    const suffix = location.pathname.replace(baseUrl, "") || "";
+    return URL_TO_TAB[suffix] || "Dashboard";
+  }, [location.pathname, baseUrl]);
+
+  const activeTab = getActiveTabFromPath();
+
+  // Navigate when sidebar item is selected
+  const setActiveTab = useCallback((tab) => {
+    const suffix = TAB_TO_URL[tab] ?? "";
+    navigate(`${baseUrl}${suffix}`);
+  }, [navigate, baseUrl]);
+
+  // On first load, redirect bare /dashboard/admin to /dashboard/admin (dashboard)
   useEffect(() => {
-    localStorage.setItem("activeTab", activeTab);
-  }, [activeTab]);
+    if (location.pathname === baseUrl || location.pathname === baseUrl + "/") {
+      navigate(`${baseUrl}`, { replace: true });
+    }
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -297,6 +342,14 @@ export default function AdminDashboard() {
                       feeRecords={feeRecords}
                       setFeeRecords={setFeeRecords}
                     />
+                  )}
+
+                  {/* Fee sub-tabs */}
+                  {activeTab === "Fees › Fee Collection" && (
+                    <FeeCollection />
+                  )}
+                  {activeTab === "Fees › Fee Reports" && (
+                    <FeeReports />
                   )}
 
                   {activeTab === "Live tracking" && (

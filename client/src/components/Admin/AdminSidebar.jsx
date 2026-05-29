@@ -66,12 +66,28 @@ export default function AdminSidebar({
     }
   }, [isTransportActive]);
 
+  const feeSubItems = [
+    "Fees › Fee Collection",
+    "Fees › Fee Reports",
+  ];
+
+  const isFeeActive = feeSubItems.includes(activeTab);
+
+  const [feesOpen, setFeesOpen] = useState(() => {
+    return feeSubItems.includes(activeTab);
+  });
+
+  useEffect(() => {
+    if (isFeeActive) {
+      setFeesOpen(true);
+    }
+  }, [isFeeActive]);
+
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Student admission", icon: UserPlus },
     { name: "Attendance", icon: CalendarCheck },
     { name: "Profile Approval", icon: UserCheck },
-    { name: "Fees", icon: DollarSign },
     { name: "Live tracking", icon: MapPin },
     { name: "Reports", icon: BarChart3 },
     { name: "Alerts", icon: Bell }
@@ -192,7 +208,62 @@ export default function AdminSidebar({
                 </AnimatePresence>
               </SidebarMenuItem>
 
-              {/* Remaining items: Fees, Live tracking, Reports, Alerts */}
+              {/* Fees expandable group */}
+              <SidebarMenuItem className="mb-3">
+                <SidebarMenuButton
+                  onClick={() => {
+                    const next = !feesOpen;
+                    setFeesOpen(next);
+                    if (next && !isFeeActive) setActiveTab("Fees › Fee Collection");
+                  }}
+                  className={`group/navItem w-[calc(100%-16px)] mx-2 flex items-center justify-between px-3 py-2 transition-colors duration-200 rounded-xl font-medium ${
+                    isFeeActive ? "bg-indigo-50 text-indigo-700 font-bold shadow-sm" : "bg-transparent text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <motion.div whileHover={{ scale: 1.15, rotate: 5 }} whileTap={{ scale: 0.9 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
+                      <DollarSign className={`w-4.5 h-4.5 stroke-[2.5] transition-colors duration-200 ${isFeeActive ? "text-indigo-600" : "text-slate-400 group-hover/navItem:text-indigo-500"}`} />
+                    </motion.div>
+                    <span className="text-sm font-bold tracking-wide leading-none">Fees</span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${feesOpen ? "rotate-180 text-indigo-500" : isFeeActive ? "text-indigo-400" : "text-slate-300"}`} />
+                </SidebarMenuButton>
+
+                {/* Fee Sub-items */}
+                <AnimatePresence initial={false}>
+                  {feesOpen && (
+                    <motion.div
+                      key="fees-sub"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="ml-8 mt-3 space-y-0.9 border-l-2 border-indigo-100 pl-3">
+                        {feeSubItems.map(sub => {
+                          const label = sub.split(" › ")[1];
+                          const isSubActive = activeTab === sub;
+                          return (
+                            <button
+                              key={sub}
+                              onClick={() => setActiveTab(sub)}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 mb-2 cursor-pointer ${
+                                isSubActive ? "text-indigo-700 bg-indigo-50/80" : "text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50"
+                              }`}
+                            >
+                              {isSubActive && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0" />}
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </SidebarMenuItem>
+
+              {/* Remaining items: Live tracking, Reports, Alerts */}
               {menuItems.slice(4).map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.name;

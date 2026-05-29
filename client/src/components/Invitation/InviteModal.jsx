@@ -64,16 +64,6 @@ export default function InviteModal({ isOpen = false, onClose, onSendInvite }) {
           </p>
         </div>
 
-        {/* Billing notice */}
-        <div className="bg-[#F5F6FF] border border-[#E4E6FF] rounded-2xl px-5 py-4 mb-6">
-          <p className="text-[13px] text-[#5C59E8] leading-relaxed font-semibold">
-            <span className="font-bold text-[#3C3BE3]">Billing Notice:</span> Adding a new
-            member will increase your monthly subscription by{" "}
-            <span className="font-bold text-[#3C3BE3]">₹99</span>. Please ensure payment is
-            made via GPay to activate this seat.
-          </p>
-        </div>
-
         {/* Error */}
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">

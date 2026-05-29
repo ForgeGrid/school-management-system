@@ -1,8 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import { Bus, MapPin, Users, TrendingUp, Activity } from "lucide-react";
+import { toast } from "sonner";
+import { getAllTransportFeeStructures, selectAllFeeStructures, selectFeeStructureLoading, selectFeeStructureNotif } from "../../../redux/slice/transportFeeStructureSlice";
 
 export default function TransportOverview({ buses = [], setActiveTab }) {
+  const dispatch = useDispatch();
+  const structures = useSelector(selectAllFeeStructures);
+  const loading = useSelector(selectFeeStructureLoading("getAll"));
+  const notification = useSelector(selectFeeStructureNotif);
+
+  useEffect(() => {
+    dispatch(getAllTransportFeeStructures());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!notification) return;
+    if (notification.type === "success") toast.success(notification.message);
+    else toast.error(notification.message);
+  }, [notification]);
+
   const running = buses.filter(b => b.status === "Running").length;
   const stopped = buses.filter(b => b.status === "Stopped").length;
 
@@ -10,7 +28,7 @@ export default function TransportOverview({ buses = [], setActiveTab }) {
     { label: "Total Routes", value: buses.length, color: "indigo", icon: MapPin },
     { label: "Running", value: running, color: "emerald", icon: Activity },
     { label: "Stopped", value: stopped, color: "amber", icon: Bus },
-    { label: "Drivers On Duty", value: running, color: "cyan", icon: Users },
+    { label: "Total Fee Structures", value: structures.length, color: "purple", icon: TrendingUp },
   ];
 
   return (
@@ -35,6 +53,7 @@ export default function TransportOverview({ buses = [], setActiveTab }) {
             emerald: { bg: "bg-emerald-50", text: "text-emerald-600", bar: "bg-emerald-500" },
             amber: { bg: "bg-amber-50", text: "text-amber-600", bar: "bg-amber-500" },
             cyan: { bg: "bg-cyan-50", text: "text-cyan-600", bar: "bg-cyan-500" },
+            purple: { bg: "bg-purple-50", text: "text-purple-600", bar: "bg-purple-500" }
           }[s.color];
           return (
             <div key={s.label} className="bg-white border border-slate-200/80 rounded-2xl p-5 relative overflow-hidden hover:shadow-md transition-all group">
@@ -48,7 +67,25 @@ export default function TransportOverview({ buses = [], setActiveTab }) {
           );
         })}
       </div>
-
+        {/* Fee Structures */}
+        <div className="mt-6">
+          <h2 className="text-base font-extrabold text-slate-800 mb-4 border-b border-slate-100 pb-3">Transport Fee Structures</h2>
+          {loading ? (
+            <p className="text-slate-500">Loading...</p>
+          ) : (
+            <ul className="space-y-2">
+              {structures && structures.map((s) => (
+                <li key={s._id} className="p-3 bg-white border border-slate-200 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{s.route_id?.name || "Unnamed Route"}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-600"}`}>{s.status}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 mt-1">Year: {s.academicYear} – Frequency: {s.frequency}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       {/* Bus cards */}
       <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
         <h2 className="text-base font-extrabold text-slate-800 mb-4 border-b border-slate-100 pb-3">Fleet at a Glance</h2>
