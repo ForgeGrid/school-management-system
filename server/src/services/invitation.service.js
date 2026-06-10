@@ -7,6 +7,11 @@ import logger from "../utils/logger.js";
 import { User } from "../models/auth/user.model.js";
 import { UserInvitation } from "../models/auth/userInvitation.model.js";
 
+import {
+  assertAdminOnly,
+  assertInviteRole,
+} from "../utils/auth.helper.js";
+
 export const inviteUserService = async ({
   school_id,
   userId,
@@ -23,14 +28,10 @@ export const inviteUserService = async ({
 
   // 1b Check if the inviter is the admin
   const inviter = await User.findById(userId);
-  if (!inviter || inviter.role !== "school_admin") {
-    throw new Error("Only school admins can invite new members.");
-  }
+  assertAdminOnly(inviter);
 
   // 1c Check if the invited role is valid
-  if (!["teacher", "staff"].includes(role)) {
-    throw new Error("Only teachers or staff members can be invited.");
-  }
+  assertInviteRole(role);
 
   // 2️⃣ Generate invite token
   const inviteToken = crypto.randomBytes(32).toString("hex");

@@ -2,6 +2,8 @@ import { User } from "../models/auth/user.model.js";
 import School from "../models/school_admin/school.model.js";
 import { StaffProfile } from "../models/staff/teacher.model.js";
 import { StudentProfile } from "../models/student/student.model.js";
+import { ParentProfile } from "../models/parent/parentProfile.model.js";
+import { sendSuccess, sendError } from "../utils/response.helper.js";
 import { uploadBufferToCloud } from "../utils/cloudinary.js";
 import { v2 as cloudinary } from "cloudinary";
 import sendEmail from "../utils/sendEmail.js";
@@ -188,5 +190,47 @@ export const updateAvatar = async (req, res) => {
     } catch (err) {
         logger.error("Error updating avatar:", err);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+/**
+ * Update Parent Contacts and Child Addresses
+ * Restricted to Parent role only
+ */
+export const updateParentContactsAndAddress = async (req, res) => {
+    try {
+        if (req.user.role !== "parent") {
+            return sendError(res, {
+                message: "Only parents can perform this action",
+                status: 403,
+            });
+        }
+
+        const { primary_phone, alternate_contact, address } = req.body;
+
+        const parentProfile = await ParentProfile.findOne({ user_id: req.user.id });
+        if (!parentProfile) {
+            return sendError(res, {
+                message: "Parent profile not found",
+                status: 404,
+            });
+        }
+
+        // 1. Update Parent Profile Contacts and Address
+        if (primary_phone) parentProfile.primary_phone = primary_phone;
+        if (alternate_contact !== undefined) parentProfile.alternate_contact = alternate_contact;
+        if (address) parentProfile.address = address;
+
+        await parentProfile.save();
+
+        return sendSuccess(res, {
+            message: "Contacts and address updated successfully",
+            parentProfile,
+        });
+    } catch (err) {
+        return sendError(res, {
+            error: err,
+            context: "Update parent contacts and address error",
+        });
     }
 };

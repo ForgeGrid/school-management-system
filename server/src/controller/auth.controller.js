@@ -24,6 +24,7 @@ import { generateToken } from "../utils/jwt.js";
 import { createNumericOtp, generateUsername } from "../utils/helper.js";
 import { uploadBufferToCloud } from "../utils/cloudinary.js";
 import { UserInvitation } from "../models/auth/userInvitation.model.js";
+import { StaffProfile } from "../models/staff/teacher.model.js";
 
 // Lockout configuration
 const THRESHOLD_SHORT = 3;
@@ -906,6 +907,37 @@ export const getMe = async (req, res) => {
           isActive: school.isActive,
         },
       });
+    }
+
+    // Handle Individual Staff Verification for Teachers and Staff
+    if (["teacher", "staff"].includes(user.role)) {
+      const staffProfile = await StaffProfile.findOne({ user_id: user._id, school_id: user.school_id });
+
+      if (!staffProfile) {
+        return res.status(200).json({
+          state: "STAFF_PROFILE_MISSING",
+          message: "Staff profile not found",
+          user,
+        });
+      }
+
+      if (staffProfile.verificationStatus !== "verified") {
+        return res.status(200).json({
+          message: `Staff account is ${staffProfile.verificationStatus}`,
+          state: staffProfile.verificationStatus === "rejected" ? "STAFF_REJECTED" : "STAFF_PENDING",
+          user,
+          staffProfile: {
+            id: staffProfile._id,
+            verificationStatus: staffProfile.verificationStatus,
+            rejection_reason: staffProfile.rejection_reason,
+            designation: staffProfile.designation,
+          },
+          school: {
+            id: school._id,
+            name: school.name,
+          }
+        });
+      }
     }
 
     // Use your existing verificationStatus field as the approval state

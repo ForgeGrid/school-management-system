@@ -27,6 +27,12 @@ const staffProfileSchema = new mongoose.Schema(
 
         subjects: [String], // Only for teachers
 
+        profile_highlight: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+
         // 🆔 Internal School Info
         employeeId: {
             type: String,

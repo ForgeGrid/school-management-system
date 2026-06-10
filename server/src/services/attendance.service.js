@@ -7,58 +7,31 @@ import { StaffProfile } from "../models/staff/teacher.model.js";
 import { notify } from "../utils/notificationHelper.js";
 import logger from "../utils/logger.js";
 
+import {
+  assertAttendanceManager,
+  assertAdminOnly,
+  assertSchoolBoundUser,
+} from "../utils/auth.helper.js";
+import {
+  dayBounds,
+} from "../utils/date.helper.js";
+import {
+  assertTeacherCanAccessClass,
+  buildEditableUntil,
+} from "../utils/academic.helper.js";
+import {
+  getClassSectionOrThrow as getClassSectionGeneric,
+} from "../utils/db.helper.js";
+
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "half_day", "excused"];
 const SOURCE_TYPES = ["manual", "bulk_upload", "biometric"];
 const EDIT_WINDOW_DAYS = 5;
-
-const assertSchoolBoundUser = (user) => {
-  if (!user || !user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-const assertAttendanceManager = (user) => {
-  assertSchoolBoundUser(user);
-
-  if (!["school_admin", "teacher"].includes(user.role)) {
-    throw new Error("Only admin or teacher can manage attendance");
-  }
-};
-
-const assertAdminOnly = (user) => {
-  assertSchoolBoundUser(user);
-
-  if (user.role !== "school_admin") {
-    throw new Error("Only school admin can perform this action");
-  }
-};
-
-const dayBounds = (inputDate) => {
-  const d = new Date(inputDate);
-  if (Number.isNaN(d.getTime())) {
-    throw new Error("Invalid attendanceDate");
-  }
-
-  const start = new Date(d);
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date(d);
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
-};
 
 const normalizeAttendanceDate = (inputDate) => {
   const { start } = dayBounds(inputDate);
   return start;
 };
 
-const buildEditableUntil = (attendanceDate) => {
-  const d = new Date(attendanceDate);
-  d.setDate(d.getDate() + EDIT_WINDOW_DAYS);
-  d.setHours(23, 59, 59, 999);
-  return d;
-};
 
 const normalizeOptionalReason = (absentReason, user) => {
   if (!absentReason) return null;
@@ -90,49 +63,15 @@ const normalizeOptionalReason = (absentReason, user) => {
   return null;
 };
 
-const assertTeacherCanAccessClass = async (user, classSection) => {
-  if (user.role === "school_admin") return;
-
-  const staffProfile = await StaffProfile.findOne({
-    user_id: user.id,
-    school_id: user.school_id,
-  });
-
-  if (!staffProfile) {
-    throw new Error("Teacher profile not found");
-  }
-
-  if (!classSection.classTeacher_id) {
-    throw new Error("This class is not assigned to a teacher");
-  }
-
-  if (String(classSection.classTeacher_id) !== String(staffProfile._id)) {
-    throw new Error("You are not assigned to this class");
-  }
-};
 
 const getClassSectionOrThrow = async (user, classSectionId, academicYear) => {
-  if (!mongoose.Types.ObjectId.isValid(classSectionId)) {
-    throw new Error("Invalid classSection_id");
+  const classSection = await getClassSectionGeneric(ClassSection, user.school_id, classSectionId);
+
+  if (academicYear && classSection.academicYear !== academicYear) {
+    throw new Error(`Class section does not belong to academic year ${academicYear}`);
   }
 
-  const query = {
-    _id: classSectionId,
-    school_id: user.school_id,
-    status: "active",
-  };
-
-  if (academicYear) {
-    query.academicYear = academicYear;
-  }
-
-  const classSection = await ClassSection.findOne(query);
-
-  if (!classSection) {
-    throw new Error("Class section not found");
-  }
-
-  await assertTeacherCanAccessClass(user, classSection);
+  await assertTeacherCanAccessClass(StaffProfile, user, classSection);
 
   return classSection;
 };
@@ -310,7 +249,7 @@ export const markSingleAttendanceService = async (user, data = {}) => {
       $set: updateDoc,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     }

@@ -4,8 +4,10 @@ import { requireRole } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import {
   getEnrollmentCandidates,
-  allocateStudentsManually,
-  autoAllocateStudents,
+  previewStudentAllocation,
+  confirmStudentAllocation,
+  // updateStudentEnrollmentType,
+  promoteStudentEnrollment,
   getClassEnrolledStudents,
 } from "../controller/studentEnrollment.controller.js";
 
@@ -15,8 +17,10 @@ const router = express.Router();
 router.use(authMiddleware, requireVerifiedSchool);
 
 router.get("/candidates", requireRole("school_admin"), getEnrollmentCandidates);
-router.post("/allocate-manual", requireRole("school_admin"), allocateStudentsManually);
-router.post("/allocate-auto", requireRole("school_admin"), autoAllocateStudents);
+router.post("/preview-allocation", requireRole("school_admin"), previewStudentAllocation);
+router.post("/confirm-allocation", requireRole("school_admin"), confirmStudentAllocation);
+// router.patch("/update-type/:enrollmentId", requireRole("school_admin"), updateStudentEnrollmentType);
+router.patch("/promote", requireRole("school_admin"), promoteStudentEnrollment);
 router.get("/enrolled", requireRole("school_admin"), getClassEnrolledStudents);
 
 export default router;

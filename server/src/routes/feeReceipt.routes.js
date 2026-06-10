@@ -13,12 +13,12 @@ import {
     requireActiveSchool,
     requireVerifiedSchool
 } from "../middleware/school_auth.middleware.js";
-import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
 
 const router = Router();
 
 // Global Authentication
-router.use(authMiddleware);
+router.use(authMiddleware, requireVerifiedStaff);
 
 // Admin / Staff
 router.post(

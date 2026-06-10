@@ -21,6 +21,11 @@ import classSectionRoutes from "./routes/classSection.routes.js";
 import studentEnrollmentRoutes from "./routes/studentEnrollment.routes.js";
 import feeReminderRoutes from "./routes/feeReminder.routes.js";
 import feeReceiptRoutes from "./routes/feeReceipt.routes.js";
+import admissionRoutes from "./routes/admission.routes.js";
+import helpdeskRoutes from "./routes/helpdesk.routes.js";
+import subjectRoutes from "./routes/subject.routes.js";
+import classSubjectAssignmentRoutes from "./routes/classSubjectAssignment.routes.js";
+import timetableRoutes from "./routes/timetable.routes.js";
 
 import { errorMiddleware } from "./middleware/error.middleware.js";
 
@@ -92,6 +97,11 @@ app.use("/api/v0/class-section", classSectionRoutes);
 app.use("/api/v0/student-enrollment", studentEnrollmentRoutes);
 app.use("/api/v0/fee-reminder", feeReminderRoutes);
 app.use("/api/v0/fee-receipt", feeReceiptRoutes);
+app.use("/api/v0/admission", admissionRoutes);
+app.use("/api/v0/helpdesk", helpdeskRoutes);
+app.use("/api/v0/subjects", subjectRoutes);
+app.use("/api/v0/class-subject-assignments", classSubjectAssignmentRoutes);
+app.use("/api/v0/timetable", timetableRoutes);
 
 
 

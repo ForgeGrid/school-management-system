@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 import {
   createProfile,
@@ -23,6 +23,9 @@ router.use(authMiddleware);
 router.post("/create", createProfile);
 router.patch("/update", updateProfile);
 router.get("/me", requireRole("school_admin", "teacher", "staff"), getMyProfile);
+
+// Enforcement for all subsequent staff lookup and management routes
+router.use(requireVerifiedStaff);
 
 // Security and Avatar management moved to profile.routes.js
 

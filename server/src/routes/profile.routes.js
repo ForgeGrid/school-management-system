@@ -5,9 +5,12 @@ import {
     requestPasswordOTP,
     verifyPasswordOTP,
     unlinkSchool,
-    updateAvatar
+    updateAvatar,
+    updateParentContactsAndAddress
 } from "../controller/profile.controller.js";
 import { upload } from "../middleware/upload.middleware.js";
+
+import { requireRole } from "../middleware/school_role.middleware.js";
 
 const router = express.Router();
 
@@ -18,5 +21,8 @@ router.patch("/avatar", upload.single("avatar"), updateAvatar);
 router.post("/password/otp-request", requestPasswordOTP);
 router.post("/password/otp-verify", verifyPasswordOTP);
 router.delete("/unlink-school", unlinkSchool);
+
+// Restricted to parents
+router.patch("/parent-update", requireRole("parent"), updateParentContactsAndAddress);
 
 export default router;

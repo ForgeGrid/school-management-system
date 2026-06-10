@@ -10,6 +10,8 @@ import {
   getAllStudents,
   getOneStudent,
   deleteStudent,
+  requestLinkedPasswordResetOtp,
+  verifyLinkedPasswordResetOtp
 } from "../controller/student.controller.js";
 
 const router = express.Router();
@@ -18,13 +20,24 @@ const router = express.Router();
 router.use(authMiddleware, requireVerifiedSchool);
 
 // Student profile management
-router.post("/create", requireRole("school_admin", "staff"), createStudent);
+router.post("/create", requireRole("school_admin", "staff"), upload.single("profile-avatar"), createStudent);
 router.patch("/update/:studentId", requireRole("school_admin", "staff"), updateStudent);
 router.get("/me", requireRole("student"), getMyStudentProfile);
 router.get("/all", requireRole("school_admin", "staff"), getAllStudents);
 router.get("/:studentId", requireRole("school_admin", "staff"), getOneStudent);
 router.delete("/:studentId", requireRole("school_admin", "staff"), deleteStudent);
 
-// Security and Avatar management moved to profile.routes.js
+// Password for student + parent by Admin
+router.post(
+  "/admin/students/:studentId/password/request-otp",
+  requireRole("school_admin"),
+  requestLinkedPasswordResetOtp
+);
+
+router.post(
+  "/admin/students/:studentId/password/verify-otp",
+  requireRole("school_admin"),
+  verifyLinkedPasswordResetOtp
+);
 
 export default router;

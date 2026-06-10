@@ -3,155 +3,39 @@ import { FeePayment } from "../models/fees/feeReceipt.model.js";
 import { StudentFeePlan } from "../models/fees/studentFeePlan.model.js";
 import { StudentProfile } from "../models/student/student.model.js";
 import { normalizeAcademicYear } from "../utils/feeReminderHelper.js";
+import { checkTransactionSupport } from "../utils/transactionHelper.js";
 import {
   notifyFeePaymentSuccessService,
   notifyFeePaymentReversedService,
 } from "./notification.service.js";
 
+import {
+  assertAdminOrStaff,
+  assertParentOrStudent,
+} from "../utils/auth.helper.js";
+import {
+  normalizeText,
+} from "../utils/format.helper.js";
+import {
+  MANUAL_PAYMENT_MODES,
+  VALID_RECEIPT_STATUSES,
+  normalizePaymentStatus,
+  generateReceiptNumber,
+  resolveBalanceBeforePayment,
+  validateReceiptUniqueness,
+} from "../utils/fee.helper.js";
+import {
+  buildPagination,
+} from "../utils/pagination.helper.js";
+import {
+  getByIdOrThrow as getByIdOrThrowGeneric,
+} from "../utils/db.helper.js";
+
+
 // --------------------------------------------------
 // CONSTANTS
 // --------------------------------------------------
 
-const MANUAL_PAYMENT_MODES = new Set([
-  "cash",
-  "upi",
-  "card",
-  "bank_transfer",
-  "cheque",
-]);
-
-const VALID_RECEIPT_STATUSES = ["success"];
-
-// --------------------------------------------------
-// HELPERS
-// --------------------------------------------------
-
-const assertStaffOrAdmin = (user, action = "perform this action") => {
-  if (!user || !["school_admin", "staff"].includes(user.role)) {
-    throw new Error(`Only school admin or staff can ${action}`);
-  }
-  if (!user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-const assertParentOrStudent = (user) => {
-  if (!user || !["student", "parent"].includes(user.role)) {
-    throw new Error("Only parent or student can access this receipt portal");
-  }
-
-  if (!user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-const normalizeText = (value) => String(value || "").trim();
-
-const normalizePaymentStatus = ({
-  totalPaid,
-  pendingAmount,
-  finalPayableAmount,
-}) => {
-  if (pendingAmount <= 0) return "paid";
-  if (totalPaid <= 0) return "unpaid";
-
-  if (totalPaid > 0 && totalPaid < finalPayableAmount) {
-    return "partial";
-  }
-
-  return "unpaid";
-};
-
-const buildPagination = ({ page = 1, limit = 20 }) => {
-  const normalizedPage = Math.max(Number(page || 1), 1);
-  const normalizedLimit = Math.min(Math.max(Number(limit || 20), 1), 100);
-
-  return {
-    page: normalizedPage,
-    limit: normalizedLimit,
-    skip: (normalizedPage - 1) * normalizedLimit,
-  };
-};
-
-const formatAcademicYearForReceipt = (academicYear) => {
-  const value = normalizeText(academicYear);
-  if (!value) return "";
-
-  const match = value.match(/^(\d{4})\s*-\s*(\d{2}|\d{4})$/);
-  if (!match) {
-    return value.replace(/\s+/g, "");
-  }
-
-  const startYear = match[1].slice(2);
-  const endPart = match[2].length === 2 ? match[2] : match[2].slice(2);
-  return `${startYear}-${endPart}`;
-};
-
-const generateReceiptNumber = async ({ schoolId, academicYear, session }) => {
-  const series = formatAcademicYearForReceipt(academicYear);
-  const latest = await FeePayment.findOne({
-    school_id: schoolId,
-    academicYear,
-  })
-    .sort({ createdAt: -1 })
-    .select("receiptNumber")
-    .session(session);
-
-  let nextSerial = 1;
-
-  if (latest?.receiptNumber) {
-    const parts = String(latest.receiptNumber).split("/");
-    const lastPart = parts[parts.length - 1];
-    const parsed = parseInt(lastPart, 10);
-
-    if (!Number.isNaN(parsed)) {
-      nextSerial = parsed + 1;
-    }
-  }
-
-  return `RECEIPT/${series}/${String(nextSerial).padStart(4, "0")}`;
-};
-
-const resolveBalanceBeforePayment = (plan) => {
-  const pending = plan?.paymentSummary?.pendingAmount;
-
-  if (Number.isFinite(pending) && pending >= 0) {
-    return pending;
-  }
-
-  // FALLBACK: If no payment lifecycle has started, Use finalPayableAmount
-  return Math.max(Number(plan?.finalPayableAmount || 0), 0);
-};
-
-const validateReceiptUniqueness = async (receiptNumber, schoolId, session) => {
-  const existing = await FeePayment.findOne({
-    receiptNumber,
-    school_id: schoolId,
-  })
-    .select("_id")
-    .session(session);
-
-  if (existing) {
-    throw new Error("Receipt number already exists");
-  }
-};
-
-// --------------------------------------------------
-// TRANSACTION HELPER
-// --------------------------------------------------
-
-let _supportsTransactions = null;
-
-const checkTransactionSupport = async () => {
-  if (_supportsTransactions !== null) return _supportsTransactions;
-  try {
-    const hello = await mongoose.connection.db.admin().command({ hello: 1 });
-    _supportsTransactions = !!hello.setName;
-  } catch (err) {
-    _supportsTransactions = false;
-  }
-  return _supportsTransactions;
-};
 
 // --------------------------------------------------
 // SERVICES
@@ -161,7 +45,7 @@ const checkTransactionSupport = async () => {
 // Create Fee Receipt / Manual Fee Payment
 // --------------------------------------------------
 export const createFeePaymentService = async (user, data = {}) => {
-  assertStaffOrAdmin(user, "create fee receipts");
+  assertAdminOrStaff(user);
 
   const studentId = data.student_id;
   const feePlanId = data.feePlan_id;
@@ -203,14 +87,7 @@ export const createFeePaymentService = async (user, data = {}) => {
   }
 
   try {
-    const student = await StudentProfile.findOne({
-      _id: studentId,
-      school_id: user.school_id,
-    }).session(session);
-
-    if (!student) {
-      throw new Error("Student not found in your school");
-    }
+    const student = await getByIdOrThrowGeneric(StudentProfile, user.school_id, studentId, "Student");
 
     const feePlan = await StudentFeePlan.findOne({
       _id: feePlanId,
@@ -242,13 +119,13 @@ export const createFeePaymentService = async (user, data = {}) => {
     let receiptNumber = receiptNumberInput;
 
     if (!receiptNumber) {
-      receiptNumber = await generateReceiptNumber({
+      receiptNumber = await generateReceiptNumber(FeePayment, {
         schoolId: user.school_id,
         academicYear,
         session,
       });
     } else {
-      await validateReceiptUniqueness(receiptNumber, user.school_id, session);
+      await validateReceiptUniqueness(FeePayment, receiptNumber, user.school_id, session);
     }
 
     const [receipt] = await FeePayment.create(
@@ -349,7 +226,7 @@ export const createFeePaymentService = async (user, data = {}) => {
 // Reverse Fee Receipt
 // --------------------------------------------------
 export const reverseFeePaymentService = async (user, receiptId, data = {}) => {
-  assertStaffOrAdmin(user, "reverse fee receipts");
+  assertAdminOrStaff(user);
 
   if (!mongoose.Types.ObjectId.isValid(receiptId)) {
     throw new Error("Invalid receipt id");
@@ -540,7 +417,7 @@ export const recalculatePaymentSummaryService = async ({
 // Get all receipts
 // --------------------------------------------------
 export const getAllFeeReceiptsService = async (user, query = {}) => {
-  assertStaffOrAdmin(user, "view fee receipts");
+  assertAdminOrStaff(user);
 
   const { page, limit, skip } = buildPagination(query);
 
@@ -598,7 +475,7 @@ export const getAllFeeReceiptsService = async (user, query = {}) => {
 // Get one student's receipt history
 // --------------------------------------------------
 export const getStudentReceiptHistoryService = async (user, studentId, query = {}) => {
-  assertStaffOrAdmin(user, "view fee receipts");
+  assertAdminOrStaff(user);
 
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
     throw new Error("Invalid student_id");

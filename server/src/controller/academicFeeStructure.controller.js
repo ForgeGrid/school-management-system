@@ -1,4 +1,4 @@
-import logger from "../utils/logger.js";
+import { sendSuccess, sendError } from "../utils/response.helper.js";
 import {
   createAcademicFeeStructureService,
   updateAcademicFeeStructureService,
@@ -16,13 +16,16 @@ export const createAcademicFeeStructure = async (req, res) => {
   try {
     const structure = await createAcademicFeeStructureService(req.user, req.body || {});
 
-    return res.status(201).json({
+    return sendSuccess(res, {
       message: "Academic fee structure created successfully",
+      status: 201,
       structure,
     });
   } catch (err) {
-    logger.error("Create academic fee structure error:", err);
-    return res.status(400).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Create academic fee structure error",
+    });
   }
 };
 
@@ -37,13 +40,15 @@ export const updateAcademicFeeStructure = async (req, res) => {
       req.body || {}
     );
 
-    return res.json({
+    return sendSuccess(res, {
       message: "Academic fee structure updated successfully",
       structure,
     });
   } catch (err) {
-    logger.error("Update academic fee structure error:", err);
-    return res.status(400).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Update academic fee structure error",
+    });
   }
 };
 
@@ -54,13 +59,15 @@ export const getAcademicFeeStructures = async (req, res) => {
   try {
     const result = await getAcademicFeeStructuresService(req.user, req.query || {});
 
-    return res.json({
+    return sendSuccess(res, {
       message: "Academic fee structures fetched successfully",
       ...result,
     });
   } catch (err) {
-    logger.error("Get academic fee structures error:", err);
-    return res.status(400).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Get academic fee structures error",
+    });
   }
 };
 
@@ -74,10 +81,13 @@ export const getOneAcademicFeeStructure = async (req, res) => {
       req.params.structureId
     );
 
-    return res.json({ structure });
+    return sendSuccess(res, { structure });
   } catch (err) {
-    logger.error("Get one academic fee structure error:", err);
-    return res.status(404).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Get one academic fee structure error",
+      status: 404,
+    });
   }
 };
 
@@ -88,10 +98,13 @@ export const getActiveAcademicFeeStructure = async (req, res) => {
   try {
     const structure = await getActiveAcademicFeeStructureService(req.user, req.query || {});
 
-    return res.json({ structure });
+    return sendSuccess(res, { structure });
   } catch (err) {
-    logger.error("Get active academic fee structure error:", err);
-    return res.status(404).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Get active academic fee structure error",
+      status: 404,
+    });
   }
 };
 
@@ -105,13 +118,15 @@ export const activateAcademicFeeStructure = async (req, res) => {
       req.params.structureId
     );
 
-    return res.json({
+    return sendSuccess(res, {
       message: "Academic fee structure activated successfully",
       structure,
     });
   } catch (err) {
-    logger.error("Activate academic fee structure error:", err);
-    return res.status(400).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Activate academic fee structure error",
+    });
   }
 };
 
@@ -125,12 +140,14 @@ export const archiveAcademicFeeStructure = async (req, res) => {
       req.params.structureId
     );
 
-    return res.json({
+    return sendSuccess(res, {
       message: "Academic fee structure archived successfully",
       structure,
     });
   } catch (err) {
-    logger.error("Archive academic fee structure error:", err);
-    return res.status(400).json({ message: err.message });
+    return sendError(res, {
+      error: err,
+      context: "Archive academic fee structure error",
+    });
   }
 };

@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
 import {
   createBusRoute,
   updateBusRoute,
