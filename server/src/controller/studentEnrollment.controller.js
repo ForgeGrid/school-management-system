@@ -1,8 +1,10 @@
 import logger from "../utils/logger.js";
 import {
   getEnrollmentCandidatesService,
-  allocateStudentsManuallyService,
-  autoAllocateStudentsService,
+  previewStudentAllocationService,
+  confirmStudentAllocationService,
+  // updateStudentEnrollmentTypeService,
+  promoteStudentEnrollmentService,
   getClassEnrolledStudentsService,
 } from "../services/studentEnrollment.service.js";
 
@@ -19,28 +21,55 @@ export const getEnrollmentCandidates = async (req, res) => {
   }
 };
 
-export const allocateStudentsManually = async (req, res) => {
+export const previewStudentAllocation = async (req, res) => {
   try {
-    const result = await allocateStudentsManuallyService(req.user, req.body || {});
-    return res.status(201).json({
-      message: "Students allocated successfully",
+    const result = await previewStudentAllocationService(req.user, req.body || {});
+    return res.json({
+      message: "Enrollment preview generated successfully",
       ...result,
     });
   } catch (err) {
-    logger.error("Manual student allocation error:", err);
+    logger.error("Preview student allocation error:", err);
     return res.status(400).json({ message: err.message });
   }
 };
 
-export const autoAllocateStudents = async (req, res) => {
+export const confirmStudentAllocation = async (req, res) => {
   try {
-    const result = await autoAllocateStudentsService(req.user, req.body || {});
+    const result = await confirmStudentAllocationService(req.user, req.body || {});
     return res.status(201).json({
-      message: "Students auto allocated successfully",
+      message: "Students enrolled successfully",
       ...result,
     });
   } catch (err) {
-    logger.error("Auto student allocation error:", err);
+    logger.error("Confirm student allocation error:", err);
+    return res.status(400).json({ message: err.message });
+  }
+};
+
+// export const updateStudentEnrollmentType = async (req, res) => {
+//   try {
+//     const { enrollmentId } = req.params;
+//     const result = await updateStudentEnrollmentTypeService(req.user, enrollmentId, req.body || {});
+//     return res.json({
+//       message: "Enrollment type updated successfully",
+//       enrollment: result,
+//     });
+//   } catch (err) {
+//     logger.error("Update enrollment type error:", err);
+//     return res.status(400).json({ message: err.message });
+//   }
+// };
+
+export const promoteStudentEnrollment = async (req, res) => {
+  try {
+    const result = await promoteStudentEnrollmentService(req.user, req.body || {});
+    return res.status(201).json({
+      message: "Student promoted successfully",
+      data: result.toObject(),
+    });
+  } catch (err) {
+    logger.error("Promote student error:", err);
     return res.status(400).json({ message: err.message });
   }
 };

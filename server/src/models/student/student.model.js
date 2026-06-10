@@ -48,45 +48,6 @@ const studentProfileSchema = new mongoose.Schema(
             index: true,
         },
 
-        parent_name: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        parent_email: {
-            type: String,
-            default: "",
-            trim: true,
-            lowercase: true,
-        },
-
-        parent_phone: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        guardian_name: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        guardian_relation: {
-            type: String,
-            default: "",
-            trim: true,
-        },
-
-        address: {
-            street: String,
-            city: String,
-            state: String,
-            postalCode: String,
-            country: String,
-        },
-
         transport_required: {
             type: Boolean,
             default: false,

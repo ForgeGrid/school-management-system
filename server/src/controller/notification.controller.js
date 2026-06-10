@@ -3,9 +3,6 @@ import Notification from "../models/notification/notification.model.js";
 import { buildNotificationMatch, resolveNotificationUserContext } from "../utils/notificationHelper.js";
 
 
-
-
-
 /**
  * Get all notifications for the current user (with pagination)
  */
@@ -68,7 +65,7 @@ export const markAsRead = async (req, res) => {
                 },
                 $inc: { readCount: 1 },
             },
-            { new: true }
+            { returnDocument: "after" }
         );
 
         if (updated) {

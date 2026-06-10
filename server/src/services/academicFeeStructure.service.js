@@ -1,77 +1,23 @@
 import mongoose from "mongoose";
 import { AcademicFeeStructure } from "../models/fees/academicFeeStructure.model.js";
 
-const VALID_STATUSES = ["draft", "active", "archived"];
+import {
+  assertAdminOnly as assertSchoolAdmin,
+  assertOwnSchool,
+} from "../utils/auth.helper.js";
+import {
+  normalizeFeeHeads,
+} from "../utils/fee.helper.js";
+import {
+  buildFilter as buildFilterGeneric,
+} from "../utils/db.helper.js";
 
-
-
-const normalizeFeeHeads = (feeHeads = []) => {
-  if (!Array.isArray(feeHeads)) {
-    throw new Error("feeHeads must be an array");
-  }
-
-  const normalized = feeHeads.map((item, index) => {
-    if (!item?.name) {
-      throw new Error(`feeHeads[${index}].name is required`);
-    }
-    if (item.amount === undefined || item.amount === null) {
-      throw new Error(`feeHeads[${index}].amount is required`);
-    }
-    if (!item.frequency) {
-      throw new Error(`feeHeads[${index}].frequency is required`);
-    }
-    if (item.order === undefined || item.order === null) {
-      throw new Error(`feeHeads[${index}].order is required`);
-    }
-
-    return {
-      name: String(item.name).trim(),
-      amount: Number(item.amount),
-      frequency: item.frequency,
-      mandatory: item.mandatory !== undefined ? Boolean(item.mandatory) : true,
-      taxable: item.taxable !== undefined ? Boolean(item.taxable) : false,
-      order: Number(item.order),
-    };
-  });
-
-  const seen = new Set();
-  for (const head of normalized) {
-    const key = head.name.toLowerCase();
-    if (seen.has(key)) {
-      throw new Error(`Duplicate fee head name found: ${head.name}`);
-    }
-    seen.add(key);
-  }
-
-  normalized.sort((a, b) => a.order - b.order);
-  return normalized;
-};
 
 const buildFilter = (schoolId, query = {}) => {
-  const filter = { school_id: schoolId };
-
-  if (query.academicYear) filter.academicYear = String(query.academicYear).trim();
-  if (query.standard) filter.standard = String(query.standard).trim();
-
-  if (query.status && VALID_STATUSES.includes(query.status)) filter.status = query.status;
-
+  const filter = buildFilterGeneric(schoolId, query, ["academicYear", "standard", "status"]);
   return filter;
 };
 
-const assertSchoolAdmin = (user) => {
-  if (!user || user.role !== "school_admin") {
-    throw new Error("Only school admin can manage academic fee structure");
-  }
-  if (!user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-const assertOwnSchool = (doc, user) => {
-  if (!doc || doc.school_id.toString() !== user.school_id.toString()) {
-    throw new Error("Unauthorized access");
-  }
-};
 
 // --------------------------------------
 // Create Academic Fee Structure

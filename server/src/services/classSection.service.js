@@ -1,45 +1,26 @@
 import mongoose from "mongoose";
 import { ClassSection } from "../models/academic/classSection.model.js";
 import { StaffProfile } from "../models/staff/teacher.model.js";
+import { ClassSubjectAssignment } from "../models/academic/classSubjectAssignment.model.js";
 
-const validateClassTeacher = async (schoolId, teacherId) => {
-  if (!teacherId) return;
 
-  if (!mongoose.Types.ObjectId.isValid(teacherId)) {
-    throw new Error("Invalid classTeacher_id format");
-  }
+import { resolveStudentPortalContextService } from "../services/studentEnrollment.service.js";
 
-  const teacher = await StaffProfile.findOne({
-    _id: teacherId,
-    school_id: schoolId,
-  });
 
-  if (!teacher) {
-    throw new Error("Class teacher profile not found in your school");
-  }
-};
+import {
+  assertAdminOnly as assertSchoolAdmin,
+} from "../utils/auth.helper.js";
+import {
+  normalizeText as normalize,
+} from "../utils/format.helper.js";
+import {
+  validateClassTeacher,
+  generateClassCode,
+} from "../utils/academic.helper.js";
+import {
+  getClassSectionOrThrow as getClassSectionGeneric,
+} from "../utils/db.helper.js";
 
-const assertSchoolAdmin = (user) => {
-  if (!user || user.role !== "school_admin") {
-    throw new Error("Only school admin can manage class sections");
-  }
-  if (!user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-const normalize = (value) => String(value || "").trim();
-
-const generateClassCode = (standard, section) => {
-  const std = normalize(standard);
-  const sec = normalize(section).toUpperCase();
-
-  const match = std.match(/^grade\s+(.+)$/i);
-  const cleanStd = match ? `G${match[1].trim()}` : std;
-
-  const safeStd = cleanStd.replace(/[^a-zA-Z0-9-]/g, "");
-  return `${safeStd}-${sec}`;
-};
 
 export const createClassSectionService = async (user, data = {}) => {
   assertSchoolAdmin(user);
@@ -66,7 +47,7 @@ export const createClassSectionService = async (user, data = {}) => {
   };
 
   if (payload.classTeacher_id) {
-    await validateClassTeacher(user.school_id, payload.classTeacher_id);
+    await validateClassTeacher(StaffProfile, user.school_id, payload.classTeacher_id);
   }
 
   if (!payload.academicYear) throw new Error("academicYear is required");
@@ -100,14 +81,7 @@ export const updateClassSectionService = async (user, classSectionId, data = {})
     throw new Error("Invalid classSection id");
   }
 
-  const classSection = await ClassSection.findOne({
-    _id: classSectionId,
-    school_id: user.school_id,
-  });
-
-  if (!classSection) {
-    throw new Error("Class section not found");
-  }
+  const classSection = await getClassSectionGeneric(ClassSection, user.school_id, classSectionId);
 
   const allowed = {
     classTeacher_id: data.classTeacher_id !== undefined ? data.classTeacher_id : undefined,
@@ -117,7 +91,7 @@ export const updateClassSectionService = async (user, classSectionId, data = {})
   };
 
   if (allowed.classTeacher_id !== undefined) {
-    await validateClassTeacher(user.school_id, allowed.classTeacher_id);
+    await validateClassTeacher(StaffProfile, user.school_id, allowed.classTeacher_id);
   }
 
   if (allowed.capacity !== undefined && Number.isNaN(allowed.capacity)) {
@@ -179,4 +153,108 @@ export const getOneClassSectionService = async (user, classSectionId) => {
   }
 
   return classSection;
+};
+
+export const getMyClassIntroService = async (user, { childId = null } = {}) => {
+  if (!["student", "parent"].includes(user.role)) {
+    throw new Error("Only student or parent can access class intro");
+  }
+
+  const { classSection } = await resolveStudentPortalContextService(user, { childId });
+
+  const freshClassSection = await ClassSection.findOne({
+    _id: classSection._id,
+    school_id: user.school_id,
+  })
+    .populate({
+      path: "classTeacher_id",
+      select: "designation qualification experienceYears profile_highlight subjects phone alternatePhone user_id",
+      populate: {
+        path: "user_id",
+        select: "name email role profile_avatar status",
+      },
+    });
+
+  if (!freshClassSection) {
+    throw new Error("Class section not found");
+  }
+
+  const assignments = await ClassSubjectAssignment.find({
+    school_id: user.school_id,
+    status: "active",
+    class_section_ids: freshClassSection._id,
+  })
+    .populate({
+      path: "subject_id",
+      select: "name code status",
+    })
+    .populate({
+      path: "staff_id",
+      select: "designation qualification experienceYears profile_highlight phone alternatePhone subjects verificationStatus employeeStatus user_id",
+      populate: {
+        path: "user_id",
+        select: "name email role profile_avatar status",
+      },
+    });
+
+  const classTeacher = freshClassSection.classTeacher_id
+    ? {
+        staff_profile_id: freshClassSection.classTeacher_id._id,
+        user_id: freshClassSection.classTeacher_id.user_id?._id || freshClassSection.classTeacher_id.user_id,
+        name: freshClassSection.classTeacher_id.user_id?.name || null,
+        email: freshClassSection.classTeacher_id.user_id?.email || null,
+        designation: freshClassSection.classTeacher_id.designation || null,
+        qualification: freshClassSection.classTeacher_id.qualification || null,
+        experienceYears: freshClassSection.classTeacher_id.experienceYears || null,
+        profile_highlight: freshClassSection.classTeacher_id.profile_highlight || null,
+      }
+    : {
+        name: "To be assigned",
+        designation: null,
+        qualification: null,
+        experienceYears: null,
+        profile_highlight: null,
+      };
+
+  const subjects = assignments
+    .map((assignment) => ({
+      subject: assignment.subject_id
+        ? {
+            id: assignment.subject_id._id,
+            name: assignment.subject_id.name,
+            code: assignment.subject_id.code,
+          }
+        : null,
+      teacher: assignment.staff_id && assignment.staff_id.user_id
+        ? {
+            staff_profile_id: assignment.staff_id._id,
+            user_id: assignment.staff_id.user_id._id,
+            name: assignment.staff_id.user_id.name,
+            email: assignment.staff_id.user_id.email,
+            designation: assignment.staff_id.designation || null,
+            qualification: assignment.staff_id.qualification || null,
+            profile_highlight: assignment.staff_id.profile_highlight || null,
+          }
+        : {
+            name: "To be assigned",
+            designation: null,
+            qualification: null,
+            profile_highlight: null,
+          },
+      assignment_id: assignment._id,
+      class_section_ids: assignment.class_section_ids || [],
+    }))
+    .sort((a, b) => String(a.subject?.name || "").localeCompare(String(b.subject?.name || "")));
+
+  return {
+    classSection: {
+      id: freshClassSection._id,
+      academicYear: freshClassSection.academicYear,
+      standard: freshClassSection.standard,
+      section: freshClassSection.section,
+      classCode: freshClassSection.classCode,
+    },
+    classTeacher,
+    subjects,
+  };
 };

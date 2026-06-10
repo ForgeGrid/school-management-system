@@ -2,71 +2,24 @@ import mongoose from "mongoose";
 import { BusRoute } from "../models/transport/busRoute.model.js";
 import { TransportFeeStructure } from "../models/fees/transportFeeStructure.model.js";
 
+import {
+  assertAdminOnly as assertSchoolAdmin,
+} from "../utils/auth.helper.js";
+import {
+  normalizeList as normalizeStops,
+} from "../utils/format.helper.js";
+import {
+  normalizeBuses,
+} from "../utils/transport.helper.js";
+import {
+  buildFilter as buildFilterGeneric,
+} from "../utils/db.helper.js";
+
 const VALID_STATUSES = ["active", "inactive", "archived"];
 
-const assertSchoolAdmin = (user) => {
-  if (!user || user.role !== "school_admin") {
-    throw new Error("Only school admin can manage bus routes");
-  }
-  if (!user.school_id) {
-    throw new Error("User is not associated with any school");
-  }
-};
-
-
-const normalizeStops = (stops = []) => {
-  if (!Array.isArray(stops)) {
-    throw new Error("stops must be an array");
-  }
-
-  return stops
-    .filter(Boolean)
-    .map((s) => String(s).trim())
-    .filter(Boolean);
-};
-
-const normalizeBuses = (buses = []) => {
-  if (!Array.isArray(buses)) {
-    throw new Error("buses must be an array");
-  }
-
-  const normalized = buses.map((item, index) => {
-    if (item?.busNo === undefined || item?.busNo === null) {
-      throw new Error(`buses[${index}].busNo is required`);
-    }
-    if (!item?.plateNumber) {
-      throw new Error(`buses[${index}].plateNumber is required`);
-    }
-
-    return {
-      busNo: Number(item.busNo),
-      plateNumber: String(item.plateNumber).trim().toUpperCase(),
-    };
-  });
-
-  const seenBusNo = new Set();
-  const seenPlate = new Set();
-
-  for (const b of normalized) {
-    if (seenBusNo.has(b.busNo)) {
-      throw new Error(`Duplicate busNo found: ${b.busNo}`);
-    }
-    if (seenPlate.has(b.plateNumber)) {
-      throw new Error(`Duplicate plateNumber found: ${b.plateNumber}`);
-    }
-    seenBusNo.add(b.busNo);
-    seenPlate.add(b.plateNumber);
-  }
-
-  return normalized;
-};
 
 const buildFilter = (schoolId, query = {}) => {
-  const filter = { school_id: schoolId };
-
-  if (query.status && VALID_STATUSES.includes(query.status)) {
-    filter.status = query.status;
-  }
+  const filter = buildFilterGeneric(schoolId, query, ["status"]);
 
   if (query.routeName) {
     filter.routeName = { $regex: String(query.routeName).trim(), $options: "i" };
@@ -345,11 +298,11 @@ export const addStopToRouteService = async (user, routeId, stopName) => {
 
   const route = await BusRoute.findOneAndUpdate(
     { _id: routeId, school_id: user.school_id },
-    { 
+    {
       $addToSet: { stops: normalizedStop },
       $set: { updatedBy: user.id }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!route) {
@@ -393,15 +346,15 @@ export const updateStopInRouteService = async (user, routeId, oldStopName, newSt
 
 
   const route = await BusRoute.findOneAndUpdate(
-    { 
-      _id: routeId, 
-      school_id: user.school_id, 
-      stops: normalizedOld 
+    {
+      _id: routeId,
+      school_id: user.school_id,
+      stops: normalizedOld
     },
-    { 
-      $set: { "stops.$": normalizedNew, updatedBy: user.id } 
+    {
+      $set: { "stops.$": normalizedNew, updatedBy: user.id }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!route) {
@@ -428,11 +381,11 @@ export const removeStopFromRouteService = async (user, routeId, stopName) => {
 
   const route = await BusRoute.findOneAndUpdate(
     { _id: routeId, school_id: user.school_id },
-    { 
+    {
       $pull: { stops: normalizedStop },
       $set: { updatedBy: user.id }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!route) {

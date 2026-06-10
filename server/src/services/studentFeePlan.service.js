@@ -3,15 +3,17 @@ import { AcademicFeeStructure } from "../models/fees/academicFeeStructure.model.
 import { TransportFeeStructure } from "../models/fees/transportFeeStructure.model.js";
 import { StudentProfile } from "../models/student/student.model.js";
 
-const calculateAcademicTotal = (feeHeads) => {
+import { resolveStudentPortalContextService } from "../services/studentEnrollment.service.js";
+
+export const calculateAcademicTotal = (feeHeads) => {
   return feeHeads.reduce((sum, item) => sum + item.amount, 0);
 };
 
-const calculateDiscountTotal = (discounts = []) => {
+export const calculateDiscountTotal = (discounts = []) => {
   return discounts.reduce((sum, item) => sum + item.amount, 0);
 };
 
-const calculateAdditionalCharges = (charges = []) => {
+export const calculateAdditionalCharges = (charges = []) => {
   return charges.reduce((sum, item) => sum + item.amount, 0);
 };
 
@@ -19,13 +21,17 @@ const calculateAdditionalCharges = (charges = []) => {
 // Create Student Fee Plan
 // --------------------------------------
 export const createStudentFeePlanService = async (user, data) => {
+  // Protect internal paymentSummary field
+  delete data.paymentSummary;
+
   if (user.role !== "school_admin") {
     throw new Error("Only school admin can create fee plans");
   }
 
   const existing = await StudentFeePlan.findOne({
     student_id: data.student_id,
-    academicYear: data.academicYear
+    academicYear: data.academicYear,
+    school_id: user.school_id
   });
 
   if (existing) {
@@ -42,12 +48,17 @@ export const createStudentFeePlanService = async (user, data) => {
     throw new Error("Unauthorized student access");
   }
 
-  const academicStructure = await AcademicFeeStructure.findById(
-    data.academicFeeStructure_id
-  );
-
+  const academicStructure = await AcademicFeeStructure.findOne({
+    _id: data.academicFeeStructure_id,
+    school_id: user.school_id,
+  });
   if (!academicStructure) {
-    throw new Error("Academic fee structure not found");
+    throw new Error("Academic fee structure not found for this school");
+  }
+
+  // Security check: ensure fee structure grade matches student's requested grade
+  if (student.requestedGrade && academicStructure.standard !== student.requestedGrade) {
+    throw new Error(`Fee structure grade (${academicStructure.standard}) does not match student's requested grade (${student.requestedGrade})`);
   }
 
   let transportStructure = null;
@@ -59,12 +70,13 @@ export const createStudentFeePlanService = async (user, data) => {
       throw new Error("Transport fee structure and route are required for this student");
     }
 
-    transportStructure = await TransportFeeStructure.findById(
-      data.transportFeeStructure_id
-    );
+    const transportStructure = await TransportFeeStructure.findOne({
+      _id: data.transportFeeStructure_id,
+      school_id: user.school_id,
+    });
 
     if (!transportStructure) {
-      throw new Error("Transport fee structure not found");
+      throw new Error("Transport fee structure not found for this school");
     }
 
     if (transportStructure.route_id.toString() !== data.currentRoute_id.toString()) {
@@ -125,6 +137,9 @@ export const updateStudentFeePlanService = async (
   user,
   data
 ) => {
+  // Protect internal paymentSummary field
+  delete data.paymentSummary;
+
   const plan = await StudentFeePlan.findById(planId);
 
   if (!plan) {
@@ -151,9 +166,13 @@ export const updateStudentFeePlanService = async (
         throw new Error("Both transport structure and route are required");
       }
 
-      const transportStructure = await TransportFeeStructure.findById(nextStructureId);
+      const transportStructure = await TransportFeeStructure.findOne({
+        _id: nextStructureId,
+        school_id: user.school_id,
+      });
+      
       if (!transportStructure) {
-        throw new Error("Transport fee structure not found");
+        throw new Error("Transport fee structure not found for this school");
       }
 
       if (transportStructure.route_id.toString() !== nextRouteId.toString()) {
@@ -240,4 +259,99 @@ export const cancelStudentFeePlanService = async (
   await plan.save();
 
   return plan;
+};
+
+export const getMyFeeDetailsService = async (user, { academicYear = null, childId = null } = {}) => {
+  if (!["student", "parent"].includes(user.role)) {
+    throw new Error("Only student or parent can access fee details");
+  }
+
+  if (!user.school_id) {
+    throw new Error("User is not linked to any school");
+  }
+
+  const { studentProfile, activeEnrollment } = await resolveStudentPortalContextService(user, { childId });
+
+  const targetAcademicYear = String(academicYear || activeEnrollment.academicYear || "").trim();
+  if (!targetAcademicYear) {
+    throw new Error("academicYear is required");
+  }
+
+  const feePlan = await StudentFeePlan.findOne({
+    school_id: user.school_id,
+    student_id: studentProfile._id,
+    academicYear: targetAcademicYear,
+  })
+    .populate("student_id", "student_name admission_no")
+    .populate("academicFeeStructure_id")
+    .populate("transportFeeStructure_id")
+    .populate("currentRoute_id");
+
+  if (!feePlan) {
+    throw new Error("Fee plan not found for the selected student and academic year");
+  }
+
+  const paymentSummary = feePlan.paymentSummary || {};
+  const academicFeeStructure = feePlan.academicFeeStructure_id || null;
+  const transportFeeStructure = feePlan.transportFeeStructure_id || null;
+  const route = feePlan.currentRoute_id || null;
+
+  return {
+    feePlan: {
+      id: feePlan._id,
+      academicYear: feePlan.academicYear,
+      status: feePlan.status,
+      finalPayableAmount: feePlan.finalPayableAmount,
+      totalAcademicFee: feePlan.totalAcademicFee,
+      totalTransportFee: feePlan.totalTransportFee,
+      totalDiscount: feePlan.totalDiscount,
+      totalAdditionalCharges: feePlan.totalAdditionalCharges,
+    },
+    paymentSummary: {
+      paidAmount: paymentSummary.paidAmount || 0,
+      pendingAmount: paymentSummary.pendingAmount || 0,
+      paymentStatus: paymentSummary.paymentStatus || "unpaid",
+      lastPaymentAt: paymentSummary.lastPaymentAt || null,
+      lastReceipt_id: paymentSummary.lastReceipt_id || null,
+      paymentUpdatedAt: paymentSummary.paymentUpdatedAt || null,
+    },
+    feeBreakdown: {
+      academic: academicFeeStructure
+        ? {
+            id: academicFeeStructure._id,
+            academicYear: academicFeeStructure.academicYear,
+            standard: academicFeeStructure.standard,
+            feeHeads: academicFeeStructure.feeHeads || [],
+          }
+        : null,
+      transport: transportFeeStructure
+        ? {
+            id: transportFeeStructure._id,
+            route_id: transportFeeStructure.route_id,
+            pickupPoint: transportFeeStructure.pickupPoint,
+            dropPoint: transportFeeStructure.dropPoint,
+            amount: transportFeeStructure.amount,
+            frequency: transportFeeStructure.frequency,
+            route: route
+              ? {
+                  id: route._id,
+                  routeName: route.routeName,
+                  startPoint: route.startPoint,
+                  endPoint: route.endPoint,
+                  stops: route.stops || [],
+                  distanceKm: route.distanceKm,
+                  status: route.status,
+                }
+              : null,
+          }
+        : null,
+      discounts: feePlan.discounts || [],
+      additionalCharges: feePlan.additionalCharges || [],
+    },
+    student: {
+      id: studentProfile._id,
+      student_name: studentProfile.student_name,
+      admission_no: studentProfile.admission_no,
+    },
+  };
 };

@@ -7,6 +7,16 @@ import { StudentProfile } from "../models/student/student.model.js";
 import { User } from "../models/auth/user.model.js";
 import { notify } from "../utils/notificationHelper.js";
 import { Notification } from "../models/notification/notification.model.js";
+import {
+  getIstStartOfToday,
+  getDaysLeft,
+} from "../utils/date.helper.js";
+import {
+  formatCurrencyINR,
+  formatINR,
+  formatDateShort,
+  replacePlaceholders,
+} from "../utils/format.helper.js";
 
 export const REMINDER_TARGET_TYPES = new Set([
   "all_students",
@@ -41,46 +51,6 @@ export const normalizeOffsets = (offsets = [7, 3, 1, 0]) => {
   return [...new Set(cleaned)].sort((a, b) => b - a);
 };
 
-export const getIstStartOfToday = (date = new Date()) => {
-  // Use Intl to get the date in Asia/Kolkata timezone
-  const istStr = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).format(date);
-
-  const [m, d, y] = istStr.split("/");
-  const today = new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0);
-  return today;
-};
-
-export const getDaysLeft = (dueDate, today = getIstStartOfToday()) => {
-  const d = new Date(dueDate);
-  d.setHours(0, 0, 0, 0);
-  return Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-};
-
-export const formatCurrencyINR = (value) => {
-  const amount = Number(value || 0);
-  return `₹${new Intl.NumberFormat("en-IN", {
-    maximumFractionDigits: 0,
-  }).format(amount)}`;
-};
-
-export const formatINR = (value) => {
-  const amount = Number(value || 0);
-  return new Intl.NumberFormat("en-IN", {
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-export const formatDateShort = (value) => {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-IN");
-};
-
 export const getFeeTypeLabel = (feeType) => {
   switch (feeType) {
     case "academic":
@@ -99,14 +69,6 @@ export const buildFeePaymentAudience = (student_id) => ({
 
 export const buildSenderId = (receipt) => {
   return receipt?.receivedBy || receipt?.createdBy || receipt?.reversal?.reversedBy || receipt?.updatedBy || null;
-};
-
-export const replacePlaceholders = (template, values = {}) => {
-  const source = String(template || "");
-  return source.replace(/\{(\w+)\}/g, (_, key) => {
-    const value = values[key];
-    return value === undefined || value === null ? "" : String(value);
-  }).replace(/\s+/g, " ").trim();
 };
 
 export const normalizeReminderMessageConfig = (messageConfig = {}) => {
@@ -399,6 +361,10 @@ export const resolveReminderAudienceService = async (config) => {
       feePlan,
       student,
     });
+  }
+
+  if (!audiencePlans.length) {
+    throw new Error("No active enrollments found for the selected target. Students must be enrolled before fee reminders can be sent.");
   }
 
   return {

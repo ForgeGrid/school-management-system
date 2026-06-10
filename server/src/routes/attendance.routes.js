@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole } from "../middleware/school_role.middleware.js";
+import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
 import { requireActiveSchool } from "../middleware/school_auth.middleware.js";
 import {
   getClassAttendanceRoster,
@@ -19,7 +19,7 @@ const router = express.Router();
 /**
  * All attendance routes require a valid session and an active school association.
  */
-router.use(authMiddleware, requireActiveSchool);
+router.use(authMiddleware, requireActiveSchool, requireVerifiedStaff);
 
 /**
  * 1) Load students of a particular class to display for marking attendance

@@ -60,3 +60,4 @@ export const generateEmployeeId = async (schoolId) => {
     throw new Error("Failed to generate employee ID");
   }
 };
+

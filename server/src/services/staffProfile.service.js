@@ -1,19 +1,23 @@
 import { StaffProfile } from "../models/staff/teacher.model.js";
 import { User } from "../models/auth/user.model.js";
 import { generateEmployeeId } from "../utils/helper.js";
+import { normalizeComparableList } from "../utils/format.helper.js";
+
+import {
+  assertStaffRole,
+  assertAdminOnly,
+  assertOwnSchool,
+} from "../utils/auth.helper.js";
+import {
+  getByIdOrThrow as getByIdOrThrowGeneric,
+} from "../utils/db.helper.js";
 
 // --------------------------------------
 // Create Profile
 // --------------------------------------
 
 export const createStaffProfileService = async (user, data) => {
-  if (!["school_admin", "teacher", "staff"].includes(user.role)) {
-    throw new Error("Invalid role for profile creation");
-  }
-
-  if (!user.school_id) {
-    throw new Error("User not associated with any school");
-  }
+  assertStaffRole(user);
 
   // Prevent duplicate profile
   const existing = await StaffProfile.findOne({ user_id: user.id });
@@ -25,6 +29,11 @@ export const createStaffProfileService = async (user, data) => {
   // Generate employee ID
   const employeeId = await generateEmployeeId(user.school_id);
 
+  if (data.subjects) {
+    data.subjects = normalizeComparableList(data.subjects);
+  }
+
+  // profile_highlight is included via ...data
   const profile = await StaffProfile.create({
     ...data,
     user_id: user.id,
@@ -58,6 +67,10 @@ export const updateStaffProfileService = async (user, data) => {
   delete data.resignedAt;
   delete data.resignationReason;
   delete data.rehiredAt;
+
+  if (data.subjects) {
+    data.subjects = normalizeComparableList(data.subjects);
+  }
 
   // Update fields dynamically
   Object.assign(profile, data);
@@ -108,14 +121,8 @@ export const getAllTeachersService = async (schoolId) => {
 // Get One Teacher
 // --------------------------------------
 export const getOneTeacherService = async (profileId, schoolId) => {
-  const profile = await StaffProfile.findById(profileId)
-    .populate("user_id", "name email role");
-
-  if (!profile || profile.school_id.toString() !== schoolId.toString()) {
-    throw new Error("Profile not found in your school");
-  }
-
-  return profile;
+  const profile = await getByIdOrThrowGeneric(StaffProfile, schoolId, profileId, "Staff profile");
+  return profile.populate("user_id", "name email role");
 };
 
 
@@ -123,9 +130,7 @@ export const getOneTeacherService = async (profileId, schoolId) => {
 // Approve Staff
 // --------------------------------------
 export const approveStaffService = async (profileId, adminUser) => {
-  if (adminUser.role !== "school_admin") {
-    throw new Error("Only school admin can approve staff");
-  }
+  assertAdminOnly(adminUser);
 
   const profile = await StaffProfile.findOne({
     _id: profileId,
@@ -137,17 +142,14 @@ export const approveStaffService = async (profileId, adminUser) => {
     throw new Error("Profile not found or already processed");
   }
 
-  if (profile.school_id.toString() !== adminUser.school_id.toString()) {
-    throw new Error("Unauthorized access");
-  }
+  assertOwnSchool(profile, adminUser);
 
-  // Rehire flow
-  if (
-    profile.employeeStatus === "resigned" &&
-    profile.verificationStatus === "pending"
-  ) {
+  // Employment transition
+  if (!profile.employeeStatus || profile.employeeStatus === "resigned") {
     profile.employeeStatus = "employed";
-    profile.rehiredAt = new Date();
+    if (profile.employeeStatus === "resigned") {
+      profile.rehiredAt = new Date();
+    }
   }
 
   profile.verificationStatus = "verified";
@@ -169,19 +171,9 @@ export const rejectStaffService = async (profileId, reason, adminUser) => {
     throw new Error("Rejection reason is required");
   }
 
-  if (adminUser.role !== "school_admin") {
-    throw new Error("Only school admin can reject staff");
-  }
+  assertAdminOnly(adminUser);
 
-  const profile = await StaffProfile.findById(profileId);
-
-  if (!profile) {
-    throw new Error("Profile not found");
-  }
-
-  if (profile.school_id.toString() !== adminUser.school_id.toString()) {
-    throw new Error("Unauthorized access");
-  }
+  const profile = await getByIdOrThrowGeneric(StaffProfile, adminUser.school_id, profileId, "Staff profile");
 
   profile.verificationStatus = "rejected";
   profile.rejection_reason = reason;
@@ -195,9 +187,7 @@ export const rejectStaffService = async (profileId, reason, adminUser) => {
 
 // Resign staff
 export const resignStaffService = async (profileId, reason, adminUser) => {
-  if (adminUser.role !== "school_admin") {
-    throw new Error("Only school admin can resign staff");
-  }
+  assertAdminOnly(adminUser);
 
   const profile = await StaffProfile.findOne({
     _id: profileId,
@@ -209,9 +199,7 @@ export const resignStaffService = async (profileId, reason, adminUser) => {
     throw new Error("Staff profile not found");
   }
 
-  if (profile.school_id.toString() !== adminUser.school_id.toString()) {
-    throw new Error("Unauthorized access");
-  }
+  assertOwnSchool(profile, adminUser);
 
   profile.employeeStatus = "resigned";
   profile.resignedAt = new Date();
@@ -240,7 +228,7 @@ export const requestRejoinStaffService = async (profileId, user) => {
 
   if (!["resigned", "terminated"].includes(profile.employeeStatus)) {
     throw new Error("Only resigned or terminated staff can request rejoin");
-  }``
+  }
 
   profile.verificationStatus = "pending";
   await profile.save();

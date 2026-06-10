@@ -38,6 +38,12 @@ const notificationSchema = new mongoose.Schema(
         "timetable",
         "chat_notice",
         "emergency",
+        "ticket_created_admin",
+        "ticket_created_user",
+        "ticket_assigned",
+        "ticket_in_progress",
+        "ticket_resolved",
+        "ticket_reply",
         "custom",
       ],
       default: "custom",
@@ -46,7 +52,7 @@ const notificationSchema = new mongoose.Schema(
 
     scope: {
       type: String,
-      enum: ["all", "roles", "users", "students", "class_sections", "custom"],
+      enum: ["all", "roles", "users", "students", "admins", "class_sections", "custom"],
       required: true,
       index: true,
     },
@@ -78,7 +84,7 @@ const notificationSchema = new mongoose.Schema(
 
     relatedModule: {
       type: String,
-      enum: ["attendance", "fees", "transport", "student", "staff", "chat", "timetable", "general"],
+      enum: ["attendance", "fees", "transport", "student", "staff", "chat", "timetable", "helpdesk", "general"],
       default: "general",
       index: true,
     },

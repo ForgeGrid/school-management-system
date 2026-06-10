@@ -9,8 +9,6 @@ import {
   validateAndNormalizeReminderTargets,
   REMINDER_MODES,
   FEE_TYPES,
-  getIstStartOfToday,
-  getDaysLeft,
   resolveReminderAudienceService,
   buildReminderMessageService,
   resolveReminderSenderId,
@@ -18,6 +16,10 @@ import {
   generateReminderStage,
   checkFeeReminderDuplicate,
 } from "../utils/feeReminderHelper.js";
+import {
+  getIstStartOfToday,
+  getDaysLeft,
+} from "../utils/date.helper.js";
 import { sendFeeReminderNotificationService } from "./notification.service.js";
 
 const assertReminderAdmin = (user) => {
