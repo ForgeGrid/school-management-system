@@ -47,13 +47,16 @@ export const getOneTransportFeeStructure = createAsyncThunk(
 );
 
 // GET /active  — query: { academicYear, route_id, dropPoint? }
+// A 404 means no fee is configured for that stop yet — treat as null, not an error.
 export const getActiveTransportFeeStructure = createAsyncThunk(
   "transportFeeStructure/getActive",
   async (params = {}, { rejectWithValue }) => {
     try {
       const { data } = await api.get("/active", { params });
-      return data.structure;
+      return data.structure ?? null;
     } catch (err) {
+      // 404 = no fee configured yet → not a hard error, resolve with null
+      if (err.response?.status === 404) return null;
       return rejectWithValue(err.response?.data?.message || "Failed to fetch active transport fee structure.");
     }
   }
@@ -114,19 +117,19 @@ export const bulkUpdateTransportFeeStructures = createAsyncThunk(
 
 
 const initialState = {
-  structures: [],       
-  pagination: null,    
-  selected: null,     
-  active: null,    
-  
+  structures: [],
+  pagination: null,
+  selected: null,
+  active: null,
+
   bulkSummary: null,
 
   modal: {
-    type: null,    
-    payload: null,    
+    type: null,
+    payload: null,
   },
 
-  notification: null, 
+  notification: null,
 
   loading: {
     create: false,
@@ -221,15 +224,21 @@ const transportFeeStructureSlice = createSlice({
       });
 
     // ── getActive
+    // fulfilled with null = stop has no fee configured yet (not a hard error)
     builder
-      .addCase(getActiveTransportFeeStructure.pending, pending("getActive"))
+      .addCase(getActiveTransportFeeStructure.pending, (state) => {
+        state.loading.getActive = true;
+        state.active = null; // clear stale value while fetching
+      })
       .addCase(getActiveTransportFeeStructure.fulfilled, (state, { payload }) => {
         state.loading.getActive = false;
-        state.active = payload;
+        state.active = payload; // null if not found, object if found
       })
-      .addCase(getActiveTransportFeeStructure.rejected, (state, { payload }) => {
+      .addCase(getActiveTransportFeeStructure.rejected, (state) => {
+        // Only reaches here for non-404 errors (network, auth, etc.)
         state.loading.getActive = false;
-        state.notification = { type: "error", message: payload };
+        state.active = null;
+        // Intentionally no error notification — don't spam the user
       });
 
     // ── update 
