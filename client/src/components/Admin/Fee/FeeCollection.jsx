@@ -1,211 +1,485 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
-  Search, ChevronDown, Download, Plus, ArrowUpDown,
-  Users, AlertCircle, Clock, DollarSign, Eye, Edit2, Trash2
+  Search, ChevronDown, Plus, Eye, Edit2, MoreVertical,
+  Calendar, BarChart2, AlertTriangle, Filter,
+  ChevronLeft, ChevronRight, GraduationCap, Clock, FileText, FileEdit, Archive
 } from "lucide-react";
-
-const FontStyle = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-    .fee-coll * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
-  `}</style>
-);
-
-const RECORDS = [
-  { id: "FEE-001", student: "Aarav Sharma",  class: "Grade 10-A", rollNo: "1001", feeType: "Tuition Fee",  amount: 12000, paid: 12000, balance: 0,     dueDate: "2025-07-01", status: "Paid"    },
-  { id: "FEE-002", student: "Diya Patel",    class: "Grade 12-B", rollNo: "1205", feeType: "Tuition Fee",  amount: 14000, paid: 7000,  balance: 7000,  dueDate: "2025-07-01", status: "Partial" },
-  { id: "FEE-003", student: "Kabir Singh",   class: "Grade 9-C",  rollNo: "0912", feeType: "Exam Fee",     amount: 3000,  paid: 0,     balance: 3000,  dueDate: "2025-06-25", status: "Overdue" },
-  { id: "FEE-004", student: "Ananya Rao",    class: "Grade 11-A", rollNo: "1103", feeType: "Lab Fee",      amount: 5000,  paid: 5000,  balance: 0,     dueDate: "2025-07-05", status: "Paid"    },
-  { id: "FEE-005", student: "Rohan Gupta",   class: "Grade 10-B", rollNo: "1014", feeType: "Tuition Fee",  amount: 12000, paid: 0,     balance: 12000, dueDate: "2025-08-01", status: "Pending" },
-  { id: "FEE-006", student: "Meera Reddy",   class: "Grade 8-A",  rollNo: "0803", feeType: "Sports Fee",   amount: 2000,  paid: 2000,  balance: 0,     dueDate: "2025-07-10", status: "Paid"    },
-  { id: "FEE-007", student: "Arjun Nair",    class: "Grade 12-A", rollNo: "1201", feeType: "Tuition Fee",  amount: 14000, paid: 0,     balance: 14000, dueDate: "2025-06-20", status: "Overdue" },
-  { id: "FEE-008", student: "Priya Verma",   class: "Grade 9-A",  rollNo: "0901", feeType: "Library Fee",  amount: 1500,  paid: 1500,  balance: 0,     dueDate: "2025-07-15", status: "Paid"    },
-  { id: "FEE-009", student: "Dev Malhotra",  class: "Grade 11-B", rollNo: "1109", feeType: "Tuition Fee",  amount: 13000, paid: 6500,  balance: 6500,  dueDate: "2025-07-01", status: "Partial" },
-  { id: "FEE-010", student: "Sana Khan",     class: "Grade 10-C", rollNo: "1023", feeType: "Exam Fee",     amount: 3000,  paid: 3000,  balance: 0,     dueDate: "2025-07-20", status: "Paid"    },
-];
+import FeeCreate from "./FeeCreate";
+import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getAcademicFeeStructures,
+  activateAcademicFeeStructure,
+  archiveAcademicFeeStructure,
+  setFilters,
+  clearError,
+  selectStructures,
+  selectTotalCount,
+  selectLoading,
+  selectError,
+  selectFilters,
+} from "../../../redux/slice/academicFeeStructureSlice";
+import { FontLoader } from "../../../fonts/plusJakartaSans";
 
 const SC = {
-  Paid:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  Partial: { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-500"   },
-  Pending: { bg: "bg-slate-100",  text: "text-slate-600",   border: "border-slate-200",   dot: "bg-slate-400"   },
-  Overdue: { bg: "bg-red-50",     text: "text-red-700",     border: "border-red-200",     dot: "bg-red-500"     },
+  active:   { badge: "bg-green-50 border border-green-200 text-green-600",  dot: "bg-green-400" },
+  draft:    { badge: "bg-amber-50 border border-amber-200 text-amber-600",  dot: "bg-amber-400" },
+  archived: { badge: "bg-slate-50 border border-slate-200 text-slate-500",  dot: "bg-slate-400" },
 };
 
-export default function FeeCollection() {
-  const [search, setSearch]       = useState("");
-  const [statusFilter, setStatus] = useState("All Status");
-  const [classFilter, setClass]   = useState("All Classes");
-  const [sortBy, setSort]         = useState("Due Date");
-  const [year, setYear]           = useState("2025 - 2026");
+// ── Select wrapper ──────────────────────────────────────────────────────────
+const SelWrap = ({ label, value, onChange, opts }) => (
+  <div className="flex flex-col gap-0.5">
+    <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide">{label}</span>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="py-[7px] pl-2.5 pr-7 border border-slate-200 rounded-lg text-[12.5px] font-semibold text-slate-700 bg-white cursor-pointer"
+      >
+        {opts.map(o => <option key={o}>{o}</option>)}
+      </select>
+      <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+    </div>
+  </div>
+);
 
-  const totalCollected = RECORDS.reduce((s, r) => s + r.paid, 0);
-  const totalPending   = RECORDS.reduce((s, r) => s + r.balance, 0);
-  const paidCount      = RECORDS.filter(r => r.status === "Paid").length;
-  const overdueCount   = RECORDS.filter(r => r.status === "Overdue").length;
+// ── Main component ──────────────────────────────────────────────────────────
+export default function AcademicFeeStructures() {
+  const dispatch = useDispatch();
 
-  const filtered = useMemo(() => RECORDS
-    .filter(r => {
-      const q = search.toLowerCase();
-      return (r.student.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.rollNo.includes(q))
-        && (statusFilter === "All Status" || r.status === statusFilter)
-        && (classFilter  === "All Classes" || r.class.includes(classFilter));
-    })
-    .sort((a, b) => {
-      if (sortBy === "Due Date") return new Date(a.dueDate) - new Date(b.dueDate);
-      if (sortBy === "Amount")   return b.amount - a.amount;
-      if (sortBy === "Name")     return a.student.localeCompare(b.student);
-      return 0;
-    }), [search, statusFilter, classFilter, sortBy]);
+  // Redux state
+  const structures  = useSelector(selectStructures);
+  const totalCount  = useSelector(selectTotalCount);
+  const loading     = useSelector(selectLoading);
+  const error       = useSelector(selectError);
+  const filters     = useSelector(selectFilters);
 
-  const stats = [
-    { label: "Total Collected", value: `₹${totalCollected.toLocaleString("en-IN")}`, sub: `${paidCount} students paid`,            icon: DollarSign,  ibg: "bg-emerald-100", it: "text-emerald-600", vt: "text-emerald-700" },
-    { label: "Pending Balance", value: `₹${totalPending.toLocaleString("en-IN")}`,   sub: `${RECORDS.length - paidCount} pending`, icon: Clock,       ibg: "bg-amber-100",   it: "text-amber-600",   vt: "text-amber-700"   },
-    { label: "Overdue Records", value: overdueCount,                                  sub: "Past due date",                          icon: AlertCircle, ibg: "bg-red-100",     it: "text-red-500",     vt: "text-red-600"     },
-    { label: "Total Students",  value: RECORDS.length,                                sub: `Academic year ${year}`,                  icon: Users,       ibg: "bg-blue-100",    it: "text-blue-600",    vt: "text-blue-700"    },
+  // Local UI state (no data, purely view concerns)
+  const [view, setView]                 = useState("list");
+  const [selectedStructure, setSelectedStructure] = useState(null);
+  const [openMenuId, setOpenMenuId]     = useState(null);
+
+  const [search,  setSearch]  = useState("");
+  const [yearF,   setYearF]   = useState("All Years");
+  const [gradeF,  setGradeF]  = useState("All Standards");
+  const [statF,   setStatF]   = useState("All Status");
+  const [sortBy,  setSortBy]  = useState("Last Updated");
+  const [acYear,  setAcYear]  = useState("2025 - 2026");
+  const [page,    setPage]    = useState(1);
+  const PER = 8;
+
+  // ── Fetch on mount and when server-side filters change ──
+  const fetchStructures = useCallback(() => {
+    const params = {};
+    if (yearF  !== "All Years")     params.academicYear = yearF;
+    if (gradeF !== "All Standards") params.standard     = gradeF;
+    if (statF  !== "All Status")    params.status       = statF.toLowerCase();
+    params.page  = page;
+    params.limit = PER;
+    dispatch(getAcademicFeeStructures(params));
+  }, [dispatch, yearF, gradeF, statF, page]);
+
+  useEffect(() => {
+    fetchStructures();
+  }, [fetchStructures]);
+
+  // Show redux errors as toasts
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
+
+  // ── Derived counts from current page data ──
+  const activeN   = structures.filter(r => r.status === "active").length;
+  const draftN    = structures.filter(r => r.status === "draft").length;
+  const archivedN = structures.filter(r => r.status === "archived").length;
+
+  // ── Client-side search filter (on top of server results) ──
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    if (!q) return structures;
+    return structures.filter(r =>
+      (r.standard?.toLowerCase().includes(q) || r.academicYear?.includes(q))
+    );
+  }, [search, structures]);
+
+  const totalPg = Math.max(1, Math.ceil(totalCount / PER));
+  const paged   = filtered; // server already paginates; show all returned items
+
+  const statCards = [
+    { Icon: GraduationCap, iconBg: "bg-blue-50",   iconColor: "text-blue-600",  label: "Total Structures",    val: totalCount,  sub: "All fee structures",  subColor: "text-slate-400" },
+    { Icon: FileText,      iconBg: "bg-emerald-50", iconColor: "text-green-600", label: "Active Structures",   val: activeN,     sub: "Currently active",    subColor: "text-green-600" },
+    { Icon: FileEdit,      iconBg: "bg-amber-50",   iconColor: "text-amber-600", label: "Draft Structures",    val: draftN,      sub: "Pending activation",  subColor: "text-amber-600" },
+    { Icon: Archive,       iconBg: "bg-slate-100",  iconColor: "text-slate-500", label: "Archived Structures", val: archivedN,   sub: "Historical records",  subColor: "text-slate-400" },
   ];
+
+  const infoCards = [
+    { Icon: Calendar,      iconBg: "bg-blue-50",    iconColor: "text-blue-600",   label: "Current Academic Year",         val: acYear,      sub: null },
+    { Icon: Clock,         iconBg: "bg-violet-50",  iconColor: "text-violet-600", label: "Recently Updated",              val: structures[0]?.standard ?? "—", sub: structures[0] ? "Latest record" : null },
+    { Icon: BarChart2,     iconBg: "bg-emerald-50", iconColor: "text-green-600",  label: "Most Used Standard",            val: "Grade 10",  sub: null },
+    { Icon: AlertTriangle, iconBg: "bg-amber-50",   iconColor: "text-amber-600",  label: "Structures Pending Activation", val: String(draftN), sub: "Draft structures" },
+  ];
+
+  // ── Handlers ────────────────────────────────────────────────────────────
+
+  const handleSave = () => {
+    // After create/edit, re-fetch the list
+    fetchStructures();
+  };
+
+  const handleActivate = async (rec) => {
+    setOpenMenuId(null);
+    const res = await dispatch(activateAcademicFeeStructure(rec._id));
+    if (activateAcademicFeeStructure.fulfilled.match(res)) {
+      toast.success("Structure activated successfully");
+    }
+  };
+
+  const handleArchive = async (rec) => {
+    setOpenMenuId(null);
+    const res = await dispatch(archiveAcademicFeeStructure(rec._id));
+    if (archiveAcademicFeeStructure.fulfilled.match(res)) {
+      toast.success("Structure archived successfully");
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // ── Format helpers ───────────────────────────────────────────────────────
+
+  const formatDate = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const formatTime = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const totalAmount = (feeHeads = []) =>
+    feeHeads.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+  const mandatoryCount = (feeHeads = []) =>
+    feeHeads.filter(h => h.mandatory).length;
+
+  // ── Views ────────────────────────────────────────────────────────────────
+
+  if (view === "create" || view === "edit") {
+    return (
+      <FeeCreate
+        onBack={() => setView("list")}
+        onSave={handleSave}
+        initialData={selectedStructure}
+      />
+    );
+  }
 
   return (
     <>
-      <FontStyle />
-      <div className="fee-coll flex flex-col h-full min-h-0 gap-4 text-slate-800">
+      <FontLoader />
+      <div className="afs flex flex-col h-full min-h-0 gap-3 text-slate-800 pb-4">
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Academic Fee Collection</h1>
-            <p className="text-[12.5px] text-slate-500 font-medium mt-0.5">Manage and track all student fee payments</p>
+            <h1 className="text-[22px] font-extrabold text-slate-900 tracking-tight m-0">Academic Fee Structures</h1>
+            <p className="text-[13px] text-slate-500 font-medium mt-1 mb-0">
+              Manage and organize academic fee structures across standards and academic years.
+            </p>
           </div>
+
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="relative">
-              <select value={year} onChange={e => setYear(e.target.value)} className="pl-3 pr-8 py-2 bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[12px] rounded-xl outline-none cursor-pointer appearance-none">
-                <option>2025 - 2026</option><option>2024 - 2025</option><option>2026 - 2027</option>
+            {/* Academic Year selector */}
+            <div className="relative flex items-center">
+              <Calendar size={14} className="absolute left-3 pointer-events-none text-blue-600" />
+              <span className="absolute left-8 text-[12.5px] font-semibold text-slate-600 pointer-events-none">
+                Academic Year:
+              </span>
+              <select
+                value={acYear}
+                onChange={e => { setAcYear(e.target.value); setYearF(e.target.value); setPage(1); }}
+                className="py-2 pr-8 pl-[125px] border border-slate-300 rounded-[10px] text-[12.5px] font-bold text-slate-900 bg-white cursor-pointer appearance-none"
+              >
+                <option>2025 - 2026</option>
+                <option>2024 - 2025</option>
+                <option>2026 - 2027</option>
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-3 pointer-events-none text-slate-500" />
             </div>
-            <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 bg-white text-slate-600 text-[12.5px] font-semibold rounded-xl hover:bg-slate-50 transition-all cursor-pointer shadow-sm">
-              <Download className="w-4 h-4" /> Export
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 bg-[#0061FF] text-white text-[12.5px] font-bold rounded-xl hover:bg-blue-700 transition-all cursor-pointer shadow-md shadow-blue-500/15">
-              <Plus className="w-4 h-4" /> Add Record
+
+            {/* Create button */}
+            <button
+              onClick={() => { setSelectedStructure(null); setView("create"); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-[10px] text-[13px] font-bold border-none"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Create Fee Structure
             </button>
           </div>
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-          {stats.map(({ label, value, sub, icon: Icon, ibg, it, vt }) => (
-            <div key={label} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-4 hover:shadow-md hover:shadow-slate-100/60 transition-all">
-              <div className={`w-12 h-12 rounded-xl ${ibg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-5 h-5 ${it} stroke-[2.2]`} />
+        {/* ── Stat Cards ── */}
+        <div className="grid grid-cols-4 gap-2.5 shrink-0">
+          {statCards.map(({ Icon, iconBg, iconColor, label, val, sub, subColor }) => (
+            <div key={label} className="bg-white border border-slate-200 rounded-2xl p-6 flex items-center gap-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <div className={`w-[50px] h-[50px] rounded-[10px] ${iconBg} flex items-center justify-center shrink-0`}>
+                <Icon size={24} className={iconColor} strokeWidth={1.8} />
               </div>
-              <div className="min-w-0">
-                <div className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wide">{label}</div>
-                <div className={`text-[20px] font-extrabold leading-none mt-0.5 ${vt}`}>{value}</div>
-                <div className="text-[11px] text-slate-400 font-medium mt-1">{sub}</div>
+              <div>
+                <div className="text-[9.5px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</div>
+                <div className="text-[22px] font-extrabold text-slate-900 leading-none">{val}</div>
+                <div className={`text-[10.5px] font-semibold mt-0.5 ${subColor}`}>{sub}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <div className="relative">
-            <input type="text" placeholder="Search student, ID, roll no..." value={search} onChange={e => setSearch(e.target.value)}
-              className="pl-4 pr-10 py-2 text-[12.5px] border border-slate-200 rounded-xl outline-none focus:border-blue-300 w-60 bg-white text-slate-700 placeholder:text-slate-400 font-medium" />
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
-          {[["All Status","Paid","Partial","Pending","Overdue"], ["All Classes","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"]].map((opts, i) => (
-            <div key={i} className="relative">
-              <select value={i === 0 ? statusFilter : classFilter} onChange={e => i === 0 ? setStatus(e.target.value) : setClass(e.target.value)}
-                className="pl-3.5 pr-8 py-2 text-[12.5px] border border-slate-200 rounded-xl outline-none bg-white text-slate-600 appearance-none cursor-pointer font-semibold">
-                {opts.map(o => <option key={o}>{o}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
-          ))}
-          <div className="flex-1" />
-          <div className="flex items-center gap-2 text-[12px] text-slate-500 font-semibold">
-            <ArrowUpDown className="w-3.5 h-3.5" /> Sort:
-            <select value={sortBy} onChange={e => setSort(e.target.value)} className="border-0 outline-none bg-transparent text-[12px] font-bold text-slate-700 cursor-pointer">
-              <option>Due Date</option><option>Amount</option><option>Name</option>
-            </select>
-          </div>
-          <span className="text-[12px] text-slate-400 font-semibold">{filtered.length} records</span>
-        </div>
+   
 
-        {/* Table */}
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col">
+        {/* ── Table card ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex-1 min-h-0 flex flex-col">
+
+          {/* Toolbar */}
+          <div className="px-3.5 py-2 border-b border-slate-100 flex items-end gap-2.5 flex-wrap shrink-0">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[180px]">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by standard, academic year, or fee structure..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full py-2 pl-8 pr-3 border border-slate-200 rounded-lg text-[12px] text-slate-700 font-medium bg-white"
+              />
+            </div>
+
+            <SelWrap label="Academic Year"    value={yearF}  onChange={v => { setYearF(v);  setPage(1); }} opts={["All Years","2025 - 2026","2024 - 2025","2023 - 2024"]} />
+            <SelWrap label="Standard / Grade" value={gradeF} onChange={v => { setGradeF(v); setPage(1); }} opts={["All Standards","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"]} />
+            <SelWrap label="Status"           value={statF}  onChange={v => { setStatF(v);  setPage(1); }} opts={["All Status","Active","Draft","Archived"]} />
+            <SelWrap label="Sort By"          value={sortBy} onChange={setSortBy}                         opts={["Last Updated","Amount","Grade"]} />
+
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] text-transparent">x</span>
+              <button className="flex items-center gap-1.5 px-3 py-[7px] border border-slate-200 rounded-lg text-[12.5px] font-semibold text-slate-700 bg-white">
+                <Filter size={13} className="text-slate-500" /> Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
           <div className="overflow-y-auto flex-1">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="border-b border-slate-100 bg-slate-50/90 backdrop-blur-sm">
-                  {["Fee ID","Student","Class","Fee Type","Amount","Paid","Balance","Due Date","Status","Actions"].map((h, i) => (
-                    <th key={h} className={`px-4 py-3.5 text-[11.5px] font-bold text-slate-500 uppercase tracking-wide ${i >= 4 && i <= 6 ? "text-right" : i === 9 ? "text-right pr-5" : "text-left"}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(rec => {
-                  const sc = SC[rec.status] || SC.Pending;
-                  const initials = rec.student.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-                  return (
-                    <tr key={rec.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-4 py-3.5 text-[12px] font-bold text-slate-500">{rec.id}</td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-[11px] font-extrabold text-indigo-700 shrink-0">{initials}</div>
-                          <div>
-                            <div className="text-[13px] font-bold text-slate-800 leading-none">{rec.student}</div>
-                            <div className="text-[11px] text-slate-400 font-medium mt-0.5">#{rec.rollNo}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-[12.5px] text-slate-600 font-medium">{rec.class}</td>
-                      <td className="px-4 py-3.5"><span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[11.5px] font-semibold">{rec.feeType}</span></td>
-                      <td className="px-4 py-3.5 text-right text-[13px] font-bold text-slate-800">₹{rec.amount.toLocaleString("en-IN")}</td>
-                      <td className="px-4 py-3.5 text-right text-[13px] font-bold text-emerald-600">₹{rec.paid.toLocaleString("en-IN")}</td>
-                      <td className="px-4 py-3.5 text-right text-[13px] font-bold text-red-500">{rec.balance > 0 ? `₹${rec.balance.toLocaleString("en-IN")}` : "—"}</td>
-                      <td className="px-4 py-3.5 text-[12px] text-slate-500 font-medium">{rec.dueDate}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />{rec.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-right pr-5">
-                        <div className="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          {[Eye, Edit2, Trash2].map((Icon, i) => (
-                            <button key={i} className={`w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-400 transition-colors cursor-pointer ${i === 2 ? "hover:bg-red-50 hover:text-red-500" : "hover:bg-slate-50 hover:text-slate-600"}`}>
-                              <Icon className="w-3.5 h-3.5" />
+            {loading.getAll ? (
+              <div className="flex items-center justify-center py-16 text-slate-400">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2" />
+                <span className="text-[13px] font-semibold">Loading structures...</span>
+              </div>
+            ) : (
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    {[
+                      { label: "Academic Year",       align: "left" },
+                      { label: "Standard / Grade",    align: "left" },
+                      { label: "Total Fee Heads",     align: "center" },
+                      { label: "Mandatory Fee Heads", align: "center" },
+                      { label: "Total Amount",        align: "center" },
+                      { label: "Status",              align: "left" },
+                      { label: "Last Updated",        align: "left" },
+                      { label: "Actions",             align: "left" },
+                    ].map(({ label, align }) => (
+                      <th
+                        key={label}
+                        className={`px-3.5 py-2 text-[10px] font-bold text-slate-500 whitespace-nowrap tracking-widest uppercase text-${align}`}
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((rec, idx) => {
+                    const statusKey = rec.status?.toLowerCase();
+                    const s = SC[statusKey] || SC.archived;
+                    const feeHeads   = rec.feeHeads || [];
+                    const totalAmt   = totalAmount(feeHeads);
+                    const mandCount  = mandatoryCount(feeHeads);
+                    const updatedAt  = rec.updatedAt || rec.createdAt;
+                    const updatedBy  = rec.updatedBy?.name || rec.createdBy?.name || "Admin User";
+
+                    return (
+                      <tr
+                        key={rec._id}
+                        className={`bg-white hover:bg-slate-50 transition-colors duration-100 ${idx < paged.length - 1 ? "border-b border-slate-100" : ""}`}
+                      >
+                        {/* Academic Year */}
+                        <td className="px-3.5 py-2 text-[13px] font-bold text-slate-900">{rec.academicYear}</td>
+
+                        {/* Grade */}
+                        <td className="px-3.5 py-2">
+                          <div className="text-[13.5px] font-extrabold text-slate-900">{rec.standard}</div>
+                          <div className="text-[11px] text-slate-400 font-medium mt-0.5">{feeHeads.length} Fee Heads</div>
+                        </td>
+
+                        {/* Total Fee Heads */}
+                        <td className="px-3.5 py-2 text-center text-[13.5px] font-bold text-slate-700">{feeHeads.length}</td>
+
+                        {/* Mandatory Fee Heads */}
+                        <td className="px-3.5 py-2 text-center text-[13.5px] font-bold text-slate-700">{mandCount}</td>
+
+                        {/* Amount */}
+                        <td className="px-3.5 py-2 text-center text-[13.5px] font-bold text-slate-900">
+                          ₹ {totalAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-3.5 py-2">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-semibold ${s.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                            {rec.status.charAt(0).toUpperCase() + rec.status.slice(1)}
+                          </span>
+                          {rec.status === "draft" && (
+                            <div className="text-[10.5px] text-slate-400 mt-0.5">Pending activation</div>
+                          )}
+                        </td>
+
+                        {/* Last Updated */}
+                        <td className="px-3.5 py-2">
+                          <div className="text-[12.5px] font-semibold text-slate-600">{formatDate(updatedAt)}</div>
+                          <div className="text-[11px] text-slate-400 font-medium mt-0.5">{formatTime(updatedAt)}</div>
+                          <div className="text-[11px] text-slate-400 font-medium">{updatedBy}</div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-3.5 py-2 relative">
+                          <div className="flex items-center gap-1.5">
+                            {/* View */}
+                            <button
+                              onClick={() => { setSelectedStructure(rec); setView("edit"); }}
+                              className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50"
+                              title="View Structure"
+                            >
+                              <Eye size={13} className="text-slate-500" />
                             </button>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {filtered.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                <Search className="w-10 h-10 mb-3 opacity-30" />
+
+                            {/* Edit */}
+                            <button
+                              onClick={() => { setSelectedStructure(rec); setView("edit"); }}
+                              className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50"
+                              title="Edit Structure"
+                            >
+                              <Edit2 size={13} className="text-slate-500" />
+                            </button>
+
+                            {/* More */}
+                            <button
+                              onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === rec._id ? null : rec._id); }}
+                              className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50"
+                              title="More Actions"
+                            >
+                              <MoreVertical size={13} className="text-slate-500" />
+                            </button>
+
+                            {/* Dropdown */}
+                            {openMenuId === rec._id && (
+                              <div
+                                onClick={e => e.stopPropagation()}
+                                className="absolute right-4 top-12 bg-white border border-slate-300 rounded-xl shadow-lg z-50 w-36 flex flex-col py-1"
+                              >
+                                <button
+                                  onClick={() => handleActivate(rec)}
+                                  disabled={loading.activate}
+                                  className="w-full px-3 py-2 border-none bg-transparent text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  {loading.activate ? "Activating..." : "Activate"}
+                                </button>
+                                <button
+                                  onClick={() => handleArchive(rec)}
+                                  disabled={loading.archive}
+                                  className="w-full px-3 py-2 border-none bg-transparent text-left text-[12px] font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  {loading.archive ? "Archiving..." : "Archive"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {!loading.getAll && filtered.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <Search size={30} className="mb-2.5 opacity-25" />
                 <p className="text-[14px] font-semibold">No records found</p>
                 <p className="text-[12px] font-medium mt-1">Try adjusting your search or filters</p>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-1 shrink-0">
-          <span className="text-[12px] text-slate-400 font-semibold">
-            {filtered.length} of {RECORDS.length} records · {year}
-          </span>
-          <div className="flex items-center gap-4">
-            {Object.entries(SC).map(([s, c]) => (
-              <span key={s} className="flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400">
-                <span className={`w-2 h-2 rounded-full ${c.dot}`} />{s}
-              </span>
-            ))}
+          {/* Footer */}
+          <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 shrink-0">
+            {/* Left legend */}
+            <div className="flex items-center gap-3.5 text-[12px] text-slate-500 font-medium">
+              <span>Showing {paged.length} of {totalCount} structures</span>
+              {[
+                { l: "Active",   dot: "bg-green-400", n: activeN },
+                { l: "Draft",    dot: "bg-amber-400", n: draftN },
+                { l: "Archived", dot: "bg-slate-400", n: archivedN },
+              ].map(({ l, dot, n }) => (
+                <span key={l} className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${dot} inline-block`} />
+                  {l}: {n}
+                </span>
+              ))}
+              <span>· Total: {totalCount}</span>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-7 h-7 border border-slate-200 rounded-[7px] bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={13} className="text-slate-500" />
+              </button>
+
+              {Array.from({ length: totalPg }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-[7px] text-[12px] font-bold border cursor-pointer
+                    ${page === p
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "bg-white border-slate-200 text-slate-700"}`}
+                >
+                  {p}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setPage(p => Math.min(totalPg, p + 1))}
+                disabled={page === totalPg}
+                className="w-7 h-7 border border-slate-200 rounded-[7px] bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={13} className="text-slate-500" />
+              </button>
+
+              <span className="text-[12px] text-slate-400 ml-1.5 font-medium">{PER} / page</span>
+            </div>
           </div>
         </div>
       </div>

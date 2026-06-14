@@ -62,8 +62,7 @@ export default function AdminDashboard() {
     "Transport › Bus Routes":      "/transport/bus-routes",
     "Transport › Transport Fees":  "/transport/fees",
     "Transport › Vehicles":        "/transport/vehicles",
-    "Transport › Drivers":         "/transport/drivers",
-    "Fees › Fee Collection":       "/fee/collection",
+    "Fees › Academic Fees":        "/fee/collection",
     "Fees › Fee Reports":          "/fee/reports",
     "Live tracking":               "/live-tracking",
     "Alerts":                      "/alerts",
@@ -201,7 +200,7 @@ export default function AdminDashboard() {
   return (
     <TooltipProvider>
       <SidebarProvider defaultOpen={true}>
-        <div className="flex h-screen w-full overflow-hidden bg-slate-50/50 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] bg-size-[16px_16px]">
+        <div className="flex h-screen w-full overflow-hidden bg-gray-50 hide-scrollbar">
 
           {/* Custom Modular Sidebar */}
           <AdminSidebar
@@ -333,9 +332,7 @@ export default function AdminDashboard() {
                   {activeTab === "Transport › Vehicles" && (
                     <Vehicles />
                   )}
-                  {activeTab === "Transport › Drivers" && (
-                    <Drivers />
-                  )}
+                 
 
                   {activeTab === "Fees" && (
                     <FeesCollection
@@ -345,7 +342,7 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Fee sub-tabs */}
-                  {activeTab === "Fees › Fee Collection" && (
+                  {activeTab === "Fees › Academic Fees" && (
                     <FeeCollection />
                   )}
                   {activeTab === "Fees › Fee Reports" && (
