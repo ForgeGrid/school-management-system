@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import scoolLogo from "@/assets/scool-logo.svg";
+import scoolLogo from "@/assets/scool.svg";
 import {
   Sidebar,
   SidebarContent,
@@ -50,7 +50,7 @@ export default function AdminSidebar({
     "Transport › Bus Routes",
     "Transport › Transport Fees",
     "Transport › Vehicles",
-    "Transport › Drivers",
+   
   ];
 
   const isTransportActive = transportSubItems.includes(activeTab);
@@ -67,7 +67,7 @@ export default function AdminSidebar({
   }, [isTransportActive]);
 
   const feeSubItems = [
-    "Fees › Fee Collection",
+    "Fees › Academic Fees",
     "Fees › Fee Reports",
   ];
 
@@ -214,7 +214,7 @@ export default function AdminSidebar({
                   onClick={() => {
                     const next = !feesOpen;
                     setFeesOpen(next);
-                    if (next && !isFeeActive) setActiveTab("Fees › Fee Collection");
+                    if (next && !isFeeActive) setActiveTab("Fees › Academic Fees");
                   }}
                   className={`group/navItem w-[calc(100%-16px)] mx-2 flex items-center justify-between px-3 py-2 transition-colors duration-200 rounded-xl font-medium ${
                     isFeeActive ? "bg-indigo-50 text-indigo-700 font-bold shadow-sm" : "bg-transparent text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"

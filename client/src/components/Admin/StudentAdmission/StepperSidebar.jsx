@@ -2,54 +2,72 @@ import { STEPS } from "./shared";
 
 export function StepperSidebar({ activeStep, onStepClick }) {
   return (
-    <nav className="flex flex-col gap-1 w-full p-1 bg-indigo-100/20 rounded-2xl">
+    <nav className="flex flex-col w-full h-140 p-2 bg-white/70 backdrop-blur-sm rounded-2xl border border-slate-100 shadow-[0_1px_6px_rgba(0,0,0,0.06)]">
       {STEPS.map((step, idx) => {
         const isActive = step.id === activeStep;
         const isDone   = step.id < activeStep;
+
         return (
           <div key={step.id}>
             <button
               type="button"
               onClick={() => onStepClick(step.id)}
-              className={`w-full flex items-start gap-6 px-3 py-3.5 rounded-2xl text-left transition-all border ${
+              className={`w-full flex items-center gap-4.5 px-3 py-10 rounded-xl text-left transition-all duration-200 group border ${
                 isActive
-                  ? "bg-blue-200/50 border-blue-500/40 shadow-sm shadow-blue-100/40"
-                  : "bg-transparent border-transparent hover:bg-blue-50/30 hover:border-blue-100/30"
+                  ? "bg-blue-600 border-blue-600 shadow-md shadow-blue-200/60"
+                  : isDone
+                  ? "bg-slate-50 border-slate-100 hover:border-green-200 hover:bg-green-50/40"
+                  : "border-transparent hover:bg-slate-50/60 hover:border-slate-100"
               }`}
             >
-              {/* Step badge */}
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0 mt-0.5 transition-all ${
+              {/* Badge */}
+              <span className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  ? "bg-white text-blue-600 shadow-sm"
                   : isDone
-                  ? "bg-green-500 text-white"
-                  : "bg-purple-200/50 text-slate-900"
+                  ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                  : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
               }`}>
                 {isDone ? (
-                  <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.8} viewBox="0 0 24 24">
                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : step.id}
               </span>
 
-              {/* Step label */}
+              {/* Labels */}
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-bold leading-snug truncate ${
-                  isActive ? "text-blue-600" : isDone ? "text-slate-800" : "text-slate-400"
-                }`}>{step.label}</p>
-                <p className={`text-xs mt-0.5 leading-snug truncate ${
-                  isDone ? "text-green-600 font-semibold" : "text-slate-400"
+                <p className={`text-sm font-bold leading-tight truncate ${
+                  isActive ? "text-white" : isDone ? "text-slate-700" : "text-slate-400"
                 }`}>
-                  {isDone ? "Completed" : step.sub}
+                  {step.label}
+                </p>
+                <p className={`text-xs mt-0.5 truncate font-medium ${
+                  isActive
+                    ? "text-blue-200"
+                    : isDone
+                    ? "text-green-500"
+                    : "text-slate-400"
+                }`}>
+                  {isDone ? "✓ Completed" : step.sub}
                 </p>
               </div>
+
+              {/* Active arrow */}
+              {isActive && (
+                <svg className="w-3.5 h-5 text-blue-200 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
 
-            {/* Connector line between steps */}
+            {/* Connector */}
             {idx < STEPS.length - 1 && (
-              <div className="flex justify-center my-0.5">
-                <div className={`w-0 h-18 border-l-2 ${
-                  isDone ? "border-purple-300/80 border-solid" : "border-slate-300 border-dashed"
+              <div className="flex items-center justify-center my-1 pl-5">
+                <div className={`w-px h-8 transition-all duration-300 ${
+                  isDone
+                    ? "bg-gradient-to-b from-green-300 to-green-200"
+                    : "bg-gradient-to-b from-slate-200 to-transparent"
                 }`} />
               </div>
             )}

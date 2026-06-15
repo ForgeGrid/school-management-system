@@ -3,7 +3,6 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-// Axios instance — sends auth_token cookie automatically
 const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
@@ -18,7 +17,6 @@ export const createSchool = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const { data } = await api.post("/school/create", formData);
-      // formData is a FormData object — axios sets multipart/form-data automatically
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "School creation failed.");
@@ -135,18 +133,69 @@ export const removeUserFromSchool = createAsyncThunk(
   }
 );
 
-// ---------------------------------------------------------------------------
-// STUDENT THUNKS
-// ---------------------------------------------------------------------------
 
-export const createStudent = createAsyncThunk(
-  "student/createStudent",
-  async (studentData, { rejectWithValue }) => {
+export const enrollStudent = createAsyncThunk(
+  "student/enrollStudent",
+  async (payload, { rejectWithValue }) => {
     try {
-      const { data } = await api.post("/student-profile/create", studentData);
+      const { avatarFile, ...rest } = payload;
+
+      const formData = new FormData();
+
+      // Primitive fields
+      formData.append("student_name",       rest.student_name       ?? "");
+      formData.append("email",              rest.email              ?? "");
+      formData.append("password",           rest.password           ?? "");
+      formData.append("admission_no",       rest.admission_no       ?? "");
+      formData.append("gender",             rest.gender             ?? "");
+      formData.append("dob",                rest.dob                ?? "");
+      formData.append("transport_required", String(rest.transport_required ?? false));
+      formData.append("requestedGrade",     rest.requestedGrade || rest.grade || "");
+
+      // Address fields — flattened
+      formData.append("address[street]",     rest.address?.street     ?? "");
+      formData.append("address[city]",       rest.address?.city       ?? "");
+      formData.append("address[state]",      rest.address?.state      ?? "");
+      formData.append("address[postalCode]", rest.address?.postalCode ?? "");
+      formData.append("address[country]",    rest.address?.country    ?? "");
+
+      // Parent fields — flattened
+      formData.append("parent[mode]",          rest.parent?.mode          ?? "");
+      formData.append("parent[parentUserId]",  rest.parent?.parentUserId  ?? "");
+      formData.append("parent[name]",          rest.parent?.name          ?? "");
+      formData.append("parent[email]",         rest.parent?.email         ?? "");
+      formData.append("parent[primary_phone]", rest.parent?.primary_phone ?? "");
+      formData.append("parent[guardian_name]",     rest.parent?.guardian_name     ?? "");
+      formData.append("parent[guardian_relation]", rest.parent?.guardian_relation ?? "");
+
+      // feePlan fields — flattened
+      formData.append("feePlan[academicYear]",            rest.feePlan?.academicYear            ?? "");
+      formData.append("feePlan[academicFeeStructure_id]", rest.feePlan?.academicFeeStructure_id ?? "");
+      formData.append("feePlan[transportFeeStructure_id]",rest.feePlan?.transportFeeStructure_id ?? "");
+      formData.append("feePlan[currentRoute_id]",         rest.feePlan?.currentRoute_id         ?? "");
+
+      // Arrays — discounts
+      (rest.feePlan?.discounts ?? []).forEach((d, i) => {
+        formData.append(`feePlan[discounts][${i}][type]`,   d.type   ?? "");
+        formData.append(`feePlan[discounts][${i}][amount]`, d.amount ?? 0);
+      });
+
+      // Arrays — additionalCharges
+      (rest.feePlan?.additionalCharges ?? []).forEach((c, i) => {
+        formData.append(`feePlan[additionalCharges][${i}][name]`,   c.name   ?? "");
+        formData.append(`feePlan[additionalCharges][${i}][amount]`, c.amount ?? 0);
+      });
+
+      // Avatar
+      if (avatarFile) {
+        formData.append("profile-avatar", avatarFile);
+      }
+
+      const { data } = await api.post("/admission/create", formData);
+
       return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || "Student creation failed.");
+      return rejectWithValue(err.response?.data?.message || "Student admission failed.");
     }
   }
 );
@@ -200,30 +249,43 @@ export const deleteStudent = createAsyncThunk(
 );
 
 // ---------------------------------------------------------------------------
-// SCHOOL SLICE
+// PARENT THUNKS (Link Existing Parent — admission flow)
+// ---------------------------------------------------------------------------
+
+export const searchParents = createAsyncThunk(
+  "student/searchParents",
+  async (query, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get("/admission/search-parent", { params: { q: query } });
+      return data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Parent search failed.");
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// SCHOOL SLICE  (unchanged)
 // ---------------------------------------------------------------------------
 
 const schoolInitialState = {
-  // Data
   allSchools: [],
   pendingSchools: [],
   selectedSchool: null,
-  staff: [],               // own school staff
-  adminStaff: {},          // { [schoolId]: [...] } for super-admin targeted fetch
+  staff: [],
+  adminStaff: {},
 
-  // UI
   selectedSchoolId: null,
-  statusFilter: null,      // "pending" | "approved" | "rejected" | null
+  statusFilter: null,
 
   modal: {
-    type: null,            // "approve" | "reject" | "remove_user" | null
+    type: null,
     payload: null,
   },
 
   reAppealDraft: null,
-  notification: null,      // { type: "success" | "error", message: string }
+  notification: null,
 
-  // Loading flags (per action key)
   loading: {
     createSchool: false,
     getAllSchools: false,
@@ -243,7 +305,6 @@ const schoolSlice = createSlice({
   initialState: schoolInitialState,
 
   reducers: {
-    // ---- Selection ----
     setSelectedSchool(state, { payload: schoolId }) {
       state.selectedSchoolId = schoolId;
     },
@@ -251,32 +312,24 @@ const schoolSlice = createSlice({
       state.selectedSchoolId = null;
       state.selectedSchool = null;
     },
-
-    // ---- Filters ----
     setStatusFilter(state, { payload: status }) {
       state.statusFilter = status;
     },
     clearStatusFilter(state) {
       state.statusFilter = null;
     },
-
-    // ---- Modals ----
     openModal(state, { payload: { type, payload } }) {
       state.modal = { type, payload };
     },
     closeModal(state) {
       state.modal = { type: null, payload: null };
     },
-
-    // ---- Re-appeal draft ----
     setReAppealDraft(state, { payload }) {
       state.reAppealDraft = payload;
     },
     clearReAppealDraft(state) {
       state.reAppealDraft = null;
     },
-
-    // ---- Notifications ----
     setNotification(state, { payload: { type, message } }) {
       state.notification = { type, message };
     },
@@ -286,25 +339,20 @@ const schoolSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    // Helper to set loading flag
     const loading = (key) => (state) => { state.loading[key] = true; };
     const done    = (key) => (state) => { state.loading[key] = false; };
 
-    // ---- createSchool ----
     builder
       .addCase(createSchool.pending,   loading("createSchool"))
-      .addCase(createSchool.fulfilled, (state, { payload }) => {
+      .addCase(createSchool.fulfilled, (state) => {
         state.loading.createSchool = false;
         state.notification = { type: "success", message: "School created! Awaiting admin approval." };
-        // Optionally store returned token/user if needed:
-        // state.createdSchool = payload.school;
       })
       .addCase(createSchool.rejected,  (state, { payload }) => {
         state.loading.createSchool = false;
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- getAllSchools ----
     builder
       .addCase(getAllSchools.pending,   loading("getAllSchools"))
       .addCase(getAllSchools.fulfilled, (state, { payload }) => {
@@ -316,7 +364,6 @@ const schoolSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- getSchoolById ----
     builder
       .addCase(getSchoolById.pending,   loading("getSchoolById"))
       .addCase(getSchoolById.fulfilled, (state, { payload }) => {
@@ -325,7 +372,6 @@ const schoolSlice = createSlice({
       })
       .addCase(getSchoolById.rejected,  done("getSchoolById"));
 
-    // ---- getPendingSchools ----
     builder
       .addCase(getPendingSchools.pending,   loading("getPendingSchools"))
       .addCase(getPendingSchools.fulfilled, (state, { payload }) => {
@@ -334,18 +380,13 @@ const schoolSlice = createSlice({
       })
       .addCase(getPendingSchools.rejected,  done("getPendingSchools"));
 
-    // ---- approveSchool ----
     builder
       .addCase(approveSchool.pending,   loading("approveSchool"))
       .addCase(approveSchool.fulfilled, (state, { payload }) => {
         state.loading.approveSchool = false;
         state.notification = { type: "success", message: "School approved successfully!" };
         state.modal = { type: null, payload: null };
-        // Remove from pending list immediately
-        state.pendingSchools = state.pendingSchools.filter(
-          (s) => s._id !== payload.schoolId
-        );
-        // Update status in allSchools list if present
+        state.pendingSchools = state.pendingSchools.filter((s) => s._id !== payload.schoolId);
         const school = state.allSchools.find((s) => s._id === payload.schoolId);
         if (school) school.verificationStatus = "approved";
       })
@@ -354,16 +395,13 @@ const schoolSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- rejectSchool ----
     builder
       .addCase(rejectSchool.pending,   loading("rejectSchool"))
       .addCase(rejectSchool.fulfilled, (state, { payload }) => {
         state.loading.rejectSchool = false;
         state.notification = { type: "success", message: "School rejected." };
         state.modal = { type: null, payload: null };
-        state.pendingSchools = state.pendingSchools.filter(
-          (s) => s._id !== payload.schoolId
-        );
+        state.pendingSchools = state.pendingSchools.filter((s) => s._id !== payload.schoolId);
         const school = state.allSchools.find((s) => s._id === payload.schoolId);
         if (school) school.verificationStatus = "rejected";
       })
@@ -372,7 +410,6 @@ const schoolSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- reAppealSchool ----
     builder
       .addCase(reAppealSchool.pending,   loading("reAppealSchool"))
       .addCase(reAppealSchool.fulfilled, (state) => {
@@ -385,7 +422,6 @@ const schoolSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- getSchoolStaff ----
     builder
       .addCase(getSchoolStaff.pending,   loading("getSchoolStaff"))
       .addCase(getSchoolStaff.fulfilled, (state, { payload }) => {
@@ -394,7 +430,6 @@ const schoolSlice = createSlice({
       })
       .addCase(getSchoolStaff.rejected,  done("getSchoolStaff"));
 
-    // ---- getSchoolStaffAdmin ----
     builder
       .addCase(getSchoolStaffAdmin.pending,   loading("getSchoolStaffAdmin"))
       .addCase(getSchoolStaffAdmin.fulfilled, (state, { payload }) => {
@@ -403,16 +438,13 @@ const schoolSlice = createSlice({
       })
       .addCase(getSchoolStaffAdmin.rejected,  done("getSchoolStaffAdmin"));
 
-    // ---- removeUserFromSchool ----
     builder
       .addCase(removeUserFromSchool.pending,   loading("removeUserFromSchool"))
       .addCase(removeUserFromSchool.fulfilled, (state, { payload }) => {
         state.loading.removeUserFromSchool = false;
         state.notification = { type: "success", message: "User removed from school." };
         state.modal = { type: null, payload: null };
-        // Remove from own staff list
         state.staff = state.staff.filter((u) => u._id !== payload.userId);
-        // Remove from any adminStaff cache that contains this user
         Object.keys(state.adminStaff).forEach((schoolId) => {
           state.adminStaff[schoolId] = state.adminStaff[schoolId].filter(
             (u) => u._id !== payload.userId
@@ -441,20 +473,18 @@ export const {
 
 export const schoolReducers = schoolSlice.reducer;
 
-// School selectors
-export const selectAllSchools         = (state) => state.school.allSchools;
-export const selectPendingSchools     = (state) => state.school.pendingSchools;
-export const selectSelectedSchool     = (state) => state.school.selectedSchool;
-export const selectSelectedSchoolId   = (state) => state.school.selectedSchoolId;
-export const selectStatusFilter       = (state) => state.school.statusFilter;
-export const selectModal              = (state) => state.school.modal;
-export const selectReAppealDraft      = (state) => state.school.reAppealDraft;
-export const selectNotification       = (state) => state.school.notification;
-export const selectSchoolStaff        = (state) => state.school.staff;
-export const selectAdminStaff         = (schoolId) => (state) => state.school.adminStaff[schoolId] ?? [];
-export const selectSchoolLoading      = (key) => (state) => state.school.loading[key];
+export const selectAllSchools       = (state) => state.school.allSchools;
+export const selectPendingSchools   = (state) => state.school.pendingSchools;
+export const selectSelectedSchool   = (state) => state.school.selectedSchool;
+export const selectSelectedSchoolId = (state) => state.school.selectedSchoolId;
+export const selectStatusFilter     = (state) => state.school.statusFilter;
+export const selectModal            = (state) => state.school.modal;
+export const selectReAppealDraft    = (state) => state.school.reAppealDraft;
+export const selectNotification     = (state) => state.school.notification;
+export const selectSchoolStaff      = (state) => state.school.staff;
+export const selectAdminStaff       = (schoolId) => (state) => state.school.adminStaff[schoolId] ?? [];
+export const selectSchoolLoading    = (key) => (state) => state.school.loading[key];
 
-// Derived selector: filter allSchools by statusFilter
 export const selectFilteredSchools = (state) => {
   const { allSchools, statusFilter } = state.school;
   if (!statusFilter) return allSchools;
@@ -462,22 +492,26 @@ export const selectFilteredSchools = (state) => {
 };
 
 // ---------------------------------------------------------------------------
-// STUDENT SLICE
+// STUDENT SLICE  (unchanged)
 // ---------------------------------------------------------------------------
 
 const studentInitialState = {
   students: [],
   selectedStudent: null,
 
+  parentSearchResults: [],
+  parentSearchLoading: false,
+  parentSearchError: null,
+
   loading: {
-    createStudent: false,
+    enrollStudent: false,
     getAllStudents: false,
     getStudentById: false,
     updateStudent: false,
     deleteStudent: false,
   },
 
-  notification: null, // { type: "success" | "error", message: string }
+  notification: null,
 };
 
 const studentSlice = createSlice({
@@ -497,22 +531,27 @@ const studentSlice = createSlice({
     clearStudentNotification(state) {
       state.notification = null;
     },
+    clearParentSearchResults(state) {
+      state.parentSearchResults = [];
+      state.parentSearchError = null;
+    },
   },
 
   extraReducers: (builder) => {
     const loading = (key) => (state) => { state.loading[key] = true; };
     const done    = (key) => (state) => { state.loading[key] = false; };
 
-    // ---- createStudent ----
+    // ---- enrollStudent ----
     builder
-      .addCase(createStudent.pending,   loading("createStudent"))
-      .addCase(createStudent.fulfilled, (state, { payload }) => {
-        state.loading.createStudent = false;
-        state.notification = { type: "success", message: "Student created successfully." };
-        if (payload?.data) state.students.unshift(payload.data);
+      .addCase(enrollStudent.pending, loading("enrollStudent"))
+      .addCase(enrollStudent.fulfilled, (state, { payload }) => {
+        state.loading.enrollStudent = false;
+        state.notification = { type: "success", message: "Student admitted successfully." };
+        const newStudent = payload?.data?.studentProfile || payload?.studentProfile;
+        if (newStudent) state.students.unshift(newStudent);
       })
-      .addCase(createStudent.rejected, (state, { payload }) => {
-        state.loading.createStudent = false;
+      .addCase(enrollStudent.rejected, (state, { payload }) => {
+        state.loading.enrollStudent = false;
         state.notification = { type: "error", message: payload };
       });
 
@@ -565,6 +604,22 @@ const studentSlice = createSlice({
         state.loading.deleteStudent = false;
         state.notification = { type: "error", message: payload };
       });
+
+    // ---- searchParents ----
+    builder
+      .addCase(searchParents.pending, (state) => {
+        state.parentSearchLoading = true;
+        state.parentSearchError = null;
+      })
+      .addCase(searchParents.fulfilled, (state, { payload }) => {
+        state.parentSearchLoading = false;
+        state.parentSearchResults = payload ?? [];
+      })
+      .addCase(searchParents.rejected, (state, { payload }) => {
+        state.parentSearchLoading = false;
+        state.parentSearchResults = [];
+        state.parentSearchError = payload;
+      });
   },
 });
 
@@ -573,12 +628,16 @@ export const {
   clearSelectedStudent,
   setStudentNotification,
   clearStudentNotification,
+  clearParentSearchResults,
 } = studentSlice.actions;
 
 export const studentReducer = studentSlice.reducer;
 
-// Student selectors
-export const selectAllStudents       = (state) => state.student.students;
-export const selectSelectedStudent   = (state) => state.student.selectedStudent;
-export const selectStudentLoading    = (key) => (state) => state.student.loading[key];
+export const selectAllStudents         = (state) => state.student.students;
+export const selectSelectedStudent     = (state) => state.student.selectedStudent;
+export const selectStudentLoading      = (key) => (state) => state.student.loading[key];
 export const selectStudentNotification = (state) => state.student.notification;
+
+export const selectParentSearchResults = (state) => state.student.parentSearchResults;
+export const selectParentSearchLoading = (state) => state.student.parentSearchLoading;
+export const selectParentSearchError   = (state) => state.student.parentSearchError;

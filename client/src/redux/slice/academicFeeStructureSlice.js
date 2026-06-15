@@ -33,6 +33,7 @@ export const getAcademicFeeStructures = createAsyncThunk(
   }
 );
 
+// A 404 means no fee structure exists for this grade/year yet — treat as null, not an error.
 export const getActiveAcademicFeeStructure = createAsyncThunk(
   "academicFeeStructure/getActive",
   async ({ academicYear, standard }, { rejectWithValue }) => {
@@ -43,6 +44,8 @@ export const getActiveAcademicFeeStructure = createAsyncThunk(
       });
       return data;
     } catch (err) {
+      // 404 = no structure configured yet → not a hard error, resolve with null
+      if (err.response?.status === 404) return null;
       return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
@@ -189,7 +192,8 @@ const academicFeeStructureSlice = createSlice({
       })
       .addCase(getActiveAcademicFeeStructure.fulfilled, (state, action) => {
         state.loading.getActive = false;
-        state.activeStructure = action.payload.structure;
+        // payload is null when no structure found (404 treated as null above)
+        state.activeStructure = action.payload?.structure ?? null;
       })
       .addCase(getActiveAcademicFeeStructure.rejected, (state) => {
         state.loading.getActive = false;

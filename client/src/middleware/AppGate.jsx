@@ -10,6 +10,7 @@ import {
   selectSchool,
   selectUser,
 } from "../redux/slice/getmeSelector";
+import CheckLoader from "../assets/CheckLoader.gif";
 import PendingApproval from "../components/selection/PendingApproval";
 import AutoJoinInvitation from "../components/selection/AutoJoinInvitation";
 
@@ -31,10 +32,9 @@ export default function AppGate({ children }) {
   // Loading
   if (status === "idle" || status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-500 font-medium">Loading your account...</p>
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-white to-indigo-50">
+        <div>
+          <img src={CheckLoader} alt="Loading..." className="w-28 h-28 object-contain" />
         </div>
       </div>
     );
