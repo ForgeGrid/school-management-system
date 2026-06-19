@@ -10,7 +10,9 @@ import {
     getTimetableByStaff,
     getSlotDetail,
     deleteSlot,
-    getAllSlots
+    getAllSlots,
+    publishTimetable,
+    getMyTimetable
 } from "../controller/timetable.controller.js";
 
 const router = express.Router();
@@ -35,6 +37,9 @@ router.delete("/delete/:id", requireRole("school_admin"), deleteSlot);
 // GET /api/v0/timetable/all (Admin list)
 router.get("/all", requireRole("school_admin"), getAllSlots);
 
+// POST /api/v0/timetable/publish
+router.post("/publish", requireRole("school_admin"), publishTimetable);
+
 
 // ─── SHARED ROUTES ────────────────────────────────────────────────────────
 
@@ -49,5 +54,8 @@ router.get("/staff", requireRole("school_admin", "staff", "teacher"), getTimetab
 
 // GET /api/v0/timetable/staff/:staffId
 router.get("/staff/:staffId", requireRole("school_admin", "staff", "teacher"), getTimetableByStaff);
+
+// GET /api/v0/timetable/my-timetable
+router.get("/my-timetable", requireRole("student", "parent"), getMyTimetable);
 
 export default router;

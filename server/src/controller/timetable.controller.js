@@ -7,7 +7,9 @@ import {
     getTimetableByStaffService,
     getTimetableByIdService,
     deleteTimetableSlotService,
-    getAllTimetableSlotsService
+    getAllTimetableSlotsService,
+    publishTimetableService,
+    getMyTimetableService
 } from "../services/timetable.service.js";
 
 export const getEligibleStaff = async (req, res) => {
@@ -92,5 +94,26 @@ export const getAllSlots = async (req, res) => {
         return sendSuccess(res, result);
     } catch (err) {
         return sendError(res, { error: err, context: "Get all slots error" });
+    }
+};
+
+export const publishTimetable = async (req, res) => {
+    try {
+        const result = await publishTimetableService(req.user, req.body || {});
+        return sendSuccess(res, result);
+    } catch (err) {
+        return sendError(res, { error: err, context: "Publish timetable error" });
+    }
+};
+
+export const getMyTimetable = async (req, res) => {
+    try {
+        const result = await getMyTimetableService(req.user, {
+            dayOfWeek: req.query.dayOfWeek,
+            childId: req.query.childId
+        });
+        return sendSuccess(res, result);
+    } catch (err) {
+        return sendError(res, { error: err, context: "Get my timetable error" });
     }
 };

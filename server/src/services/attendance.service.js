@@ -18,6 +18,7 @@ import {
 import {
   assertTeacherCanAccessClass,
   buildEditableUntil,
+  assertAttendanceEditable
 } from "../utils/academic.helper.js";
 import {
   getClassSectionOrThrow as getClassSectionGeneric,
@@ -25,7 +26,6 @@ import {
 
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "half_day", "excused"];
 const SOURCE_TYPES = ["manual", "bulk_upload", "biometric"];
-const EDIT_WINDOW_DAYS = 5;
 
 const normalizeAttendanceDate = (inputDate) => {
   const { start } = dayBounds(inputDate);
@@ -217,6 +217,16 @@ export const markSingleAttendanceService = async (user, data = {}) => {
   const normalizedDate = normalizeAttendanceDate(attendanceDate);
   const reason = normalizeOptionalReason(absentReason, user);
 
+  const existing = await Attendance.findOne({
+    school_id: user.school_id,
+    student_id,
+    attendanceDate: normalizedDate,
+  });
+
+  if (existing) {
+    assertAttendanceEditable(existing, user);
+  }
+
   const updateDoc = {
     school_id: user.school_id,
     academicYear,
@@ -331,6 +341,18 @@ export const markBulkAttendanceService = async (user, data = {}) => {
   }
 
   const normalizedDate = normalizeAttendanceDate(attendanceDate);
+
+  const existingRecords = await Attendance.find({
+    school_id: user.school_id,
+    classSection_id: classSection._id,
+    attendanceDate: normalizedDate,
+    student_id: { $in: records.map((r) => r.student_id) },
+  });
+
+  for (const attendance of existingRecords) {
+    assertAttendanceEditable(attendance, user);
+  }
+
   const commonSet = {
     school_id: user.school_id,
     academicYear,

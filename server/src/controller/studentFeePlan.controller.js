@@ -3,7 +3,8 @@ import {
   createStudentFeePlanService,
   updateStudentFeePlanService,
   getStudentFeePlanService,
-  cancelStudentFeePlanService
+  cancelStudentFeePlanService,
+  getMyFeeDetailsService
 } from "../services/studentFeePlan.service.js";
 
 export const createStudentFeePlan = async (req, res) => {
@@ -75,6 +76,22 @@ export const cancelStudentFeePlan = async (req, res) => {
     });
   } catch (err) {
     logger.error(err);
+    return res.status(400).json({
+      message: err.message
+    });
+  }
+};
+
+export const getMyFeeDetails = async (req, res) => {
+  try {
+    const result = await getMyFeeDetailsService(req.user, {
+      academicYear: req.query.academicYear,
+      childId: req.query.childId
+    });
+
+    return res.json(result);
+  } catch (err) {
+    logger.error("Get my fee details error:", err);
     return res.status(400).json({
       message: err.message
     });
