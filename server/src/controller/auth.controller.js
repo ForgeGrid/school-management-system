@@ -522,11 +522,7 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "email and password required" });
     }
 
-    const user = await User.findOne({
-      email,
-      reset_token: null,
-      reset_token_expiry: null,
-    }).select(
+    const user = await User.findOne({ email }).select(
       "+password_hash +failed_login_attempts +locked_until +lockout_level",
     );
 

@@ -189,3 +189,31 @@ export const formatSectionResponse = (classSection) => {
         label: buildGradeLabel(classSection),
     };
 };
+
+export const assertAttendanceEditable = (
+  attendance,
+  user,
+  { allowAdminOverride = false } = {}
+) => {
+  // Admin override bypasses both checks
+  if (user.role === "school_admin" && allowAdminOverride) {
+    return;
+  }
+
+  // Explicit admin lock (independent of date window)
+  if (attendance.isLocked) {
+    throw new Error(
+      "Attendance record is locked. Contact the administrator."
+    );
+  }
+
+  // 5-day edit window expired
+  if (
+    attendance.editableUntil &&
+    attendance.editableUntil < new Date()
+  ) {
+    throw new Error(
+      "Attendance edit window has expired."
+    );
+  }
+};

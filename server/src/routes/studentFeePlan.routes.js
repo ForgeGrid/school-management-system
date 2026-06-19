@@ -6,12 +6,16 @@ import {
   updateStudentFeePlan,
   getStudentFeePlan,
   cancelStudentFeePlan,
+  getMyFeeDetails,
 } from "../controller/studentFeePlan.controller.js";
 
 const router = express.Router();
 
 // All routes require auth
 router.use(authMiddleware);
+
+// Get my fee details (accessible to student/parent)
+router.get("/my-fees", requireRole("student", "parent"), getMyFeeDetails);
 
 // Only school admin can manage student fee plans
 router.use(requireRole("school_admin"));

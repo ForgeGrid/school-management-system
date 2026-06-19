@@ -9,7 +9,7 @@ import { cronFeeReminderService } from "../services/feeReminder.service.js";
 export const initCron = () => {
     // Fee Reminder Scan - Daily 9:00 AM IST
     cron.schedule(
-        "05 20 * * *",
+        "0 9 * * *",
         async () => {
             try {
                 const result = await cronFeeReminderService();

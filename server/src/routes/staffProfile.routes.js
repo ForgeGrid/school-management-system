@@ -22,22 +22,23 @@ router.use(authMiddleware);
 // Profile management
 router.post("/create", createProfile);
 router.patch("/update", updateProfile);
-router.get("/me", requireRole("school_admin", "teacher", "staff"), getMyProfile);
 
-// Enforcement for all subsequent staff lookup and management routes
-router.use(requireVerifiedStaff);
 
 // Security and Avatar management moved to profile.routes.js
 
 // Staff lookup (School Admin only)
 router.get("/all-teachers", requireRole("school_admin"), getAllTeachers);
 router.get("/teacher/:profileId", requireRole("school_admin"), getOneTeacher);
+router.get("/me", requireRole("school_admin", "teacher", "staff"), getMyProfile);
 
 // Staff approval (School Admin only)
 router.patch("/approve/:profileId", requireRole("school_admin"), approveStaff);
 router.patch("/reject/:profileId", requireRole("school_admin"), rejectStaff);
 
 router.patch("/staff/:profileId/resign", requireRole("school_admin"), resignStaff);
+
+// Enforcement for all subsequent staff lookup and management routes
+router.use(requireVerifiedStaff);
 
 router.patch("/staff/:profileId/request-rejoin", requireRole("teacher", "staff"), requestRejoinStaff);
 

@@ -2,13 +2,15 @@ import mongoose from "mongoose";
 import { ClassSection } from "../models/academic/classSection.model.js";
 import { StaffProfile } from "../models/staff/teacher.model.js";
 import { ClassSubjectAssignment } from "../models/academic/classSubjectAssignment.model.js";
-
+import { StudentEnrollment } from "../models/student/studentEnrollment.model.js";
+import { Attendance } from "../models/student/attendance.model.js";
+import { Timetable } from "../models/academic/timetable.model.js";
 
 import { resolveStudentPortalContextService } from "../services/studentEnrollment.service.js";
 
-
 import {
   assertAdminOnly as assertSchoolAdmin,
+  assertSchoolBoundUser,
 } from "../utils/auth.helper.js";
 import {
   normalizeText as normalize,
@@ -20,6 +22,11 @@ import {
 import {
   getClassSectionOrThrow as getClassSectionGeneric,
 } from "../utils/db.helper.js";
+import {
+  dayBounds,
+} from "../utils/date.helper.js";
+
+const ATTENDANCE_STATUSES = ["present", "absent", "late", "half_day", "excused"];
 
 
 export const createClassSectionService = async (user, data = {}) => {
@@ -199,48 +206,48 @@ export const getMyClassIntroService = async (user, { childId = null } = {}) => {
 
   const classTeacher = freshClassSection.classTeacher_id
     ? {
-        staff_profile_id: freshClassSection.classTeacher_id._id,
-        user_id: freshClassSection.classTeacher_id.user_id?._id || freshClassSection.classTeacher_id.user_id,
-        name: freshClassSection.classTeacher_id.user_id?.name || null,
-        email: freshClassSection.classTeacher_id.user_id?.email || null,
-        designation: freshClassSection.classTeacher_id.designation || null,
-        qualification: freshClassSection.classTeacher_id.qualification || null,
-        experienceYears: freshClassSection.classTeacher_id.experienceYears || null,
-        profile_highlight: freshClassSection.classTeacher_id.profile_highlight || null,
-      }
+      staff_profile_id: freshClassSection.classTeacher_id._id,
+      user_id: freshClassSection.classTeacher_id.user_id?._id || freshClassSection.classTeacher_id.user_id,
+      name: freshClassSection.classTeacher_id.user_id?.name || null,
+      email: freshClassSection.classTeacher_id.user_id?.email || null,
+      designation: freshClassSection.classTeacher_id.designation || null,
+      qualification: freshClassSection.classTeacher_id.qualification || null,
+      experienceYears: freshClassSection.classTeacher_id.experienceYears || null,
+      profile_highlight: freshClassSection.classTeacher_id.profile_highlight || null,
+    }
     : {
-        name: "To be assigned",
-        designation: null,
-        qualification: null,
-        experienceYears: null,
-        profile_highlight: null,
-      };
+      name: "To be assigned",
+      designation: null,
+      qualification: null,
+      experienceYears: null,
+      profile_highlight: null,
+    };
 
   const subjects = assignments
     .map((assignment) => ({
       subject: assignment.subject_id
         ? {
-            id: assignment.subject_id._id,
-            name: assignment.subject_id.name,
-            code: assignment.subject_id.code,
-          }
+          id: assignment.subject_id._id,
+          name: assignment.subject_id.name,
+          code: assignment.subject_id.code,
+        }
         : null,
       teacher: assignment.staff_id && assignment.staff_id.user_id
         ? {
-            staff_profile_id: assignment.staff_id._id,
-            user_id: assignment.staff_id.user_id._id,
-            name: assignment.staff_id.user_id.name,
-            email: assignment.staff_id.user_id.email,
-            designation: assignment.staff_id.designation || null,
-            qualification: assignment.staff_id.qualification || null,
-            profile_highlight: assignment.staff_id.profile_highlight || null,
-          }
+          staff_profile_id: assignment.staff_id._id,
+          user_id: assignment.staff_id.user_id._id,
+          name: assignment.staff_id.user_id.name,
+          email: assignment.staff_id.user_id.email,
+          designation: assignment.staff_id.designation || null,
+          qualification: assignment.staff_id.qualification || null,
+          profile_highlight: assignment.staff_id.profile_highlight || null,
+        }
         : {
-            name: "To be assigned",
-            designation: null,
-            qualification: null,
-            profile_highlight: null,
-          },
+          name: "To be assigned",
+          designation: null,
+          qualification: null,
+          profile_highlight: null,
+        },
       assignment_id: assignment._id,
       class_section_ids: assignment.class_section_ids || [],
     }))
@@ -256,5 +263,466 @@ export const getMyClassIntroService = async (user, { childId = null } = {}) => {
     },
     classTeacher,
     subjects,
+  };
+};
+
+// ============================================================
+// CLASS SECTION HUB
+// GET /class-sections/:classSectionId/hub
+//
+// Compact, role-aware summary payload for the Class Section
+// Hub page. Returns header info, class teacher summary, and
+// lightweight counts only — full lists (roster, assignments,
+// timetable slots, attendance roster) live on separate
+// lazy-loaded endpoints.
+// ============================================================
+
+/**
+ * Determines how the requesting user relates to this class section
+ * and throws a 403-style error if they have no relationship at all.
+ *
+ * Returns one of: "admin" | "class_teacher" | "subject_teacher"
+ */
+const resolveClassSectionAccessRole = async (user, classSection) => {
+  if (user.role === "school_admin") {
+    return "school_admin";
+  }
+
+  if (user.role !== "teacher") {
+    const err = new Error("You are not authorized to access this class section");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const staff = await StaffProfile.findOne({
+    user_id: user.id,
+    school_id: user.school_id,
+  });
+
+  if (!staff) {
+    const err = new Error("Staff profile not found");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const isClassTeacher =
+    classSection.classTeacher_id &&
+    String(classSection.classTeacher_id) === String(staff._id);
+
+  if (isClassTeacher) {
+    return "class_teacher";
+  }
+
+  const subjectAssignment = await ClassSubjectAssignment.findOne({
+    school_id: user.school_id,
+    staff_id: staff._id,
+    class_section_ids: classSection._id,
+    status: "active",
+  }).select("_id");
+
+  if (subjectAssignment) {
+    return "subject_teacher";
+  }
+
+  const err = new Error("You are not authorized to access this class section");
+  err.statusCode = 403;
+  throw err;
+};
+
+/**
+ * Builds the permissions object for the hub page based on the
+ * resolved access role.
+ */
+const buildHubPermissions = (accessRole) => {
+  if (accessRole === "school_admin") {
+    return {
+      canEnrollStudents: true,
+      canAssignTeachers: true,
+      canMarkAttendance: true,
+    };
+  }
+
+  if (accessRole === "class_teacher") {
+    return {
+      canEnrollStudents: false,
+      canAssignTeachers: false,
+      canMarkAttendance: true,
+    };
+  }
+
+  return {
+    canEnrollStudents: false,
+    canAssignTeachers: false,
+    canMarkAttendance: false,
+  };
+};
+
+/**
+ * Formats the class teacher's StaffProfile (populated with user_id)
+ * into the compact summary shape required by the hub.
+ */
+const formatHubClassTeacher = (classTeacher) => {
+  if (!classTeacher) return null;
+
+  const teacherUser = classTeacher.user_id || null;
+
+  return {
+    staff_profile_id: classTeacher._id,
+    user_id: teacherUser?._id || null,
+    name: teacherUser?.name || null,
+    email: teacherUser?.email || null,
+    designation: classTeacher.designation || null,
+    qualification: classTeacher.qualification || null,
+    profile_highlight: classTeacher.profile_highlight || null,
+    avatar: teacherUser?.profile_avatar || null,
+  };
+};
+
+export const getClassSectionHubService = async (user, classSectionId, { attendanceDate } = {}) => {
+  assertSchoolBoundUser(user);
+
+  if (!mongoose.Types.ObjectId.isValid(classSectionId)) {
+    const err = new Error("Invalid classSection id");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // 1) Single class section lookup, with class teacher + user populated
+  const classSection = await ClassSection.findOne({
+    _id: classSectionId,
+    school_id: user.school_id,
+  }).populate({
+    path: "classTeacher_id",
+    select: "designation qualification profile_highlight user_id",
+    populate: {
+      path: "user_id",
+      select: "name email profile_avatar",
+    },
+  });
+
+  if (!classSection) {
+    const err = new Error("Class section not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // 2) Resolve access role (admin / class teacher / subject teacher) — throws 403 if none
+  const accessRole = await resolveClassSectionAccessRole(user, classSection);
+
+  // 3) Fetch summary counts in parallel
+  const { start, end } = dayBounds(attendanceDate || new Date());
+
+  const [
+    enrolledStudents,
+    activeSubjectAssignments,
+    attendanceAgg,
+    publishedTimetableCount,
+    latestTimetableSlot,
+  ] = await Promise.all([
+    StudentEnrollment.countDocuments({
+      school_id: user.school_id,
+      academicYear: classSection.academicYear,
+      classSection_id: classSection._id,
+      isActive: true,
+    }),
+
+    ClassSubjectAssignment.find({
+      school_id: user.school_id,
+      class_section_ids: classSection._id,
+      status: "active",
+    }).select("staff_id"),
+
+    Attendance.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          classSection_id: classSection._id,
+          attendanceDate: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+
+    Timetable.countDocuments({
+      school_id: user.school_id,
+      class_section_id: classSection._id,
+      status: "published",
+    }),
+
+    Timetable.findOne({
+      school_id: user.school_id,
+      class_section_id: classSection._id,
+      status: { $ne: "inactive" },
+    })
+      .sort({ updatedAt: -1 })
+      .select("updatedAt"),
+  ]);
+
+  // ---- Student summary ----
+  const capacity = classSection.capacity || 0;
+  const remainingSeats = Math.max(capacity - enrolledStudents, 0);
+
+  // ---- Subject summary ----
+  const assignedTeacherIds = new Set(
+    activeSubjectAssignments.map((a) => String(a.staff_id))
+  );
+
+  // ---- Attendance summary ----
+  const attendanceCounts = {
+    present: 0,
+    absent: 0,
+    late: 0,
+    half_day: 0,
+    excused: 0,
+  };
+  for (const row of attendanceAgg) {
+    if (ATTENDANCE_STATUSES.includes(row._id)) {
+      attendanceCounts[row._id] = row.count;
+    }
+  }
+
+  return {
+    classSection: {
+      id: classSection._id,
+      academicYear: classSection.academicYear,
+      standard: classSection.standard,
+      section: classSection.section,
+      classCode: classSection.classCode,
+      status: classSection.status,
+      createdBy: classSection.createdBy
+        ? {
+          id: classSection.createdBy._id,
+          name: classSection.createdBy.name,
+          email: classSection.createdBy.email,
+          role: classSection.createdBy.role,
+        }
+        : null,
+      createdAt: classSection.createdAt,
+    },
+
+    classTeacher: formatHubClassTeacher(classSection.classTeacher_id),
+
+    studentSummary: {
+      enrolledStudents,
+      capacity,
+      remainingSeats,
+    },
+
+    subjectSummary: {
+      assignedSubjects: activeSubjectAssignments.length,
+      assignedTeachers: assignedTeacherIds.size,
+    },
+
+    attendanceSummary: {
+      ...attendanceCounts,
+      attendanceDate: start,
+    },
+
+    timetableSummary: {
+      isPublished: publishedTimetableCount > 0,
+      lastUpdatedAt: latestTimetableSlot?.updatedAt || null,
+    },
+
+    request_role: accessRole,
+    permissions: buildHubPermissions(accessRole),
+  };
+};
+
+// ============================================================
+// TEACHER MY CLASSES
+// GET /class-sections/my-classes
+//
+// Returns the authenticated teacher's class overview, split into:
+//   - classTeacherSections  (where they are the class teacher)
+//   - assignedSections      (where they are only a subject teacher)
+// ============================================================
+
+export const getMyClassesService = async (user) => {
+  if (!user || user.role !== "teacher") {
+    const err = new Error("Only teachers can access this endpoint");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (!user.school_id) {
+    const err = new Error("User is not linked to any school");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  // 1) Resolve the teacher's StaffProfile
+  const staff = await StaffProfile.findOne({
+    user_id: user.id,
+    school_id: user.school_id,
+  }).select("_id");
+
+  if (!staff) {
+    const err = new Error("Staff profile not found. Please contact your school admin.");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  // 2) Parallel: class-teacher sections + active subject assignments
+  const [classTeacherSections, subjectAssignments] = await Promise.all([
+    ClassSection.find({
+      school_id: user.school_id,
+      classTeacher_id: staff._id,
+    }).sort({ academicYear: -1, standard: 1, section: 1 }),
+
+    ClassSubjectAssignment.find({
+      school_id: user.school_id,
+      staff_id: staff._id,
+      status: "active",
+    })
+      .populate({
+        path: "subject_id",
+        select: "name code status",
+      })
+      .populate({
+        path: "class_section_ids",
+        select: "academicYear standard section classCode status school_id",
+      }),
+  ]);
+
+  // 3) Build a set of section IDs where teacher is the class teacher (for deduplication)
+  const classTeacherSectionIds = new Set(
+    classTeacherSections.map((cs) => String(cs._id))
+  );
+
+  // 4) Flatten assignments into per-section entries, deduplicating class-teacher sections
+  const assignedEntries = []; // { classSection, assignment_id, subject }
+  for (const assignment of subjectAssignments) {
+    for (const cs of assignment.class_section_ids) {
+      // skip if not in the same school (safety) or already a class-teacher section
+      if (String(cs.school_id) !== String(user.school_id)) continue;
+      if (classTeacherSectionIds.has(String(cs._id))) continue;
+      assignedEntries.push({
+        classSection: cs,
+        assignment_id: assignment._id,
+        subject: assignment.subject_id
+          ? {
+            id: assignment.subject_id._id,
+            name: assignment.subject_id.name,
+            code: assignment.subject_id.code,
+          }
+          : null,
+      });
+    }
+  }
+
+  // Sort assigned entries: academicYear desc, standard asc, section asc, subject name asc
+  assignedEntries.sort((a, b) => {
+    const yearDiff = String(b.classSection.academicYear || "").localeCompare(
+      String(a.classSection.academicYear || "")
+    );
+    if (yearDiff !== 0) return yearDiff;
+    const stdDiff = String(a.classSection.standard || "").localeCompare(
+      String(b.classSection.standard || "")
+    );
+    if (stdDiff !== 0) return stdDiff;
+    const secDiff = String(a.classSection.section || "").localeCompare(
+      String(b.classSection.section || "")
+    );
+    if (secDiff !== 0) return secDiff;
+    return String(a.subject?.name || "").localeCompare(String(b.subject?.name || ""));
+  });
+
+  // 5) Batch fetch: enrolled student counts + subject counts for class-teacher sections
+  const classTeacherSectionIdsArr = classTeacherSections.map((cs) => cs._id);
+
+  const [enrollmentCountDocs, subjectCountDocs] = await Promise.all([
+    // Count enrolled students per class-teacher section
+    StudentEnrollment.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          classSection_id: { $in: classTeacherSectionIdsArr },
+          isActive: true,
+        },
+      },
+      {
+        $group: { _id: "$classSection_id", count: { $sum: 1 } },
+      },
+    ]),
+
+    // Count active subject assignments per class-teacher section
+    ClassSubjectAssignment.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          class_section_ids: { $in: classTeacherSectionIdsArr },
+          status: "active",
+        },
+      },
+      {
+        $unwind: "$class_section_ids",
+      },
+      {
+        $match: {
+          class_section_ids: { $in: classTeacherSectionIdsArr },
+        },
+      },
+      {
+        $group: { _id: "$class_section_ids", count: { $sum: 1 } },
+      },
+    ]),
+  ]);
+
+  // Build lookup maps for O(1) access
+  const enrollmentCountMap = new Map(
+    enrollmentCountDocs.map((d) => [String(d._id), d.count])
+  );
+  const subjectCountMap = new Map(
+    subjectCountDocs.map((d) => [String(d._id), d.count])
+  );
+
+  // 6) Shape classTeacherSections
+  const shapedClassTeacherSections = classTeacherSections.map((cs) => ({
+    id: cs._id,
+    academicYear: cs.academicYear,
+    standard: cs.standard,
+    section: cs.section,
+    classCode: cs.classCode,
+    status: cs.status,
+    enrolledStudents: enrollmentCountMap.get(String(cs._id)) ?? 0,
+    subjectCount: subjectCountMap.get(String(cs._id)) ?? 0,
+    canMarkAttendance: true,
+    canViewStudents: true,
+    canManageTimetable: true,
+  }));
+
+  // 7) Shape assignedSections
+  const shapedAssignedSections = assignedEntries.map((entry) => ({
+    id: entry.classSection._id,
+    academicYear: entry.classSection.academicYear,
+    standard: entry.classSection.standard,
+    section: entry.classSection.section,
+    classCode: entry.classSection.classCode,
+    status: entry.classSection.status,
+    assignment_id: entry.assignment_id,
+    subject: entry.subject,
+    canMarkAttendance: false,
+    canViewStudents: true,
+  }));
+
+  // 8) Unique total sections (class-teacher + distinct assigned section IDs)
+  const assignedSectionIds = new Set(shapedAssignedSections.map((s) => String(s.id)));
+  const totalSections = classTeacherSectionIds.size + assignedSectionIds.size;
+
+  return {
+    classTeacherSections: shapedClassTeacherSections,
+    assignedSections: shapedAssignedSections,
+    totalClassTeacherSections: shapedClassTeacherSections.length,
+    totalAssignedSections: shapedAssignedSections.length,
+    totalSections,
+    roleSummary: {
+      isClassTeacher: shapedClassTeacherSections.length > 0,
+      isSubjectTeacher: shapedAssignedSections.length > 0,
+    },
   };
 };

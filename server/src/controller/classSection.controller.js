@@ -4,6 +4,9 @@ import {
   updateClassSectionService,
   getClassSectionsService,
   getOneClassSectionService,
+  getMyClassIntroService,
+  getClassSectionHubService,
+  getMyClassesService,
 } from "../services/classSection.service.js";
 
 export const createClassSection = async (req, res) => {
@@ -57,5 +60,63 @@ export const getOneClassSection = async (req, res) => {
   } catch (err) {
     logger.error("Get one class section error:", err);
     return res.status(404).json({ message: err.message });
+  }
+};
+
+// --------------------------------------
+// GET /api/student/class-intro
+// Query: ?childId=<id>  (optional, used when a parent is viewing a specific child)
+// Access: student, parent
+// --------------------------------------
+export const getMyClassIntroController = async (req, res, next) => {
+  try {
+    const { childId } = req.query;
+
+    const result = await getMyClassIntroService(req.user, {
+      childId: childId || null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// --------------------------------------
+// GET /api/class-sections/:classSectionId/hub
+// Query: ?attendanceDate=YYYY-MM-DD  (optional, defaults to today)
+// Access: school_admin, class_teacher, subject_teacher
+// --------------------------------------
+export const getClassSectionHub = async (req, res, next) => {
+  try {
+    const { classSectionId } = req.params;
+    const { attendanceDate } = req.query;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const result = await getClassSectionHubService(req.user, classSectionId, {
+      attendanceDate: attendanceDate ? new Date(attendanceDate) : today,
+    });
+
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// --------------------------------------
+// GET /api/class-sections/my-classes
+// Access: teacher (verified staff only)
+// --------------------------------------
+export const getMyClassesController = async (req, res, next) => {
+  try {
+    const result = await getMyClassesService(req.user);
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
   }
 };

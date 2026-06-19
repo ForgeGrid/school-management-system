@@ -1,5 +1,6 @@
 node_modules
 .env
 sample_test
+plans
 classSubjectAssignemnt.txt
 helper-refactor-audit.md
