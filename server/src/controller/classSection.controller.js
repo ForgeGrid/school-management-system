@@ -114,7 +114,7 @@ export const getClassSectionHub = async (req, res, next) => {
 // --------------------------------------
 export const getMyClassesController = async (req, res, next) => {
   try {
-    const result = await getMyClassesService(req.user);
+    const result = await getMyClassesService(req.user, req.query || {});
     return res.status(200).json({ success: true, data: result });
   } catch (err) {
     return next(err);

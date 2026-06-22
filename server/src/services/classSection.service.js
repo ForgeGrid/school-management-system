@@ -25,6 +25,7 @@ import {
 import {
   dayBounds,
 } from "../utils/date.helper.js";
+import { formatClassSectionCard } from "../utils/classSectionCard.helper.js";
 
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "half_day", "excused"];
 
@@ -136,11 +137,144 @@ export const getClassSectionsService = async (user, query = {}) => {
   if (query.standard) filter.standard = normalize(query.standard);
   if (query.status && ["active", "inactive"].includes(query.status)) filter.status = query.status;
 
-  const items = await ClassSection.find(filter)
-    .sort({ academicYear: -1, standard: 1, section: 1 })
-    .populate("classTeacher_id", "name email");
+  if (query.search) {
+    const searchRegex = new RegExp(normalize(query.search), "i");
+    filter.$or = [
+      { standard: searchRegex },
+      { section: searchRegex },
+      { classCode: searchRegex },
+    ];
+  }
 
-  return items;
+  // Pagination
+  const page = Math.max(1, parseInt(query.page) || 1);
+  const limit = Math.max(1, parseInt(query.limit) || 20);
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    ClassSection.find(filter)
+      .sort({ academicYear: -1, standard: 1, section: 1 })
+      .populate({
+        path: "classTeacher_id",
+        select: "user_id designation qualification profile_highlight",
+        populate: {
+          path: "user_id",
+          select: "name email profile_avatar",
+        },
+      })
+      .populate("createdBy", "name email role")
+      .skip(skip)
+      .limit(limit),
+    ClassSection.countDocuments(filter),
+  ]);
+
+  // 3) Batch fetch counts for the current page of results
+  const sectionIds = items.map((i) => i._id);
+  const { start, end } = dayBounds(new Date());
+
+  const [enrollmentCounts, subjectCounts, attendanceCounts, timetableCounts] = await Promise.all([
+    StudentEnrollment.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          classSection_id: { $in: sectionIds },
+          isActive: true,
+        },
+      },
+      { $group: { _id: "$classSection_id", count: { $sum: 1 } } },
+    ]),
+
+    ClassSubjectAssignment.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          class_section_ids: { $in: sectionIds },
+          status: "active",
+        },
+      },
+      { $unwind: "$class_section_ids" },
+      { $match: { class_section_ids: { $in: sectionIds } } },
+      { $group: { _id: "$class_section_ids", count: { $sum: 1 } } },
+    ]),
+
+    Attendance.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          classSection_id: { $in: sectionIds },
+          attendanceDate: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: { classSection_id: "$classSection_id", status: "$status" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+
+    Timetable.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          class_section_id: { $in: sectionIds },
+          status: "published",
+        },
+      },
+      { $group: { _id: "$class_section_id", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  // Map results for O(1) lookup
+  const enrollmentMap = new Map(enrollmentCounts.map((d) => [String(d._id), d.count]));
+  const subjectMap = new Map(subjectCounts.map((d) => [String(d._id), d.count]));
+  const timetableMap = new Map(timetableCounts.map((d) => [String(d._id), d.count]));
+
+  // Attendance map: sectionId -> { present: X, absent: Y, ... }
+  const attendanceMap = new Map();
+  sectionIds.forEach((id) => {
+    attendanceMap.set(String(id), {
+      present: 0,
+      absent: 0,
+      late: 0,
+      half_day: 0,
+      excused: 0,
+    });
+  });
+
+  attendanceCounts.forEach((d) => {
+    const sId = String(d._id.classSection_id);
+    const status = d._id.status;
+    if (attendanceMap.has(sId) && ATTENDANCE_STATUSES.includes(status)) {
+      attendanceMap.get(sId)[status] = d.count;
+    }
+  });
+
+  return {
+    items: items.map((item) => {
+      const sId = String(item._id);
+      const attendance = attendanceMap.get(sId);
+      const hasAttendance = Object.values(attendance).some((v) => v > 0);
+
+      return formatClassSectionCard(item, {
+        studentCount: enrollmentMap.get(sId) ?? 0,
+        subjectCount: subjectMap.get(sId) ?? 0,
+        attendanceToday: hasAttendance ? attendance : null,
+        timetableStatus: (timetableMap.get(sId) ?? 0) > 0 ? "published" : "not_published",
+        createdBy: item.createdBy,
+        canMarkAttendance: true,
+        canManageTimetable: true,
+        canAssignTeachers: true,
+        canEnrollStudents: true,
+      });
+    }),
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 export const getOneClassSectionService = async (user, classSectionId) => {
@@ -542,7 +676,7 @@ export const getClassSectionHubService = async (user, classSectionId, { attendan
 //   - assignedSections      (where they are only a subject teacher)
 // ============================================================
 
-export const getMyClassesService = async (user) => {
+export const getMyClassesService = async (user, query = {}) => {
   if (!user || user.role !== "teacher") {
     const err = new Error("Only teachers can access this endpoint");
     err.statusCode = 403;
@@ -567,18 +701,26 @@ export const getMyClassesService = async (user) => {
     throw err;
   }
 
+  const sectionFilter = {
+    school_id: user.school_id,
+    classTeacher_id: staff._id,
+  };
+  const assignmentFilter = {
+    school_id: user.school_id,
+    staff_id: staff._id,
+    status: "active",
+  };
+
+  if (query.academicYear) {
+    sectionFilter.academicYear = normalize(query.academicYear);
+    assignmentFilter.academicYear = normalize(query.academicYear); // Assuming assignment has academicYear too, or we filter later
+  }
+
   // 2) Parallel: class-teacher sections + active subject assignments
   const [classTeacherSections, subjectAssignments] = await Promise.all([
-    ClassSection.find({
-      school_id: user.school_id,
-      classTeacher_id: staff._id,
-    }).sort({ academicYear: -1, standard: 1, section: 1 }),
+    ClassSection.find(sectionFilter).sort({ academicYear: -1, standard: 1, section: 1 }),
 
-    ClassSubjectAssignment.find({
-      school_id: user.school_id,
-      staff_id: staff._id,
-      status: "active",
-    })
+    ClassSubjectAssignment.find(assignmentFilter)
       .populate({
         path: "subject_id",
         select: "name code status",
@@ -632,10 +774,11 @@ export const getMyClassesService = async (user) => {
     return String(a.subject?.name || "").localeCompare(String(b.subject?.name || ""));
   });
 
-  // 5) Batch fetch: enrolled student counts + subject counts for class-teacher sections
+  // 5) Batch fetch: enrolled student counts + subject counts + attendance + timetable
   const classTeacherSectionIdsArr = classTeacherSections.map((cs) => cs._id);
+  const { start, end } = dayBounds(new Date());
 
-  const [enrollmentCountDocs, subjectCountDocs] = await Promise.all([
+  const [enrollmentCountDocs, subjectCountDocs, attendanceCounts, timetableCounts] = await Promise.all([
     // Count enrolled students per class-teacher section
     StudentEnrollment.aggregate([
       {
@@ -645,9 +788,7 @@ export const getMyClassesService = async (user) => {
           isActive: true,
         },
       },
-      {
-        $group: { _id: "$classSection_id", count: { $sum: 1 } },
-      },
+      { $group: { _id: "$classSection_id", count: { $sum: 1 } } },
     ]),
 
     // Count active subject assignments per class-teacher section
@@ -659,56 +800,94 @@ export const getMyClassesService = async (user) => {
           status: "active",
         },
       },
-      {
-        $unwind: "$class_section_ids",
-      },
+      { $unwind: "$class_section_ids" },
+      { $match: { class_section_ids: { $in: classTeacherSectionIdsArr } } },
+      { $group: { _id: "$class_section_ids", count: { $sum: 1 } } },
+    ]),
+
+    // Attendance today summary for class-teacher sections
+    Attendance.aggregate([
       {
         $match: {
-          class_section_ids: { $in: classTeacherSectionIdsArr },
+          school_id: user.school_id,
+          classSection_id: { $in: classTeacherSectionIdsArr },
+          attendanceDate: { $gte: start, $lte: end },
         },
       },
       {
-        $group: { _id: "$class_section_ids", count: { $sum: 1 } },
+        $group: {
+          _id: { classSection_id: "$classSection_id", status: "$status" },
+          count: { $sum: 1 },
+        },
       },
+    ]),
+
+    // Timetable status for class-teacher sections
+    Timetable.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          class_section_id: { $in: classTeacherSectionIdsArr },
+          status: "published",
+        },
+      },
+      { $group: { _id: "$class_section_id", count: { $sum: 1 } } },
     ]),
   ]);
 
   // Build lookup maps for O(1) access
-  const enrollmentCountMap = new Map(
-    enrollmentCountDocs.map((d) => [String(d._id), d.count])
-  );
-  const subjectCountMap = new Map(
-    subjectCountDocs.map((d) => [String(d._id), d.count])
-  );
+  const enrollmentCountMap = new Map(enrollmentCountDocs.map((d) => [String(d._id), d.count]));
+  const subjectCountMap = new Map(subjectCountDocs.map((d) => [String(d._id), d.count]));
+  const timetableMap = new Map(timetableCounts.map((d) => [String(d._id), d.count]));
+
+  const attendanceMap = new Map();
+  classTeacherSectionIdsArr.forEach((id) => {
+    attendanceMap.set(String(id), {
+      present: 0,
+      absent: 0,
+      late: 0,
+      half_day: 0,
+      excused: 0,
+    });
+  });
+
+  attendanceCounts.forEach((d) => {
+    const sId = String(d._id.classSection_id);
+    const status = d._id.status;
+    if (attendanceMap.has(sId) && ATTENDANCE_STATUSES.includes(status)) {
+      attendanceMap.get(sId)[status] = d.count;
+    }
+  });
 
   // 6) Shape classTeacherSections
-  const shapedClassTeacherSections = classTeacherSections.map((cs) => ({
-    id: cs._id,
-    academicYear: cs.academicYear,
-    standard: cs.standard,
-    section: cs.section,
-    classCode: cs.classCode,
-    status: cs.status,
-    enrolledStudents: enrollmentCountMap.get(String(cs._id)) ?? 0,
-    subjectCount: subjectCountMap.get(String(cs._id)) ?? 0,
-    canMarkAttendance: true,
-    canViewStudents: true,
-    canManageTimetable: true,
-  }));
+  const shapedClassTeacherSections = classTeacherSections.map((cs) => {
+    const sId = String(cs._id);
+    const attendance = attendanceMap.get(sId);
+    const hasAttendance = Object.values(attendance).some((v) => v > 0);
+
+    return formatClassSectionCard(cs, {
+      studentCount: enrollmentCountMap.get(sId) ?? 0,
+      subjectCount: subjectCountMap.get(sId) ?? 0,
+      attendanceToday: hasAttendance ? attendance : null,
+      timetableStatus: (timetableMap.get(sId) ?? 0) > 0 ? "published" : "not_published",
+      canMarkAttendance: true,
+      canViewStudents: true,
+      canManageTimetable: true,
+    });
+  });
 
   // 7) Shape assignedSections
-  const shapedAssignedSections = assignedEntries.map((entry) => ({
-    id: entry.classSection._id,
-    academicYear: entry.classSection.academicYear,
-    standard: entry.classSection.standard,
-    section: entry.classSection.section,
-    classCode: entry.classSection.classCode,
-    status: entry.classSection.status,
-    assignment_id: entry.assignment_id,
-    subject: entry.subject,
-    canMarkAttendance: false,
-    canViewStudents: true,
-  }));
+  const shapedAssignedSections = assignedEntries.map((entry) => {
+    const card = formatClassSectionCard(entry.classSection, {
+      canMarkAttendance: false,
+    });
+    return {
+      ...card,
+      assignment_id: entry.assignment_id,
+      subject: entry.subject,
+      canViewStudents: true,
+    };
+  });
 
   // 8) Unique total sections (class-teacher + distinct assigned section IDs)
   const assignedSectionIds = new Set(shapedAssignedSections.map((s) => String(s.id)));
