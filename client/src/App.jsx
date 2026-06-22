@@ -6,17 +6,16 @@ import TenantMain from "./page/Dashboard/Dashboard";
 import AuthProtectRoute from "./middleware/AuthProtect.route";
 import PublicRoute from "./middleware/PublicRoute";
 import AdminDashboard from "./page/Admin/AdminDashboard";
-import StudentDashboard from "./page/StudentDhasboard/ParentDashboard"
-
-import { Toaster, toast } from 'sonner';
+import StudentDashboard from "./page/StudentDhasboard/ParentDashboard";
+import { Toaster } from 'sonner';
 import AppGate from "./middleware/AppGate";
+
 function App() {
   return (
     <Provider store={store}>
       <Toaster position="top-right" richColors />
       <BrowserRouter>
         <Routes>
-
           {/* Public Routes */}
           <Route path="/" element={<PublicRoute> <AuthMain /> </PublicRoute>} />
 
@@ -65,7 +64,7 @@ function App() {
             element={
               <AuthProtectRoute>
                 <AppGate>
-                  <AdminDashboard />
+                   <AdminDashboard />
                 </AppGate>
               </AuthProtectRoute>
             }
