@@ -7,6 +7,9 @@ import { schoolReducers, studentReducer } from "./slice/schoolStudentSlice";
 import busRouteReducer from "./slice/busRouteSlice";
 import academicFeeStructureReducer from "./slice/academicFeeStructureSlice";
 import transportFeeStructureReducer from "./slice/transportFeeStructureSlice";
+import classSubjectAssignmentReducer from "./slice/classSubjectAssignmentSlice";
+import subjectReducer from "./slice/subjectSlice";
+
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -17,7 +20,10 @@ const store = configureStore({
     student: studentReducer,
      busRoute: busRouteReducer,
       academicFeeStructure: academicFeeStructureReducer,
-      transportFeeStructure: transportFeeStructureReducer
+      transportFeeStructure: transportFeeStructureReducer,
+      classSubjectAssignment: classSubjectAssignmentReducer,
+          subject: subjectReducer,
+
   },
 });
 
