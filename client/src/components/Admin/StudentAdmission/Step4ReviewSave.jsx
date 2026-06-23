@@ -85,7 +85,7 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
   const handleConfirmAdmission = async () => {
     if (!confirmed || apiLoading) return;
 
-    // ── Validate the minimum required fee plan fields before dispatch ────────
+    // ── Step 1: Validate academic plan ───────────────────────────────────────
     if (!form.academicPlanId) {
       alert("Academic fee structure is required. Please go back to Step 2 and select a fee structure.");
       return;
@@ -94,70 +94,87 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
       alert("Academic year is required. Please go back to Step 2.");
       return;
     }
-    if (form.transport_required && (!form.transportFeeStructureId || !form.transportRouteId)) {
-      alert("Transport fee structure and route are required when transport is enabled. Please go back to Step 2.");
-      return;
+
+    // ── Step 2: Validate transport fields strictly ───────────────────────────
+    // Use Boolean coercion — empty string "", null, undefined all fail this check
+    const transportRequired = Boolean(form.transport_required);
+
+    if (transportRequired) {
+      const hasFeeStructure = form.transportFeeStructureId && String(form.transportFeeStructureId).trim() !== "";
+      const hasRoute        = form.transportRouteId        && String(form.transportRouteId).trim()        !== "";
+
+      if (!hasFeeStructure || !hasRoute) {
+        alert(
+          "Transport is enabled but no valid transport fee structure or route was found.\n\n" +
+          "Please go back to Step 2 and select a valid Route and Drop Point that has an active transport fee configured."
+        );
+        return;
+      }
     }
 
-   
+    // ── Step 3: Build parent block ───────────────────────────────────────────
     let parentBlock = form.parent;
 
     if (!parentBlock) {
-      // Fallback: reconstruct from flat form fields (shouldn't happen normally)
       if (form.parentMode === "existing" || form.parentMode === "link") {
         parentBlock = { mode: "existing", parentUserId: form.parentUserId };
       } else {
         parentBlock = {
-          mode:               "new",
-          name:               form.parent_name,
-          email:              form.parent_email,
-          primary_phone:      form.parent_phone,
+          mode:          "new",
+          name:          form.parent_name,
+          email:         form.parent_email,
+          primary_phone: form.parent_phone,
           ...(form.guardian_name     ? { guardian_name:     form.guardian_name     } : {}),
           ...(form.guardian_relation ? { guardian_relation: form.guardian_relation } : {}),
         };
       }
     }
 
-
+    // ── Step 4: Build feePlan — NEVER include transport keys when not required
     const feePlan = {
       academicYear:            form.academicYear,
       academicFeeStructure_id: form.academicPlanId,
-      discounts:         discounts.map((d) => ({ type: d.type,  amount: Number(d.amount) || 0 })),
-      additionalCharges: charges.map((c)   => ({ name: c.name,  amount: Number(c.amount) || 0 })),
+      discounts:         discounts.map((d) => ({ type: d.type, amount: Number(d.amount) || 0 })),
+      additionalCharges: charges.map((c)   => ({ name: c.name, amount: Number(c.amount) || 0 })),
     };
 
-    // Only include transport IDs when transport is required
-    if (form.transport_required) {
-      feePlan.transportFeeStructure_id = form.transportFeeStructureId || undefined;
-      feePlan.currentRoute_id          = form.transportRouteId        || undefined;
+    // Only attach transport keys when transport is truly required AND IDs are valid
+    if (transportRequired) {
+      feePlan.transportFeeStructure_id = String(form.transportFeeStructureId).trim();
+      feePlan.currentRoute_id          = String(form.transportRouteId).trim();
     }
+    // When transport is NOT required, transportFeeStructure_id and currentRoute_id
+    // are intentionally omitted from feePlan entirely — not set to undefined/null/""
 
-    // ── Final payload — field names match createAdmissionService params ──────
+    // ── Step 5: Build final payload ──────────────────────────────────────────
     const payload = {
       student_name:       form.student_name,
       email:              form.email,
       password:           form.password,
       admission_no:       form.admission_no,
       gender:             form.gender?.toLowerCase() || "prefer_not_to_say",
-      dob:                form.dob                  || null,
-      transport_required: form.transport_required   ?? false,
-      requestedGrade:     form.requestedGrade       || form.grade || undefined,
-      address:            form.address,  // { street, city, state, postalCode, country }
-      parent:             parentBlock,   // { mode, ... }
+      dob:                form.dob  || null,
+      transport_required: transportRequired,   // always a clean boolean
+      requestedGrade:     form.requestedGrade || form.grade || undefined,
+      address:            form.address,
+      parent:             parentBlock,
       feePlan,
-      // avatarFile is handled separately via FormData in the thunk
       ...(form.avatarFile ? { avatarFile: form.avatarFile } : {}),
     };
+
+    // ── Step 6: Debug log — remove after confirming fix ──────────────────────
+    console.log("[handleConfirmAdmission] payload:", JSON.stringify({
+      ...payload,
+      avatarFile: payload.avatarFile ? "[File]" : undefined,
+    }, null, 2));
 
     const result = await dispatch(enrollStudent(payload));
 
     if (enrollStudent.fulfilled.match(result)) {
       onSubmit(result);
     }
-    // On rejection the Redux notification toast shows the error automatically
   };
 
- 
   return (
     <div className="flex flex-col h-full bg-blue-100/30 rounded-xl">
 
@@ -218,6 +235,17 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
           ))}
         </div>
 
+        {/* ── Transport warning banner — shown when transport is on but IDs are missing ── */}
+        {form.transport_required && (!form.transportFeeStructureId || !form.transportRouteId) && (
+          <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 font-semibold">
+            <svg className="w-5 h-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" strokeLinecap="round" />
+            </svg>
+            Transport is enabled but no active fee structure was found for the selected route and drop point.
+            Please go back to Step 2 and pick a valid combination.
+          </div>
+        )}
+
         {/* Main two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
@@ -275,7 +303,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                   <p className="text-[11px] text-slate-400 font-semibold">Parent Email</p>
                   <p className="text-sm font-semibold text-slate-700 break-all">{form.parent_email || "—"}</p>
                 </div>
-                {/*  Show guardian fields in review if filled */}
                 {form.guardian_name && (
                   <div>
                     <p className="text-[11px] text-slate-400 font-semibold">Guardian Name</p>
@@ -290,7 +317,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 )}
               </div>
 
-              {/* Address */}
               {address && (
                 <div className="mb-3">
                   <div className="flex items-center gap-1.5 mb-0.5">
@@ -301,7 +327,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 </div>
               )}
 
-              {/* Transport badge */}
               <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                 <span className="text-[11px] text-slate-400 font-semibold">Transport Required</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -376,7 +401,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 </div>
               </div>
 
-              {/* Warning if no structure selected */}
               {!form.academicPlanId && (
                 <div className="mb-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 text-xs text-red-700 font-semibold">
                   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -386,7 +410,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 </div>
               )}
 
-              {/* Fee Heads Table */}
               {heads.length > 0 && (
                 <table className="w-full border-collapse mb-3">
                   <thead>
@@ -424,7 +447,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 </table>
               )}
 
-              {/* Academic Subtotal */}
               <div className="flex items-center justify-between bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-3">
                 <span className="text-sm font-bold text-blue-700">Academic Subtotal</span>
                 <span className="text-base font-black text-blue-700">{fmt(acadTotal)}</span>
@@ -436,10 +458,8 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
         {/* ── Bottom: Adjustments + Final Summary ── */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 mb-4">
 
-          {/* Additional Adjustments */}
           <SectionCard icon={<Receipt className="w-4 h-4" />} title="Additional Adjustments" onEdit={goBack}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Discounts */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-6 rounded-md bg-green-50 border border-green-100 flex items-center justify-center text-green-500 text-xs">%</div>
@@ -473,7 +493,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                 )}
               </div>
 
-              {/* Additional Charges */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-6 rounded-md bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-500 text-xs font-bold">+</div>
@@ -509,7 +528,6 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
             </div>
           </SectionCard>
 
-          {/* Final Payment Summary */}
           <div className="bg-blue-600 rounded-2xl p-5 flex flex-col justify-between shadow-md">
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -518,10 +536,10 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
               </div>
               <div className="space-y-2.5 text-sm mb-4">
                 {[
-                  { label: "Academic Subtotal",  value: fmt(acadTotal),                    color: "text-blue-100"  },
-                  { label: "Transport Fee",       value: fmt(transTotal),                   color: "text-blue-100"  },
-                  { label: "Additional Charges",  value: `+ ${fmt(additionalChargesTotal)}`,color: "text-green-300" },
-                  { label: "Discounts",           value: `- ${fmt(discountsTotal)}`,         color: "text-rose-300"  },
+                  { label: "Academic Subtotal",  value: fmt(acadTotal),                     color: "text-blue-100"  },
+                  { label: "Transport Fee",       value: fmt(transTotal),                    color: "text-blue-100"  },
+                  { label: "Additional Charges",  value: `+ ${fmt(additionalChargesTotal)}`, color: "text-green-300" },
+                  { label: "Discounts",           value: `- ${fmt(discountsTotal)}`,          color: "text-rose-300"  },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="flex justify-between items-center">
                     <span className="text-blue-200 font-semibold">{label}</span>
@@ -579,13 +597,21 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
             <Save className="w-4 h-4" /> Save Draft
           </button>
 
-          {/* ✅ The one and only API trigger button in the entire wizard */}
           <button
             type="button"
             onClick={handleConfirmAdmission}
-            disabled={!confirmed || apiLoading || !form.academicPlanId}
+            disabled={
+              !confirmed ||
+              apiLoading ||
+              !form.academicPlanId ||
+              // Disable if transport is required but IDs are missing
+              (Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
+            }
             className={`flex items-center gap-2 h-10 px-6 text-sm font-black text-white rounded-xl transition active:scale-95 cursor-pointer shadow-md ${
-              confirmed && !apiLoading && form.academicPlanId
+              confirmed &&
+              !apiLoading &&
+              form.academicPlanId &&
+              !(Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
                 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
                 : "bg-slate-300 cursor-not-allowed"
             }`}

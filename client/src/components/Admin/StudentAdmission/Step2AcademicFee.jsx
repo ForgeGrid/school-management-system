@@ -55,7 +55,6 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
 
   const [academicYear, setAcademicYear] = useState(form.academicYear || "2025 - 2026");
 
- 
   const grade = form.requestedGrade || form.grade || "";
 
   const [selectedStructureId, setSelectedStructureId] = useState(form.academicPlanId || null);
@@ -97,9 +96,9 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
 
   // ── Auto-select first active route when routes load ──────────────────────
   useEffect(() => {
+    if (!form.transport_required) return;
     if (activeRoutes.length === 0) return;
 
-    // If we already have a valid selectedRouteId, keep it
     if (selectedRouteId && activeRoutes.some((r) => r._id === selectedRouteId)) return;
 
     const matchedRoute =
@@ -113,9 +112,9 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
     const matchedStop =
       stops.find((s) => s === form.transportStop) || stops[0] || "";
     setTransportStop(matchedStop);
-  }, [activeRoutes]); 
+  }, [activeRoutes, form.transport_required]);
 
-  // Fetch transport fee structures when route or year changes
+  // ── Fetch transport fee structures when route or year changes ────────────
   useEffect(() => {
     if (!form.transport_required || !academicYear || !selectedRouteId) return;
     dispatch(
@@ -128,9 +127,9 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
     );
   }, [dispatch, form.transport_required, academicYear, selectedRouteId]);
 
-  //Derive active transport fee for the selected stop 
+  // ── Derive active transport fee for the selected stop ────────────────────
   const activeTransportFee = useMemo(() => {
-    if (!transportStop || !selectedRouteId) return null;
+    if (!form.transport_required || !transportStop || !selectedRouteId) return null;
     return (
       allTransportStructures.find(
         (s) =>
@@ -139,19 +138,18 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
           s.status === "active"
       ) || null
     );
-  }, [allTransportStructures, selectedRouteId, transportStop]);
+  }, [allTransportStructures, selectedRouteId, transportStop, form.transport_required]);
 
-  //Sync transportFee & frequency from derived value 
+  // ── Sync transportFee & frequency from derived value ─────────────────────
   useEffect(() => {
     if (form.transport_required && activeTransportFee) {
       setTransportFee(activeTransportFee.amount || 0);
       setTransportFrequency(FREQ_DISPLAY[activeTransportFee.frequency] || "Monthly");
-    } else if (form.transport_required) {
+    } else {
       setTransportFee(0);
       setTransportFrequency("Monthly");
     }
   }, [activeTransportFee, form.transport_required]);
-
 
   const filteredStructures = useMemo(
     () => structures.filter((s) => s.academicYear === academicYear && s.standard === grade),
@@ -223,20 +221,37 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
 
   // ── Continue ──────────────────────────────────────────────────────────────
   const handleContinue = () => {
-    onChange("academicPlanId")          ({ target: { value: selectedStructureId } });
-    onChange("academicPlan")            ({ target: { value: selectedStructure ? `${selectedStructure.standard} - Academic Plan (${selectedStructure.academicYear})` : "" } });
-    onChange("academicYear")            ({ target: { value: academicYear } });
-    // ✅ FIX: always write grade back as form.requestedGrade so it stays in sync
-    onChange("grade")                   ({ target: { value: grade } });
-    onChange("transportRouteId")        ({ target: { value: selectedRouteId } });
-    onChange("transportRoute")          ({ target: { value: selectedRoute?.routeName || "" } });
-    onChange("transportStop")           ({ target: { value: transportStop } });
-    onChange("transportFee")            ({ target: { value: transportFee } });
-    onChange("transportFrequency")      ({ target: { value: transportFrequency } });
-    onChange("transportFeeStructureId") ({ target: { value: activeTransportFee?._id || "" } });
-    onChange("discounts")               ({ target: { value: discounts } });
-    onChange("additionalCharges")       ({ target: { value: charges } });
-    onChange("estimatedTotal")          ({ target: { value: estimatedTotal } });
+    // Guard: transport required but no fee structure resolved
+    if (form.transport_required && !activeTransportFee?._id) {
+      alert("No active transport fee structure found for the selected route and drop point. Please select a valid combination.");
+      return;
+    }
+
+    onChange("academicPlanId")    ({ target: { value: selectedStructureId } });
+    onChange("academicPlan")      ({ target: { value: selectedStructure ? `${selectedStructure.standard} - Academic Plan (${selectedStructure.academicYear})` : "" } });
+    onChange("academicYear")      ({ target: { value: academicYear } });
+    onChange("grade")             ({ target: { value: grade } });
+    onChange("discounts")         ({ target: { value: discounts } });
+    onChange("additionalCharges") ({ target: { value: charges } });
+    onChange("estimatedTotal")    ({ target: { value: estimatedTotal } });
+
+    if (form.transport_required) {
+      onChange("transportRouteId")        ({ target: { value: selectedRouteId } });
+      onChange("transportRoute")          ({ target: { value: selectedRoute?.routeName || "" } });
+      onChange("transportStop")           ({ target: { value: transportStop } });
+      onChange("transportFee")            ({ target: { value: transportFee } });
+      onChange("transportFrequency")      ({ target: { value: transportFrequency } });
+      onChange("transportFeeStructureId") ({ target: { value: activeTransportFee?._id || "" } });
+    } else {
+      // Explicitly clear all transport fields — prevents stale values leaking into the payload
+      onChange("transportRouteId")        ({ target: { value: "" } });
+      onChange("transportRoute")          ({ target: { value: "" } });
+      onChange("transportStop")           ({ target: { value: "" } });
+      onChange("transportFee")            ({ target: { value: 0 } });
+      onChange("transportFrequency")      ({ target: { value: "" } });
+      onChange("transportFeeStructureId") ({ target: { value: "" } });
+    }
+
     goNext();
   };
 
@@ -324,9 +339,7 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                   </div>
                 </div>
 
-                {/* ✅ FIX: Grade is READ-ONLY — locked to requestedGrade from Step 1.
-                    The backend service enforces academicStructure.standard === requestedGrade,
-                    so this field must never diverge. Show it as a disabled display field. */}
+                {/* Grade — read-only, locked from Step 1 */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1.5">
                     Grade / Standard

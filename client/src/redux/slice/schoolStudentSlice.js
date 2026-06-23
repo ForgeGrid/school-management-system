@@ -133,6 +133,9 @@ export const removeUserFromSchool = createAsyncThunk(
   }
 );
 
+// ---------------------------------------------------------------------------
+// ENROLL STUDENT THUNK
+// ---------------------------------------------------------------------------
 
 export const enrollStudent = createAsyncThunk(
   "student/enrollStudent",
@@ -140,65 +143,126 @@ export const enrollStudent = createAsyncThunk(
     try {
       const { avatarFile, ...rest } = payload;
 
-      const formData = new FormData();
+      // Always a real boolean — never trust incoming value directly
+      const transportRequired = rest.transport_required === true;
 
-      // Primitive fields
-      formData.append("student_name",       rest.student_name       ?? "");
-      formData.append("email",              rest.email              ?? "");
-      formData.append("password",           rest.password           ?? "");
-      formData.append("admission_no",       rest.admission_no       ?? "");
-      formData.append("gender",             rest.gender             ?? "");
-      formData.append("dob",                rest.dob                ?? "");
-      formData.append("transport_required", String(rest.transport_required ?? false));
-      formData.append("requestedGrade",     rest.requestedGrade || rest.grade || "");
-
-      // Address fields — flattened
-      formData.append("address[street]",     rest.address?.street     ?? "");
-      formData.append("address[city]",       rest.address?.city       ?? "");
-      formData.append("address[state]",      rest.address?.state      ?? "");
-      formData.append("address[postalCode]", rest.address?.postalCode ?? "");
-      formData.append("address[country]",    rest.address?.country    ?? "");
-
-      // Parent fields — flattened
-      formData.append("parent[mode]",          rest.parent?.mode          ?? "");
-      formData.append("parent[parentUserId]",  rest.parent?.parentUserId  ?? "");
-      formData.append("parent[name]",          rest.parent?.name          ?? "");
-      formData.append("parent[email]",         rest.parent?.email         ?? "");
-      formData.append("parent[primary_phone]", rest.parent?.primary_phone ?? "");
-      formData.append("parent[guardian_name]",     rest.parent?.guardian_name     ?? "");
-      formData.append("parent[guardian_relation]", rest.parent?.guardian_relation ?? "");
-
-      // feePlan fields — flattened
-      formData.append("feePlan[academicYear]",            rest.feePlan?.academicYear            ?? "");
-      formData.append("feePlan[academicFeeStructure_id]", rest.feePlan?.academicFeeStructure_id ?? "");
-      formData.append("feePlan[transportFeeStructure_id]",rest.feePlan?.transportFeeStructure_id ?? "");
-      formData.append("feePlan[currentRoute_id]",         rest.feePlan?.currentRoute_id         ?? "");
-
-      // Arrays — discounts
-      (rest.feePlan?.discounts ?? []).forEach((d, i) => {
-        formData.append(`feePlan[discounts][${i}][type]`,   d.type   ?? "");
-        formData.append(`feePlan[discounts][${i}][amount]`, d.amount ?? 0);
-      });
-
-      // Arrays — additionalCharges
-      (rest.feePlan?.additionalCharges ?? []).forEach((c, i) => {
-        formData.append(`feePlan[additionalCharges][${i}][name]`,   c.name   ?? "");
-        formData.append(`feePlan[additionalCharges][${i}][amount]`, c.amount ?? 0);
-      });
-
-      // Avatar
       if (avatarFile) {
+        // ── Has avatar: must use multipart/form-data ──────────────────────────
+        // To keep transport_required as a real boolean on the backend,
+        // we send the entire JSON payload as a single "data" field,
+        // and only the file as a separate FormData entry.
+        // The backend reads req.body.data (JSON string) + req.file (avatar).
+        // 
+        // If your backend does NOT support this pattern, we use the fallback
+        // below which sends transport_required as "true"/"false" string
+        // but omits transport fee fields entirely when not required.
+
+        const formData = new FormData();
+
+        // Primitive fields
+        formData.append("student_name",   rest.student_name   ?? "");
+        formData.append("email",          rest.email          ?? "");
+        formData.append("password",       rest.password       ?? "");
+        formData.append("admission_no",   rest.admission_no   ?? "");
+        formData.append("gender",         rest.gender         ?? "");
+        formData.append("dob",            rest.dob            ?? "");
+        formData.append("requestedGrade", rest.requestedGrade || rest.grade || "");
+
+        // ✅ KEY FIX: send "true" only when true, omit entirely when false
+        // Backend: if (transport_required) — only "true" string triggers this
+        // We do NOT append "false" because "false" string is truthy in JS/Node
+        if (transportRequired) {
+          formData.append("transport_required", "true");
+        }
+        // When transport is NOT required, we simply don't append the field at all.
+        // req.body.transport_required will be undefined → falsy → backend skips transport
+
+        // Address
+        formData.append("address[street]",     rest.address?.street     ?? "");
+        formData.append("address[city]",       rest.address?.city       ?? "");
+        formData.append("address[state]",      rest.address?.state      ?? "");
+        formData.append("address[postalCode]", rest.address?.postalCode ?? "");
+        formData.append("address[country]",    rest.address?.country    ?? "");
+
+        // Parent
+        formData.append("parent[mode]",              rest.parent?.mode              ?? "");
+        formData.append("parent[parentUserId]",      rest.parent?.parentUserId      ?? "");
+        formData.append("parent[name]",              rest.parent?.name              ?? "");
+        formData.append("parent[email]",             rest.parent?.email             ?? "");
+        formData.append("parent[primary_phone]",     rest.parent?.primary_phone     ?? "");
+        formData.append("parent[guardian_name]",     rest.parent?.guardian_name     ?? "");
+        formData.append("parent[guardian_relation]", rest.parent?.guardian_relation ?? "");
+
+        // feePlan base fields
+        formData.append("feePlan[academicYear]",            rest.feePlan?.academicYear            ?? "");
+        formData.append("feePlan[academicFeeStructure_id]", rest.feePlan?.academicFeeStructure_id ?? "");
+
+        // ✅ KEY FIX: only append transport fee fields when actually required
+        // Never send empty strings — backend treats any present key as valid
+        if (transportRequired) {
+          formData.append("feePlan[transportFeeStructure_id]", rest.feePlan?.transportFeeStructure_id ?? "");
+          formData.append("feePlan[currentRoute_id]",          rest.feePlan?.currentRoute_id          ?? "");
+        }
+
+        // Discounts
+        (rest.feePlan?.discounts ?? []).forEach((d, i) => {
+          formData.append(`feePlan[discounts][${i}][type]`,   d.type   ?? "");
+          formData.append(`feePlan[discounts][${i}][amount]`, d.amount ?? 0);
+        });
+
+        // Additional charges
+        (rest.feePlan?.additionalCharges ?? []).forEach((c, i) => {
+          formData.append(`feePlan[additionalCharges][${i}][name]`,   c.name   ?? "");
+          formData.append(`feePlan[additionalCharges][${i}][amount]`, c.amount ?? 0);
+        });
+
+        // Avatar file
         formData.append("profile-avatar", avatarFile);
+
+        const { data } = await api.post("/admission/create", formData);
+        return data;
+
+      } else {
+        // ── No avatar: send as JSON so booleans stay real booleans ────────────
+        const jsonPayload = {
+          student_name:       rest.student_name   ?? "",
+          email:              rest.email          ?? "",
+          password:           rest.password       ?? "",
+          admission_no:       rest.admission_no   ?? "",
+          gender:             rest.gender         ?? "",
+          dob:                rest.dob            ?? null,
+          transport_required: transportRequired,        // ✅ real boolean — false stays false
+          requestedGrade:     rest.requestedGrade || rest.grade || "",
+          address:            rest.address        || {},
+          parent:             rest.parent         || {},
+          feePlan: {
+            academicYear:            rest.feePlan?.academicYear            ?? "",
+            academicFeeStructure_id: rest.feePlan?.academicFeeStructure_id ?? "",
+            discounts:               rest.feePlan?.discounts               ?? [],
+            additionalCharges:       rest.feePlan?.additionalCharges       ?? [],
+            // ✅ only include transport keys when actually required
+            ...(transportRequired ? {
+              transportFeeStructure_id: rest.feePlan?.transportFeeStructure_id ?? "",
+              currentRoute_id:          rest.feePlan?.currentRoute_id          ?? "",
+            } : {}),
+          },
+        };
+
+        const { data } = await api.post("/admission/create", jsonPayload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        return data;
       }
 
-      const { data } = await api.post("/admission/create", formData);
-
-      return data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Student admission failed.");
     }
   }
 );
+
+// ---------------------------------------------------------------------------
+// OTHER STUDENT THUNKS
+// ---------------------------------------------------------------------------
 
 export const getAllStudents = createAsyncThunk(
   "student/getAllStudents",
@@ -249,7 +313,7 @@ export const deleteStudent = createAsyncThunk(
 );
 
 // ---------------------------------------------------------------------------
-// PARENT THUNKS (Link Existing Parent — admission flow)
+// PARENT THUNKS
 // ---------------------------------------------------------------------------
 
 export const searchParents = createAsyncThunk(
@@ -265,7 +329,7 @@ export const searchParents = createAsyncThunk(
 );
 
 // ---------------------------------------------------------------------------
-// SCHOOL SLICE  (unchanged)
+// SCHOOL SLICE
 // ---------------------------------------------------------------------------
 
 const schoolInitialState = {
@@ -274,18 +338,11 @@ const schoolInitialState = {
   selectedSchool: null,
   staff: [],
   adminStaff: {},
-
   selectedSchoolId: null,
   statusFilter: null,
-
-  modal: {
-    type: null,
-    payload: null,
-  },
-
+  modal: { type: null, payload: null },
   reAppealDraft: null,
   notification: null,
-
   loading: {
     createSchool: false,
     getAllSchools: false,
@@ -303,7 +360,6 @@ const schoolInitialState = {
 const schoolSlice = createSlice({
   name: "school",
   initialState: schoolInitialState,
-
   reducers: {
     setSelectedSchool(state, { payload: schoolId }) {
       state.selectedSchoolId = schoolId;
@@ -337,7 +393,6 @@ const schoolSlice = createSlice({
       state.notification = null;
     },
   },
-
   extraReducers: (builder) => {
     const loading = (key) => (state) => { state.loading[key] = true; };
     const done    = (key) => (state) => { state.loading[key] = false; };
@@ -348,7 +403,7 @@ const schoolSlice = createSlice({
         state.loading.createSchool = false;
         state.notification = { type: "success", message: "School created! Awaiting admin approval." };
       })
-      .addCase(createSchool.rejected,  (state, { payload }) => {
+      .addCase(createSchool.rejected, (state, { payload }) => {
         state.loading.createSchool = false;
         state.notification = { type: "error", message: payload };
       });
@@ -359,7 +414,7 @@ const schoolSlice = createSlice({
         state.loading.getAllSchools = false;
         state.allSchools = payload;
       })
-      .addCase(getAllSchools.rejected,  (state, { payload }) => {
+      .addCase(getAllSchools.rejected, (state, { payload }) => {
         state.loading.getAllSchools = false;
         state.notification = { type: "error", message: payload };
       });
@@ -370,7 +425,7 @@ const schoolSlice = createSlice({
         state.loading.getSchoolById = false;
         state.selectedSchool = payload;
       })
-      .addCase(getSchoolById.rejected,  done("getSchoolById"));
+      .addCase(getSchoolById.rejected, done("getSchoolById"));
 
     builder
       .addCase(getPendingSchools.pending,   loading("getPendingSchools"))
@@ -378,7 +433,7 @@ const schoolSlice = createSlice({
         state.loading.getPendingSchools = false;
         state.pendingSchools = payload;
       })
-      .addCase(getPendingSchools.rejected,  done("getPendingSchools"));
+      .addCase(getPendingSchools.rejected, done("getPendingSchools"));
 
     builder
       .addCase(approveSchool.pending,   loading("approveSchool"))
@@ -428,7 +483,7 @@ const schoolSlice = createSlice({
         state.loading.getSchoolStaff = false;
         state.staff = payload;
       })
-      .addCase(getSchoolStaff.rejected,  done("getSchoolStaff"));
+      .addCase(getSchoolStaff.rejected, done("getSchoolStaff"));
 
     builder
       .addCase(getSchoolStaffAdmin.pending,   loading("getSchoolStaffAdmin"))
@@ -436,7 +491,7 @@ const schoolSlice = createSlice({
         state.loading.getSchoolStaffAdmin = false;
         state.adminStaff[payload.schoolId] = payload.staff;
       })
-      .addCase(getSchoolStaffAdmin.rejected,  done("getSchoolStaffAdmin"));
+      .addCase(getSchoolStaffAdmin.rejected, done("getSchoolStaffAdmin"));
 
     builder
       .addCase(removeUserFromSchool.pending,   loading("removeUserFromSchool"))
@@ -492,17 +547,15 @@ export const selectFilteredSchools = (state) => {
 };
 
 // ---------------------------------------------------------------------------
-// STUDENT SLICE  (unchanged)
+// STUDENT SLICE
 // ---------------------------------------------------------------------------
 
 const studentInitialState = {
   students: [],
   selectedStudent: null,
-
   parentSearchResults: [],
   parentSearchLoading: false,
   parentSearchError: null,
-
   loading: {
     enrollStudent: false,
     getAllStudents: false,
@@ -510,14 +563,12 @@ const studentInitialState = {
     updateStudent: false,
     deleteStudent: false,
   },
-
   notification: null,
 };
 
 const studentSlice = createSlice({
   name: "student",
   initialState: studentInitialState,
-
   reducers: {
     setSelectedStudent(state, { payload }) {
       state.selectedStudent = payload;
@@ -536,12 +587,10 @@ const studentSlice = createSlice({
       state.parentSearchError = null;
     },
   },
-
   extraReducers: (builder) => {
     const loading = (key) => (state) => { state.loading[key] = true; };
     const done    = (key) => (state) => { state.loading[key] = false; };
 
-    // ---- enrollStudent ----
     builder
       .addCase(enrollStudent.pending, loading("enrollStudent"))
       .addCase(enrollStudent.fulfilled, (state, { payload }) => {
@@ -555,25 +604,22 @@ const studentSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- getAllStudents ----
     builder
       .addCase(getAllStudents.pending,   loading("getAllStudents"))
       .addCase(getAllStudents.fulfilled, (state, { payload }) => {
         state.loading.getAllStudents = false;
         state.students = payload?.data ?? payload;
       })
-      .addCase(getAllStudents.rejected,  done("getAllStudents"));
+      .addCase(getAllStudents.rejected, done("getAllStudents"));
 
-    // ---- getStudentById ----
     builder
       .addCase(getStudentById.pending,   loading("getStudentById"))
       .addCase(getStudentById.fulfilled, (state, { payload }) => {
         state.loading.getStudentById = false;
         state.selectedStudent = payload?.data ?? payload;
       })
-      .addCase(getStudentById.rejected,  done("getStudentById"));
+      .addCase(getStudentById.rejected, done("getStudentById"));
 
-    // ---- updateStudent ----
     builder
       .addCase(updateStudent.pending,   loading("updateStudent"))
       .addCase(updateStudent.fulfilled, (state, { payload }) => {
@@ -591,7 +637,6 @@ const studentSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- deleteStudent ----
     builder
       .addCase(deleteStudent.pending,   loading("deleteStudent"))
       .addCase(deleteStudent.fulfilled, (state, { payload: studentId }) => {
@@ -605,7 +650,6 @@ const studentSlice = createSlice({
         state.notification = { type: "error", message: payload };
       });
 
-    // ---- searchParents ----
     builder
       .addCase(searchParents.pending, (state) => {
         state.parentSearchLoading = true;
@@ -637,7 +681,6 @@ export const selectAllStudents         = (state) => state.student.students;
 export const selectSelectedStudent     = (state) => state.student.selectedStudent;
 export const selectStudentLoading      = (key) => (state) => state.student.loading[key];
 export const selectStudentNotification = (state) => state.student.notification;
-
 export const selectParentSearchResults = (state) => state.student.parentSearchResults;
 export const selectParentSearchLoading = (state) => state.student.parentSearchLoading;
 export const selectParentSearchError   = (state) => state.student.parentSearchError;
