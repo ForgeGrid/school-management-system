@@ -57,7 +57,7 @@ export default function AdminDashboard() {
   const getRoleLabel = () => {
     if (isSuperAdmin) return "Super Admin";
     if (user?.role === "teacher") return "Teacher";
-    if (user?.role === "school_admin") return "School Admin";
+    if (user?.role === "school_admin" || user?.role === "admin") return "Admin";
     if (user?.role === "staff") return "Staff";
     return "User";
   };
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   const getPortalLabel = () => {
     if (isSuperAdmin) return "Super Admin Portal";
     if (user?.role === "teacher") return "Teacher Portal";
-    if (user?.role === "school_admin") return "School Admin Portal";
+    if (user?.role === "school_admin" || user?.role === "admin") return "Admin Portal";
     if (user?.role === "staff") return "Staff Portal";
     return "User Portal";
   };
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
     } else if (user?.role === "teacher") {
       document.title = "Teacher Dashboard | S-Cool";
     } else {
-      document.title = "School Admin Dashboard | S-Cool";
+      document.title = "Admin Dashboard | S-Cool";
     }
   }, [isSuperAdmin, user?.role]);
 
@@ -85,10 +85,9 @@ export default function AdminDashboard() {
 
   const TAB_TO_URL = {
     "Dashboard":                    "",
-    "Student admission":            "/admission",
+    "Admission":                    "/admission",
     "Attendance":                   "/attendance",
     "Profile Approval":             "/profile-approval",
-    "Transport › Overview":         "/transport/overview",
     "Transport › Bus Routes":       "/transport/bus-routes",
     "Transport › Transport Fees":   "/transport/fees",
     "Transport › Vehicles":         "/transport/vehicles",
@@ -262,42 +261,6 @@ export default function AdminDashboard() {
                     {getPortalLabel()}
                   </span>
                 </div>
-
-                {/* User Profile */}
-                <div className="flex items-center gap-3">
-
-                  <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-slate-50/60 active:bg-slate-100/60 transition-all duration-200 cursor-pointer select-none border border-transparent">
-                    <div className="relative w-9 h-9 rounded-full overflow-hidden bg-sky-100 border border-sky-200 flex items-center justify-center shrink-0 shadow-2xs">
-                      {(user?.profile_avatar?.secure_url || user?.avatarUrl) ? (
-                        <img
-                          src={user?.profile_avatar?.secure_url || user?.avatarUrl}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-sky-100 text-sky-700 font-extrabold text-sm uppercase">
-                          {(() => {
-                            const name = user?.name || "V MANOJ KUMAR";
-                            return name.trim().charAt(0);
-                          })()}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-slate-700 leading-tight">
-                        {user?.name || "V MANOJ KUMAR"}
-                      </p>
-                      <p className="text-[11px] font-semibold text-slate-450 leading-tight mt-0.5">
-                        {getRoleLabel()}
-                      </p>
-                    </div>
-
-                    <svg className="h-4 w-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </div>
               </header>
 
               {/* Immersive tab view rendering */}
@@ -327,7 +290,7 @@ export default function AdminDashboard() {
                     )}
 
                     {/* ── Student Admission ─────────────────────────────────── */}
-                    {activeTab === "Student admission" && (
+                    {activeTab === "Admission" && (
                       <StudentAdmissionForm
                         setStudents={setStudents}
                         setAttendance={setAttendance}
@@ -354,9 +317,6 @@ export default function AdminDashboard() {
                     )}
 
                     {/* ── Transport sub-tabs ────────────────────────────────── */}
-                    {activeTab === "Transport › Overview" && (
-                      <TransportOverview buses={buses} setActiveTab={setActiveTab} />
-                    )}
                     {activeTab === "Transport › Bus Routes" && (
                       <BusRoutes buses={buses} setBuses={setBuses} />
                     )}

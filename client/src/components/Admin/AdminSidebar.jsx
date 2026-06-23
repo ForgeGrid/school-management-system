@@ -56,7 +56,6 @@ export default function AdminSidebar({
 
   // ── Transport ──────────────────────────────────────────────
   const transportSubItems = [
-    "Transport › Overview",
     "Transport › Bus Routes",
     "Transport › Transport Fees",
     "Transport › Vehicles",
@@ -86,20 +85,25 @@ export default function AdminSidebar({
   const [academicOpen, setAcademicOpen] = useState(() => academicSubItems.includes(activeTab));
   useEffect(() => { if (isAcademicActive) setAcademicOpen(true); }, [isAcademicActive]);
 
+  // ── Role checks ────────────────────────────────────────────
+  const isSuperAdmin =
+    user?.platform_role === "super_admin" ||
+    user?.platformRole === "super_admin";
+
+  const isTeacher = user?.role === "teacher";
+
   // ── Menu items ─────────────────────────────────────────────
-  const menuItems = [
+  const topMenuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
-    { name: "Student admission", icon: UserPlus },
-    { name: "Attendance", icon: CalendarCheck },
-    { name: "Profile Approval", icon: UserCheck },
+    { name: "Admission", icon: UserPlus },
+    ...(!isTeacher ? [{ name: "Profile Approval", icon: UserCheck }] : []),
+  ];
+
+  const bottomMenuItems = [
     { name: "Live tracking", icon: MapPin },
     { name: "Reports", icon: BarChart3 },
     { name: "Alerts", icon: Bell },
   ];
-
-  const isSuperAdmin =
-    user?.platform_role === "super_admin" ||
-    user?.platformRole === "super_admin";
 
   const secondaryMenuItems = [
     ...(isSuperAdmin ? [{ name: "Admin Dashboard", icon: ShieldCheck }] : []),
@@ -253,40 +257,44 @@ export default function AdminSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
 
-              {/* Top 4 items: Dashboard → Profile Approval */}
-              {menuItems.slice(0, 4).map((item) => (
+              {/* Top items: Dashboard → Profile Approval */}
+              {topMenuItems.map((item) => (
                 <NavItem key={item.name} item={item} />
               ))}
 
               {/* Transport expandable */}
-              <ExpandableGroup
-                label="Transport"
-                icon={Bus}
-                subItems={transportSubItems}
-                isParentActive={isTransportActive}
-                isOpen={transportOpen}
-                animKey="transport-sub"
-                onToggle={() => {
-                  const next = !transportOpen;
-                  setTransportOpen(next);
-                  if (next && !isTransportActive) setActiveTab("Transport › Overview");
-                }}
-              />
+              {!isTeacher && (
+                <ExpandableGroup
+                  label="Transport"
+                  icon={Bus}
+                  subItems={transportSubItems}
+                  isParentActive={isTransportActive}
+                  isOpen={transportOpen}
+                  animKey="transport-sub"
+                  onToggle={() => {
+                    const next = !transportOpen;
+                    setTransportOpen(next);
+                    if (next && !isTransportActive) setActiveTab("Transport › Bus Routes");
+                  }}
+                />
+              )}
 
               {/* Fees expandable */}
-              <ExpandableGroup
-                label="Fees"
-                icon={DollarSign}
-                subItems={feeSubItems}
-                isParentActive={isFeeActive}
-                isOpen={feesOpen}
-                animKey="fees-sub"
-                onToggle={() => {
-                  const next = !feesOpen;
-                  setFeesOpen(next);
-                  if (next && !isFeeActive) setActiveTab("Fees › Academic Fees");
-                }}
-              />
+              {!isTeacher && (
+                <ExpandableGroup
+                  label="Fees"
+                  icon={DollarSign}
+                  subItems={feeSubItems}
+                  isParentActive={isFeeActive}
+                  isOpen={feesOpen}
+                  animKey="fees-sub"
+                  onToggle={() => {
+                    const next = !feesOpen;
+                    setFeesOpen(next);
+                    if (next && !isFeeActive) setActiveTab("Fees › Academic Fees");
+                  }}
+                />
+              )}
 
               {/* Academic expandable ← NEW */}
               <ExpandableGroup
@@ -304,7 +312,7 @@ export default function AdminSidebar({
               />
 
               {/* Remaining items: Live tracking, Reports, Alerts */}
-              {menuItems.slice(4).map((item) => (
+              {bottomMenuItems.map((item) => (
                 <NavItem key={item.name} item={item} />
               ))}
 
@@ -398,7 +406,7 @@ export default function AdminSidebar({
                 {(() => {
                   if (isSuperAdmin) return "Super Admin";
                   if (user?.role === "teacher") return "Teacher";
-                  if (user?.role === "school_admin") return "School Admin";
+                  if (user?.role === "school_admin" || user?.role === "admin") return "School Admin";
                   if (user?.role === "staff") return "Staff";
                   return "User";
                 })()}
