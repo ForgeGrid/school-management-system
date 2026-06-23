@@ -144,7 +144,7 @@ function Login({ onSwitchToRegister }) {
       {/* Email */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-700">Email Address</label>
-        <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white transition-all">
+        <div className="flex items-center gap-3 border border-gray-200 rounded-full px-4 py-3 bg-white transition-all">
           <Mail className="w-4 h-4 text-gray-400 shrink-0" />
           <input
             type="email"
@@ -165,7 +165,7 @@ function Login({ onSwitchToRegister }) {
       {/* Password */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-semibold text-gray-700">Password</label>
-        <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+        <div className="flex items-center gap-3 border border-gray-200 rounded-full px-4 py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
           <Lock className="w-4 h-4 text-gray-400 shrink-0" />
           <input
             type={showPassword ? "text" : "password"}
@@ -178,7 +178,7 @@ function Login({ onSwitchToRegister }) {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -190,7 +190,7 @@ function Login({ onSwitchToRegister }) {
         <button
           type="button"
           onClick={() => setIsForgotOpen(true)}
-          className="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition-colors"
+          className="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition-colors cursor-pointer"
         >
           Forgot Password?
         </button>
@@ -201,7 +201,7 @@ function Login({ onSwitchToRegister }) {
         type="button"
         onClick={handleSubmit}
         disabled={loginLoading || resendLoading || !form.email || !form.password}
-        className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98]"
+        className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-full transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98] cursor-pointer"
       >
         {loginLoading || resendLoading ? (
           <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -216,7 +216,7 @@ function Login({ onSwitchToRegister }) {
         Don't have an account?{" "}
         <button
           onClick={onSwitchToRegister}
-          className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors"
+          className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors cursor-pointer"
         >
           Register
         </button>

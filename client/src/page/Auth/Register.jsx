@@ -132,7 +132,7 @@ function Register({ onSwitchToLogin }) {
         {/* Full Name */}
         <div className="flex flex-col gap-1">
           <label className="text-xs sm:text-sm font-semibold text-gray-700">Full Name</label>
-          <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+          <div className="flex items-center gap-3 border border-gray-200 rounded-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
             <User className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               type="text" name="fullName" value={form.fullName} onChange={handleChange}
@@ -145,7 +145,7 @@ function Register({ onSwitchToLogin }) {
         {/* Email */}
         <div className="flex flex-col gap-1">
           <label className="text-xs sm:text-sm font-semibold text-gray-700">Email Address</label>
-          <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+          <div className="flex items-center gap-3 border border-gray-200 rounded-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
             <Mail className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               type="email" name="email" value={form.email} onChange={handleChange}
@@ -161,14 +161,14 @@ function Register({ onSwitchToLogin }) {
           {/* Password */}
           <div className="flex flex-col gap-1">
             <label className="text-xs sm:text-sm font-semibold text-gray-700">Password</label>
-            <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+            <div className="flex items-center gap-2 border border-gray-200 rounded-full px-3 py-2.5 sm:py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
               <Lock className="w-4 h-4 text-gray-400 shrink-0" />
               <input
                 type={showPassword ? "text" : "password"} name="password"
                 value={form.password} onChange={handleChange} placeholder="Password"
                 className="flex-1 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent min-w-0"
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600 shrink-0">
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer">
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -180,7 +180,7 @@ function Register({ onSwitchToLogin }) {
           {/* Confirm */}
           <div className="flex flex-col gap-1">
             <label className="text-xs sm:text-sm font-semibold text-gray-700">Confirm Password</label>
-            <div className={`flex items-center gap-2 border rounded-xl px-3 py-2.5 sm:py-3 bg-white focus-within:ring-2 transition-all ${passwordMismatch
+            <div className={`flex items-center gap-2 border rounded-full px-3 py-2.5 sm:py-3 bg-white focus-within:ring-2 transition-all ${passwordMismatch
               ? "border-red-300 focus-within:border-red-400 focus-within:ring-red-50"
               : "border-gray-200 focus-within:border-indigo-400 focus-within:ring-indigo-50"
               }`}>
@@ -190,7 +190,7 @@ function Register({ onSwitchToLogin }) {
                 value={form.confirmPassword} onChange={handleChange} placeholder="Confirm"
                 className="flex-1 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent min-w-0"
               />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="text-gray-400 hover:text-gray-600 shrink-0">
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer">
                 {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -206,10 +206,10 @@ function Register({ onSwitchToLogin }) {
         <button
           type="button" onClick={handleSubmit}
           disabled={loading || resendLoading || !!passwordMismatch}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 sm:py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 sm:py-3.5 rounded-full transition-all duration-200 shadow-md shadow-indigo-200 active:scale-[0.98] cursor-pointer"
         >
           {loading || resendLoading
-            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin cursor-pointer" />
             : <UserPlus className="w-4 h-4" />}
           {loading || resendLoading ? "Processing..." : (needsVerification ? "Verify Email" : "Create Account")}
         </button>
@@ -219,7 +219,7 @@ function Register({ onSwitchToLogin }) {
           Already have an account?{" "}
           <button
             onClick={onSwitchToLogin ?? (() => navigate('/login'))}
-            className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors"
+            className="text-indigo-600 font-semibold hover:text-indigo-800 transition-colors cursor-pointer"
           >
             Login
           </button>
