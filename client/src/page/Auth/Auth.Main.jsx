@@ -67,7 +67,7 @@ function AuthMain() {
           <div className="shrink-0">
             <div className="grid grid-cols-3 gap-3 mb-3">
               {features.map((f) => (
-                <div key={f.title} className="bg-gray-50 border border-gray-100 rounded-4xl p-3 text-center flex flex-col items-center py-8">
+                <div key={f.title} className="bg-white/85 backdrop-blur-xs border border-gray-100 rounded-4xl text-center flex flex-col items-center py-3">
                   <div className="bg-indigo-50 rounded-full w-10 h-10 flex items-center justify-center mb-2">
                     {f.icon}
                   </div>
@@ -84,7 +84,7 @@ function AuthMain() {
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden scale-100">
           <div
             className="w-full max-w-md lg:max-w-xl bg-white rounded-4xl shadow-lg border border-gray-100 flex flex-col overflow-hidden"
             style={{ maxHeight: 'calc(100vh - 24px)' }}
@@ -92,7 +92,7 @@ function AuthMain() {
             <div className="overflow-y-auto flex-1 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7">
 
               {/* Mobile logo */}
-              <div className="flex lg:hidden items-center gap-2 mb-6 justify-center">
+              <div className="flex lg:hidden items-center gap-2 mb-4 justify-center">
                 <div className="bg-indigo-600 rounded-full p-1.5 shrink-0">
                   <img src={prd} alt="logo" className="w-4 h-4" />
                 </div>
@@ -100,7 +100,7 @@ function AuthMain() {
               </div>
 
               {/* TABS */}
-              <div className="grid grid-cols-2 mb-10 rounded-full gap-4 bg-zinc-100 p-2 shadow-inner shadow-zinc-200">
+              <div className="grid grid-cols-2 mb-4 rounded-full gap-4 bg-zinc-100 p-2 shadow-inner shadow-zinc-200 sm:p-1 lg:p-2">
                 <button
                   onClick={() => navigate('/login')}
                   className={`py-2.5 text-sm font-semibold text-center transition-all duration-200 rounded-full cursor-pointer ${

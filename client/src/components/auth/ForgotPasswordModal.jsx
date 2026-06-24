@@ -134,7 +134,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-sm bg-white rounded-4xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
 
         {/* Close button */}
         <button
@@ -178,14 +178,14 @@ function ForgotPasswordModal({ isOpen, onClose }) {
             </div>
 
             {forgotError && (
-              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-full px-3 py-2 mb-4">
                 {forgotError}
               </p>
             )}
 
             <div className="flex flex-col gap-1.5 mb-5">
               <label className="text-sm font-semibold text-gray-700">Email Address</label>
-              <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+              <div className="flex items-center gap-3 border border-gray-200 rounded-full px-4 py-3 bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
                 <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                 <input
                   type="email"
@@ -202,7 +202,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
             <button
               onClick={handleSendOtp}
               disabled={!isValidEmail(email) || forgotLoading}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-xl transition-all shadow-md shadow-indigo-200 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-full transition-all shadow-md shadow-indigo-200 active:scale-[0.98]"
             >
               {forgotLoading ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -232,7 +232,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
             </div>
 
             {verifyResetError && (
-              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-full px-3 py-2 mb-4">
                 {verifyResetError}
               </p>
             )}
@@ -266,7 +266,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
             <button
               onClick={handleVerifyOtp}
               disabled={!otpComplete || verifyResetLoading}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-xl transition-all shadow-md shadow-indigo-200 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 rounded-full transition-all shadow-md shadow-indigo-200 active:scale-[0.98]"
             >
               {verifyResetLoading ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -306,7 +306,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
             </div>
 
             {(localError || resetPasswordError) && (
-              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-full px-3 py-2 mb-4">
                 {localError || resetPasswordError}
               </p>
             )}

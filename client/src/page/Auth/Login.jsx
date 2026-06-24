@@ -46,6 +46,7 @@ function Login({ onSwitchToRegister }) {
 
   useEffect(() => {
     if (loginError) {
+      toast.option
       toast.error(loginError);
     }
   }, [loginError]);
