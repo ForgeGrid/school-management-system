@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
+import { requireRole } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import {
   createClassSection,
@@ -28,7 +28,6 @@ router.get("/class-intro", requireRole("student", "parent"), getMyClassIntroCont
 router.get(
   "/my-classes",
   requireRole("teacher"),
-  requireVerifiedStaff,
   getMyClassesController,
 );
 
@@ -36,7 +35,6 @@ router.get(
 router.get(
   "/:classSectionId/hub",
   requireRole("school_admin", "teacher"),
-  requireVerifiedStaff,
   getClassSectionHub,
 );
 

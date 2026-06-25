@@ -332,7 +332,7 @@ export const resendSignupOtp = async (req, res) => {
     await sendEmail({
       from: `"FG ERP" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Your new verification code (resend)",
+      subject: "Verification Code - FG ERP 🔄",
       text: `Your new verification code is ${otp}. It expires in 5 minutes.`,
       html: `
   <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
@@ -573,7 +573,7 @@ export const loginUser = async (req, res) => {
             await sendEmail({
               from: `"FG ERP" <${process.env.EMAIL_USER}>`,
               to: user.email,
-              subject: "Your account has been temporarily locked",
+              subject: "Account Locked - FG ERP 🔒",
               text: `Your account has been temporarily locked due to multiple failed attempts. Reset your password here: ${resetLink}`,
               html: `
     <div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
@@ -905,36 +905,36 @@ export const getMe = async (req, res) => {
       });
     }
 
-    // Handle Individual Staff Verification for Teachers and Staff
-    if (["teacher", "staff"].includes(user.role)) {
-      const staffProfile = await StaffProfile.findOne({ user_id: user._id, school_id: user.school_id });
+    // // Handle Individual Staff Verification for Teachers and Staff
+    // if (["teacher", "staff"].includes(user.role)) {
+    //   const staffProfile = await StaffProfile.findOne({ user_id: user._id, school_id: user.school_id });
 
-      if (!staffProfile) {
-        return res.status(200).json({
-          state: "STAFF_PROFILE_MISSING",
-          message: "Staff profile not found",
-          user,
-        });
-      }
+    //   if (!staffProfile) {
+    //     return res.status(200).json({
+    //       state: "STAFF_PROFILE_MISSING",
+    //       message: "Staff profile not found",
+    //       user,
+    //     });
+    //   }
 
-      if (staffProfile.verificationStatus !== "verified") {
-        return res.status(200).json({
-          message: `Staff account is ${staffProfile.verificationStatus}`,
-          state: staffProfile.verificationStatus === "rejected" ? "STAFF_REJECTED" : "STAFF_PENDING",
-          user,
-          staffProfile: {
-            id: staffProfile._id,
-            verificationStatus: staffProfile.verificationStatus,
-            rejection_reason: staffProfile.rejection_reason,
-            designation: staffProfile.designation,
-          },
-          school: {
-            id: school._id,
-            name: school.name,
-          }
-        });
-      }
-    }
+    //   if (staffProfile.verificationStatus !== "verified") {
+    //     return res.status(200).json({
+    //       message: `Staff account is ${staffProfile.verificationStatus}`,
+    //       state: staffProfile.verificationStatus === "rejected" ? "STAFF_REJECTED" : "STAFF_PENDING",
+    //       user,
+    //       staffProfile: {
+    //         id: staffProfile._id,
+    //         verificationStatus: staffProfile.verificationStatus,
+    //         rejection_reason: staffProfile.rejection_reason,
+    //         designation: staffProfile.designation,
+    //       },
+    //       school: {
+    //         id: school._id,
+    //         name: school.name,
+    //       }
+    //     });
+    //   }
+    // }
 
     // Use your existing verificationStatus field as the approval state
     switch (school.verificationStatus) {

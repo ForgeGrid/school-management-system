@@ -254,7 +254,7 @@ export const requestLinkedPasswordResetOtpService = async (adminUser, studentId)
     await sendEmail({
       from: `"S-Cool" <${process.env.EMAIL_USER}>`,
       to: studentUser.email,
-      subject: "Password Reset Verification Code",
+      subject: "Password Reset Verification - FG ERP",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #2563eb; text-align: center;">Password Reset Verification</h2>

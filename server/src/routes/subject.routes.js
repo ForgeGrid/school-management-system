@@ -3,7 +3,6 @@ import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import {
     requireRole,
-    requireVerifiedStaff
 } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import {
@@ -17,7 +16,7 @@ import {
 const router = express.Router();
 
 // All subject routes require authentication, verified school, and verified staff status
-router.use(authMiddleware, requireVerifiedSchool, requireVerifiedStaff);
+router.use(authMiddleware, requireVerifiedSchool);
 
 /**
  * Subject Management

@@ -195,7 +195,7 @@ export const createAdmissionService = async (adminUser, data, avatarFile) => {
         );
       }
 
-      totalTransportFee = transportStructure.amount * 12;
+      totalTransportFee = transportStructure.amount * 12; // frequency
       resolvedTransportId = feePlan.transportFeeStructure_id;
       resolvedRouteId = feePlan.currentRoute_id;
     }
@@ -300,7 +300,8 @@ export const createAdmissionService = async (adminUser, data, avatarFile) => {
 
       // Reuse the PROVIDED student password for the new parent (as per requirement)
       const parentPassword = password;
-
+      
+      // IF no parent user needed
       const parentUser = new User({
         name: parent.name,
         username: parentUsername,

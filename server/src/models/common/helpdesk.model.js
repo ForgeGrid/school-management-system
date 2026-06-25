@@ -127,13 +127,6 @@ const helpdeskTicketSchema = new mongoose.Schema(
             trim: true,
         },
 
-        priority: {
-            type: String,
-            enum: ["low", "medium", "high", "urgent"],
-            default: "medium",
-            index: true,
-        },
-
         status: {
             type: String,
             enum: ["open", "in_progress", "resolved", "closed"],

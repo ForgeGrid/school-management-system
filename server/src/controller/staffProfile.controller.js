@@ -9,8 +9,8 @@ import {
   getMyProfileService,
   getAllTeachersService,
   getOneTeacherService,
-  approveStaffService,
-  rejectStaffService,
+  // approveStaffService,
+  // rejectStaffService,
   resignStaffService,
   requestRejoinStaffService
 } from "../services/staffProfile.service.js";
@@ -114,41 +114,41 @@ export const getOneTeacher = async (req, res) => {
 // --------------------------------------
 // Approve teacher/staff
 // --------------------------------------
-export const approveStaff = async (req, res) => {
-  try {
-    const profile = await approveStaffService(req.params.profileId, req.user);
+// export const approveStaff = async (req, res) => {
+//   try {
+//     const profile = await approveStaffService(req.params.profileId, req.user);
 
-    return res.json({
-      message: "Staff approved successfully",
-      profile,
-    });
-  } catch (err) {
-    logger.error("Approve staff error:", err);
-    return res.status(400).json({ message: err.message });
-  }
-};
+//     return res.json({
+//       message: "Staff approved successfully",
+//       profile,
+//     });
+//   } catch (err) {
+//     logger.error("Approve staff error:", err);
+//     return res.status(400).json({ message: err.message });
+//   }
+// };
 
 
 // --------------------------------------
 // Reject teacher/staff
 // --------------------------------------
-export const rejectStaff = async (req, res) => {
-  try {
-    const profile = await rejectStaffService(
-      req.params.profileId,
-      (req.body || {}).reason,
-      req.user
-    );
+// export const rejectStaff = async (req, res) => {
+//   try {
+//     const profile = await rejectStaffService(
+//       req.params.profileId,
+//       (req.body || {}).reason,
+//       req.user
+//     );
 
-    return res.json({
-      message: "Staff rejected",
-      profile,
-    });
-  } catch (err) {
-    logger.error("Reject staff error:", err);
-    return res.status(400).json({ message: err.message });
-  }
-};
+//     return res.json({
+//       message: "Staff rejected",
+//       profile,
+//     });
+//   } catch (err) {
+//     logger.error("Reject staff error:", err);
+//     return res.status(400).json({ message: err.message });
+//   }
+// };
 
 // --------------------------------------
 // Resign Staff

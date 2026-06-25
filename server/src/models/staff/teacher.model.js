@@ -65,22 +65,22 @@ const staffProfileSchema = new mongoose.Schema(
         phone: String,
         alternatePhone: String,
 
-        // 🟢 Approval Flow
-        verificationStatus: {
-            type: String,
-            enum: ["pending", "verified", "rejected"],
-            default: "pending",
-        },
+        // // 🟢 Approval Flow
+        // verificationStatus: {
+        //     type: String,
+        //     enum: ["pending", "verified", "rejected"],
+        //     default: "pending",
+        // },
 
-        verifiedAt: {
-            type: Date,
-            default: null,
-        },
+        // verifiedAt: {
+        //     type: Date,
+        //     default: null,
+        // },
 
-        verifiedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-        },
+        // verifiedBy: {
+        //     type: mongoose.Schema.Types.ObjectId,
+        //     ref: "User",
+        // },
 
         rejection_reason: {
             type: String,

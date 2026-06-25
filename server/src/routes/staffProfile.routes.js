@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
+import { requireRole } from "../middleware/school_role.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 import {
   createProfile,
@@ -8,8 +8,8 @@ import {
   getMyProfile,
   getAllTeachers,
   getOneTeacher,
-  approveStaff,
-  rejectStaff,
+  // approveStaff,
+  // rejectStaff,
   resignStaff,
   requestRejoinStaff,
 } from "../controller/staffProfile.controller.js";
@@ -31,14 +31,14 @@ router.get("/all-teachers", requireRole("school_admin"), getAllTeachers);
 router.get("/teacher/:profileId", requireRole("school_admin"), getOneTeacher);
 router.get("/me", requireRole("school_admin", "teacher", "staff"), getMyProfile);
 
-// Staff approval (School Admin only)
-router.patch("/approve/:profileId", requireRole("school_admin"), approveStaff);
-router.patch("/reject/:profileId", requireRole("school_admin"), rejectStaff);
+// // Staff approval (School Admin only)
+// router.patch("/approve/:profileId", requireRole("school_admin"), approveStaff);
+// router.patch("/reject/:profileId", requireRole("school_admin"), rejectStaff);
 
 router.patch("/staff/:profileId/resign", requireRole("school_admin"), resignStaff);
 
 // Enforcement for all subsequent staff lookup and management routes
-router.use(requireVerifiedStaff);
+// Verification requirement removed
 
 router.patch("/staff/:profileId/request-rejoin", requireRole("teacher", "staff"), requestRejoinStaff);
 
