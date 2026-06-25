@@ -42,11 +42,8 @@ export const updateClassSection = async (req, res) => {
 
 export const getClassSections = async (req, res) => {
   try {
-    const items = await getClassSectionsService(req.user, req.query || {});
-    return res.json({
-      message: "Class sections fetched successfully",
-      items,
-    });
+    const { items, meta } = await getClassSectionsService(req.user, req.query || {});
+    return res.json({message: "Class sections fetched successfully", items, meta });
   } catch (err) {
     logger.error("Get class sections error:", err);
     return res.status(400).json({ message: err.message });

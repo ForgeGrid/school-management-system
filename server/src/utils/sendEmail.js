@@ -29,7 +29,12 @@ if (process.env.NODE_ENV === "production") {
 
 export default async function sendEmail(mail) {
   try {
-    logger.info(`📧 Sending email to: ${mail.to}...`);
+    if (!mail.subject) {
+      logger.warn(`⚠️ sendEmail: Missing subject for email to ${mail.to}. Using fallback.`);
+      mail.subject = "Notification - FG ERP";
+    }
+
+    logger.info(`📧 Sending email to: ${mail.to} | Subject: ${mail.subject}`);
     const result = await transporter.sendMail(mail);
     logger.info("✅ Email sent successfully");
     return result;

@@ -53,9 +53,10 @@ export const notify = async ({
         // 2. Send Email if requested and email is available
         if (sendEmailFlag && recipientEmail) {
             try {
+                const emailSubject = `${title || "Notification"} - FG ERP`;
                 await sendEmail({
                     to: recipientEmail,
-                    subject: `${title} - S-Cool`,
+                    subject: emailSubject,
                     text: message,
                     html: `<div style="font-family:sans-serif;padding:20px;border:1px solid #eee;border-radius:10px;">
             <h2 style="color:#333;">${title}</h2>

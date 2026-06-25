@@ -53,7 +53,7 @@ export const requestPasswordOTP = async (req, res) => {
         await sendEmail({
             from: `"FG ERP" <${process.env.EMAIL_USER}>`,
             to: user.email,
-            subject: "Your School Portal Verification Code",
+            subject: "Verification Code - FG ERP",
             html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #2563eb; text-align: center;">Security Verification</h2>

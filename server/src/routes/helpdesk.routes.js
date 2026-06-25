@@ -3,7 +3,6 @@ import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import {
     requireRole,
-    requireVerifiedStaff
 } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import { uploadFiles } from "../middleware/upload.middleware.js";
@@ -20,7 +19,7 @@ import {
 const router = express.Router();
 
 // All helpdesk routes require authentication, verified school, and verified staff (for staff/teachers)
-router.use(authMiddleware, requireVerifiedSchool, requireVerifiedStaff);
+router.use(authMiddleware, requireVerifiedSchool);
 
 // ─── TICKET CREATION & LISTING ──────────────────────────────────────────────
 

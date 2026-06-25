@@ -43,7 +43,6 @@ const CATEGORIES = new Set([
     "general",
 ]);
 
-const PRIORITIES = new Set(["low", "medium", "high", "urgent"]);
 const STATUSES = new Set(["open", "in_progress", "resolved", "closed"]);
 const VISIBILITIES = new Set(["private", "department", "public"]);
 
@@ -136,14 +135,12 @@ export const createTicketService = async (user, data = {}) => {
     const subject = normalizeText(data.subject);
     const description = normalizeText(data.description);
     const category = normalizeText(data.category || "general");
-    const priority = normalizeText(data.priority || "medium");
     const visibility = normalizeText(data.visibility || "private");
     const attachments = normalizeAttachments(data.initial_attachments || [], user.id, "issue");
 
     if (!subject) throw new Error("subject is required");
     if (!description) throw new Error("description is required");
     if (!CATEGORIES.has(category)) throw new Error("Invalid category");
-    if (!PRIORITIES.has(priority)) throw new Error("Invalid priority");
     if (!VISIBILITIES.has(visibility)) throw new Error("Invalid visibility");
 
     let ticket = null;
@@ -164,7 +161,6 @@ export const createTicketService = async (user, data = {}) => {
                 category,
                 subject,
                 description,
-                priority,
                 status: "open",
                 visibility,
                 assigned_to: null,
@@ -237,10 +233,6 @@ export const listMyTicketsService = async (user, query = {}) => {
         filter.category = String(query.category);
     }
 
-    if (query.priority && PRIORITIES.has(String(query.priority))) {
-        filter.priority = String(query.priority);
-    }
-
     applySearchFilter(filter, query.search);
 
     const [tickets, total] = await Promise.all([
@@ -249,7 +241,7 @@ export const listMyTicketsService = async (user, query = {}) => {
             .skip(skip)
             .limit(limit)
             .select(
-                "ticket_no category subject priority status visibility assigned_to raised_by initial_attachments responses resolved_at closed_at createdAt updatedAt"
+                "ticket_no category subject status visibility assigned_to raised_by initial_attachments responses resolved_at closed_at createdAt updatedAt"
             )
             .populate("assigned_to", "name email role status"),
         HelpdeskTicket.countDocuments(filter),
@@ -286,10 +278,6 @@ export const listAdminTicketsService = async (user, query = {}) => {
         filter.category = String(query.category);
     }
 
-    if (query.priority && PRIORITIES.has(String(query.priority))) {
-        filter.priority = String(query.priority);
-    }
-
     if (query.creator_role && CREATOR_ROLES.has(String(query.creator_role))) {
         filter["raised_by.role"] = String(query.creator_role);
     }
@@ -302,7 +290,7 @@ export const listAdminTicketsService = async (user, query = {}) => {
             .skip(skip)
             .limit(limit)
             .select(
-                "ticket_no category subject priority status visibility assigned_to raised_by initial_attachments responses resolved_at closed_at createdAt updatedAt"
+                "ticket_no category subject status visibility assigned_to raised_by initial_attachments responses resolved_at closed_at createdAt updatedAt"
             )
             .populate("assigned_to", "name email role status"),
         HelpdeskTicket.countDocuments(filter),

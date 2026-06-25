@@ -3,7 +3,6 @@ import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import {
     requireRole,
-    requireVerifiedStaff
 } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import {
@@ -18,7 +17,7 @@ import {
 const router = express.Router();
 
 // Common middlewares for all routes
-router.use(authMiddleware, requireVerifiedSchool, requireVerifiedStaff);
+router.use(authMiddleware, requireVerifiedSchool);
 
 /**
  * Class Subject Assignment Routes

@@ -39,7 +39,7 @@ export const createStaffProfileService = async (user, data) => {
     user_id: user.id,
     employeeId,
     school_id: user.school_id, // 🔒 always from user
-    verificationStatus: user.role === "school_admin" ? "verified" : "pending",
+    // verificationStatus: user.role === "school_admin" ? "verified" : "pending",
   });
 
   return profile;
@@ -76,9 +76,9 @@ export const updateStaffProfileService = async (user, data) => {
   Object.assign(profile, data);
 
   // Optional: reset approval if teacher edits profile
-  if (user.role !== "school_admin") {
-    profile.verificationStatus = "pending";
-  }
+  // if (user.role !== "school_admin") {
+  //   profile.verificationStatus = "pending";
+  // }
 
   await profile.save();
 
@@ -129,61 +129,61 @@ export const getOneTeacherService = async (profileId, schoolId) => {
 // --------------------------------------
 // Approve Staff
 // --------------------------------------
-export const approveStaffService = async (profileId, adminUser) => {
-  assertAdminOnly(adminUser);
+// export const approveStaffService = async (profileId, adminUser) => {
+//   assertAdminOnly(adminUser);
 
-  const profile = await StaffProfile.findOne({
-    _id: profileId,
-    school_id: adminUser.school_id,
-    verificationStatus: "pending",
-  });
+//   const profile = await StaffProfile.findOne({
+//     _id: profileId,
+//     school_id: adminUser.school_id,
+//     verificationStatus: "pending",
+//   });
 
-  if (!profile) {
-    throw new Error("Profile not found or already processed");
-  }
+//   if (!profile) {
+//     throw new Error("Profile not found or already processed");
+//   }
 
-  assertOwnSchool(profile, adminUser);
+//   assertOwnSchool(profile, adminUser);
 
-  // Employment transition
-  if (!profile.employeeStatus || profile.employeeStatus === "resigned") {
-    profile.employeeStatus = "employed";
-    if (profile.employeeStatus === "resigned") {
-      profile.rehiredAt = new Date();
-    }
-  }
+//   // Employment transition
+//   if (!profile.employeeStatus || profile.employeeStatus === "resigned") {
+//     profile.employeeStatus = "employed";
+//     if (profile.employeeStatus === "resigned") {
+//       profile.rehiredAt = new Date();
+//     }
+//   }
 
-  profile.verificationStatus = "verified";
-  profile.rejection_reason = null;
-  profile.verifiedBy = adminUser.id;
-  profile.verifiedAt = new Date();
+//   profile.verificationStatus = "verified";
+//   profile.rejection_reason = null;
+//   profile.verifiedBy = adminUser.id;
+//   profile.verifiedAt = new Date();
 
-  await profile.save();
+//   await profile.save();
 
-  return profile;
-};
+//   return profile;
+// };
 
 
 // --------------------------------------
 // Reject Staff
 // --------------------------------------
-export const rejectStaffService = async (profileId, reason, adminUser) => {
-  if (!reason) {
-    throw new Error("Rejection reason is required");
-  }
+// export const rejectStaffService = async (profileId, reason, adminUser) => {
+//   if (!reason) {
+//     throw new Error("Rejection reason is required");
+//   }
 
-  assertAdminOnly(adminUser);
+//   assertAdminOnly(adminUser);
 
-  const profile = await getByIdOrThrowGeneric(StaffProfile, adminUser.school_id, profileId, "Staff profile");
+//   const profile = await getByIdOrThrowGeneric(StaffProfile, adminUser.school_id, profileId, "Staff profile");
 
-  profile.verificationStatus = "rejected";
-  profile.rejection_reason = reason;
-  profile.verifiedBy = adminUser.id;
-  profile.verifiedAt = new Date();
+//   profile.verificationStatus = "rejected";
+//   profile.rejection_reason = reason;
+//   profile.verifiedBy = adminUser.id;
+//   profile.verifiedAt = new Date();
 
-  await profile.save();
+//   await profile.save();
 
-  return profile;
-};
+//   return profile;
+// };
 
 // Resign staff
 export const resignStaffService = async (profileId, reason, adminUser) => {

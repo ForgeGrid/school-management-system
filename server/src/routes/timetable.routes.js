@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { requireRole, requireVerifiedStaff } from "../middleware/school_role.middleware.js";
+import { requireRole } from "../middleware/school_role.middleware.js";
 import { requireVerifiedSchool } from "../middleware/school_auth.middleware.js";
 import {
     getEligibleStaff,
@@ -18,7 +18,7 @@ import {
 const router = express.Router();
 
 // All routes require authentication, a verified school, and verified staff status
-router.use(authMiddleware, requireVerifiedSchool, requireVerifiedStaff);
+router.use(authMiddleware, requireVerifiedSchool);
 
 // ─── ADMIN ONLY ROUTES ───────────────────────────────────────────────────
 

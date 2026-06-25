@@ -73,7 +73,7 @@ export const inviteUserService = async ({
   await sendEmail({
     from: `"FG ERP" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: `You're invited to join ${school.name} on Drona ERP 🎉`,
+    subject: `Invitation to join ${school.name} - FG ERP 🎉`,
     html: `
       <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; background: #ffffff;">
         <div style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); padding: 40px 20px; text-align: center;">
