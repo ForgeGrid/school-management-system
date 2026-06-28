@@ -15,6 +15,7 @@ import {
 import {
   getNumericStandard,
   derivePreviousAcademicYear,
+  formatEnrollmentResponse,
 } from "../utils/academic.helper.js";
 import {
   getClassSectionOrThrow as getTargetClassSectionGeneric,
@@ -641,13 +642,21 @@ export const getClassEnrolledStudentsService = async (user, query = {}) => {
     academicYear,
     classSection_id: classSection._id,
     isActive: true,
-  }).sort({ roll_no: 1 });
+  })
+    .populate({
+      path: "student_id",
+      populate: {
+        path: "user_id",
+        select: "profile_avatar",
+      },
+    })
+    .sort({ roll_no: 1 });
 
   return {
     classSection,
     academicYear,
     total: enrollments.length,
-    enrollments,
+    enrollments: enrollments.map(formatEnrollmentResponse),
   };
 };
 
