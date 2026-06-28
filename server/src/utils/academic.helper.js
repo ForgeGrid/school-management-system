@@ -191,29 +191,79 @@ export const formatSectionResponse = (classSection) => {
 };
 
 export const assertAttendanceEditable = (
-  attendance,
-  user,
-  { allowAdminOverride = false } = {}
+    attendance,
+    user,
+    { allowAdminOverride = false } = {}
 ) => {
-  // Admin override bypasses both checks
-  if (user.role === "school_admin" && allowAdminOverride) {
-    return;
-  }
+    // Admin override bypasses both checks
+    if (user.role === "school_admin" && allowAdminOverride) {
+        return;
+    }
 
-  // Explicit admin lock (independent of date window)
-  if (attendance.isLocked) {
-    throw new Error(
-      "Attendance record is locked. Contact the administrator."
-    );
-  }
+    // Explicit admin lock (independent of date window)
+    if (attendance.isLocked) {
+        throw new Error(
+            "Attendance record is locked. Contact the administrator."
+        );
+    }
 
-  // 5-day edit window expired
-  if (
-    attendance.editableUntil &&
-    attendance.editableUntil < new Date()
-  ) {
-    throw new Error(
-      "Attendance edit window has expired."
-    );
-  }
+    // 5-day edit window expired
+    if (
+        attendance.editableUntil &&
+        attendance.editableUntil < new Date()
+    ) {
+        throw new Error(
+            "Attendance edit window has expired."
+        );
+    }
+};
+
+/**
+ * Formats a student enrollment record for a consistent response matching the UI representation.
+ */
+export const formatEnrollmentResponse = (enrollment) => {
+    if (!enrollment) return null;
+
+    const student = enrollment.student_id || {};
+    const userProfile = student.user_id || {};
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    let formattedDob = null;
+    if (student.dob) {
+        const date = new Date(student.dob);
+        if (!Number.isNaN(date.getTime())) {
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            formattedDob = `${day} ${month} ${year}`;
+        }
+    }
+
+    const formattedRollNo = String(enrollment.roll_no || "").padStart(2, "0");
+    const formattedGender = student.gender
+        ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1).toLowerCase()
+        : null;
+    const formattedStatus = student.status
+        ? student.status.charAt(0).toUpperCase() + student.status.slice(1).toLowerCase()
+        : "Active";
+
+    return {
+        _id: enrollment._id,
+        roll_no: formattedRollNo,
+        enrollmentType: enrollment.enrollmentType,
+        isActive: enrollment.isActive,
+        student_id: {
+            _id: student._id,
+            admission_no: student.admission_no,
+            student_name: student.student_name,
+            gender: formattedGender,
+            dob: formattedDob,
+            transport_required: student.transport_required,
+            status: formattedStatus,
+            user_id: {
+                _id: userProfile._id,
+                profile_avatar: userProfile.profile_avatar?.secure_url || "",
+            },
+        },
+    };
 };

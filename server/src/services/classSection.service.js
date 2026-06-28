@@ -91,11 +91,33 @@ export const updateClassSectionService = async (user, classSectionId, data = {})
   const classSection = await getClassSectionGeneric(ClassSection, user.school_id, classSectionId);
 
   const allowed = {
+    standard: data.standard !== undefined ? normalize(data.standard) : undefined,
+    section: data.section !== undefined ? normalize(data.section).toUpperCase() : undefined,
     classTeacher_id: data.classTeacher_id !== undefined ? data.classTeacher_id : undefined,
     capacity: data.capacity !== undefined ? Number(data.capacity) : undefined,
     status: data.status,
     classCode: data.classCode !== undefined ? normalize(data.classCode) : undefined,
   };
+
+  if (allowed.standard !== undefined || allowed.section !== undefined) {
+    const newStandard = allowed.standard !== undefined ? allowed.standard : classSection.standard;
+    const newSection = allowed.section !== undefined ? allowed.section : classSection.section;
+
+    if (!newStandard) throw new Error("standard cannot be empty");
+    if (!newSection) throw new Error("section cannot be empty");
+
+    const exists = await ClassSection.findOne({
+      _id: { $ne: classSection._id },
+      school_id: user.school_id,
+      academicYear: classSection.academicYear,
+      standard: newStandard,
+      section: newSection,
+    });
+
+    if (exists) {
+      throw new Error("Another class section already exists for this standard and section in this academic year");
+    }
+  }
 
   if (allowed.classTeacher_id !== undefined) {
     await validateClassTeacher(StaffProfile, user.school_id, allowed.classTeacher_id);
