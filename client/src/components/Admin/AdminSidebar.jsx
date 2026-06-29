@@ -31,12 +31,6 @@ import {
 } from "lucide-react";
 
 
-import {Attendece} from "./Acadameic/Attendance";
-import {Myclass} from "./Acadameic/Myclass";
-import {ClassSection} from './Acadameic/ClassSection';
-import {Timetable} from './Acadameic/TimeTable'
-import {Subject} from './Acadameic/Subject'
-
 
 export default function AdminSidebar({
   activeTab,

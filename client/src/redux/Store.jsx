@@ -1,4 +1,4 @@
-import {configureStore,} from '@reduxjs/toolkit';
+import { configureStore, } from '@reduxjs/toolkit';
 import authReducer from './slice/authslice'
 import getmeReducer from './slice/getmeslice'
 import schoolReducer from "./slice/schoolslice";
@@ -9,7 +9,8 @@ import academicFeeStructureReducer from "./slice/academicFeeStructureSlice";
 import transportFeeStructureReducer from "./slice/transportFeeStructureSlice";
 import classSubjectAssignmentReducer from "./slice/classSubjectAssignmentSlice";
 import subjectReducer from "./slice/subjectSlice";
-
+import { staffReducer } from "./slice/staffSlice"
+import profileReducer from "./slice/profileSlice";
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -18,11 +19,13 @@ const store = configureStore({
     invitation: invitationReducer,
     schools: schoolReducers,
     student: studentReducer,
-     busRoute: busRouteReducer,
-      academicFeeStructure: academicFeeStructureReducer,
-      transportFeeStructure: transportFeeStructureReducer,
-      classSubjectAssignment: classSubjectAssignmentReducer,
-          subject: subjectReducer,
+    busRoute: busRouteReducer,
+    academicFeeStructure: academicFeeStructureReducer,
+    transportFeeStructure: transportFeeStructureReducer,
+    classSubjectAssignment: classSubjectAssignmentReducer,
+    subject: subjectReducer,
+    staff: staffReducer,
+    profile: profileReducer
 
   },
 });

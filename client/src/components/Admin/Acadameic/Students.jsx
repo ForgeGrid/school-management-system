@@ -2,19 +2,19 @@ import React, { useState } from "react";
 import { Search, Filter, Plus, MoreVertical } from "lucide-react";
 
 const MOCK_STUDENTS = [
-  { id: 1, name: "Aarav Sharma", roll: "01", admissionNo: "ADM-2025-001", gender: "Male",   dob: "12 Jul 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=12" },
+  { id: 1, name: "Aarav Sharma", roll: "01", admissionNo: "ADM-2025-001", gender: "Male", dob: "12 Jul 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=12" },
   { id: 2, name: "Ananya Singh", roll: "02", admissionNo: "ADM-2025-002", gender: "Female", dob: "18 Aug 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=47" },
-  { id: 3, name: "Vihaan Patel", roll: "03", admissionNo: "ADM-2025-003", gender: "Male",   dob: "21 May 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=33" },
-  { id: 4, name: "Myra Iyer",    roll: "04", admissionNo: "ADM-2025-004", gender: "Female", dob: "03 Sep 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=45" },
-  { id: 5, name: "Arjun Kumar",  roll: "05", admissionNo: "ADM-2025-005", gender: "Male",   dob: "11 Jan 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=14" },
-  { id: 6, name: "Siya Reddy",   roll: "06", admissionNo: "ADM-2025-006", gender: "Female", dob: "27 Feb 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=49" },
-  { id: 7, name: "Krish Mehta",  roll: "07", admissionNo: "ADM-2025-007", gender: "Male",   dob: "16 Mar 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=15" },
-  { id: 8, name: "Aadhya Nair",  roll: "08", admissionNo: "ADM-2025-008", gender: "Female", dob: "05 Apr 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=44" },
-  { id: 9, name: "Ritvik Jain",  roll: "09", admissionNo: "ADM-2025-009", gender: "Male",   dob: "30 May 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=18" },
+  { id: 3, name: "Vihaan Patel", roll: "03", admissionNo: "ADM-2025-003", gender: "Male", dob: "21 May 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=33" },
+  { id: 4, name: "Myra Iyer", roll: "04", admissionNo: "ADM-2025-004", gender: "Female", dob: "03 Sep 2014", status: "Active", avatar: "https://i.pravatar.cc/64?img=45" },
+  { id: 5, name: "Arjun Kumar", roll: "05", admissionNo: "ADM-2025-005", gender: "Male", dob: "11 Jan 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=14" },
+  { id: 6, name: "Siya Reddy", roll: "06", admissionNo: "ADM-2025-006", gender: "Female", dob: "27 Feb 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=49" },
+  { id: 7, name: "Krish Mehta", roll: "07", admissionNo: "ADM-2025-007", gender: "Male", dob: "16 Mar 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=15" },
+  { id: 8, name: "Aadhya Nair", roll: "08", admissionNo: "ADM-2025-008", gender: "Female", dob: "05 Apr 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=44" },
+  { id: 9, name: "Ritvik Jain", roll: "09", admissionNo: "ADM-2025-009", gender: "Male", dob: "30 May 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=18" },
   { id: 10, name: "Ishita Verma", roll: "10", admissionNo: "ADM-2025-010", gender: "Female", dob: "14 Jun 2015", status: "Active", avatar: "https://i.pravatar.cc/64?img=48" },
 ];
 
-export function Students({ students = MOCK_STUDENTS, capacity = 40 }) {
+export function Students({ students = MOCK_STUDENTS, capacity = 40, onStartEnrollment }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -48,7 +48,10 @@ export function Students({ students = MOCK_STUDENTS, capacity = 40 }) {
             <Filter className="w-3.5 h-3.5" />
             Filter
           </button>
-          <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+          <button
+            onClick={onStartEnrollment}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
             <Plus className="w-3.5 h-3.5" />
             Enroll Student
           </button>
@@ -124,9 +127,8 @@ export function Students({ students = MOCK_STUDENTS, capacity = 40 }) {
             <button
               key={n}
               onClick={() => setPage(n)}
-              className={`w-7 h-7 flex items-center justify-center rounded-md text-sm font-semibold transition-colors ${
-                n === page ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"
-              }`}
+              className={`w-7 h-7 flex items-center justify-center rounded-md text-sm font-semibold transition-colors ${n === page ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"
+                }`}
             >
               {n}
             </button>

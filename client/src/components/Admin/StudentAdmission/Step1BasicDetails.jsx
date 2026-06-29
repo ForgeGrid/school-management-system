@@ -5,7 +5,6 @@ import { LinkExistingParent } from "./LinkExistingParent";
 export function Step1BasicDetails({ form, onChange, goNext }) {
   const [photoFile,    setPhotoFile]    = useState(form.avatarFile    || null);
   const [photoPreview, setPhotoPreview] = useState(form.avatarPreview || null);
-  const [showFooter,   setShowFooter]   = useState(false);
   const [errors,       setErrors]       = useState({});
 
   const [parentMode, setParentMode] = useState(
@@ -14,13 +13,6 @@ export function Step1BasicDetails({ form, onChange, goNext }) {
 
   const photoRef  = useRef(null);
   const scrollRef = useRef(null);
-
-  // ── Scroll → reveal footer ───────────────────────────────────────────────
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    setShowFooter(scrollTop + clientHeight >= scrollHeight - 30);
-  };
 
   // ── Photo handling ───────────────────────────────────────────────────────
   const handlePhoto = (e) => {
@@ -154,7 +146,6 @@ export function Step1BasicDetails({ form, onChange, goNext }) {
       {/* ── Scrollable body ── */}
       <div
         ref={scrollRef}
-        onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-0 hide-scrollbar "
       >
         {/* Page header */}
@@ -643,31 +634,14 @@ export function Step1BasicDetails({ form, onChange, goNext }) {
           )}
         </Section>
 
-        <div className="h-2" />
-      </div>
-
-      {/* ── Footer ── */}
-      <div
-        style={{
-          maxHeight:  showFooter ? "72px" : "0px",
-          overflow:   "hidden",
-          transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
-        }}
-      >
-        <div
-          style={{
-            transform:  showFooter ? "translateY(0)" : "translateY(100%)",
-            opacity:    showFooter ? 1 : 0,
-            transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease",
-          }}
-          className="flex items-center justify-end gap-2.5 px-4 sm:px-5 py-3.5 border-t border-slate-100 bg-white"
-        >
+        {/* ── Action Buttons ── */}
+        <div className="mt-8 flex items-center justify-end gap-4 pb-4">
           <button
             type="button"
             onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 h-9 px-4 text-sm font-semibold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-700 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full text-slate-600 bg-white hover:bg-slate-50 transition-all text-sm font-semibold cursor-pointer active:scale-95 shadow-sm"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14z" />
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
@@ -678,7 +652,7 @@ export function Step1BasicDetails({ form, onChange, goNext }) {
           <button
             type="button"
             onClick={handleSaveAndContinue}
-            className="flex items-center gap-1.5 h-9 px-5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-200/60"
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all text-sm font-bold shadow-md shadow-blue-200/50 active:scale-95 cursor-pointer"
           >
             Save &amp; Continue
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -686,6 +660,7 @@ export function Step1BasicDetails({ form, onChange, goNext }) {
             </svg>
           </button>
         </div>
+
       </div>
     </div>
   );

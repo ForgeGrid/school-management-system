@@ -35,6 +35,82 @@ const enrolledStudents = [
   { id: 32, name: 'Kiara Fernandes', image: 'https://i.pravatar.cc/80?img=32', roll: '32', admission: 'ADM-2025-032', gender: 'Female', dob: '21 Sep 2015', status: 'Active' },
 ]
 
+// ── Subject Teachers Data ──────────────────────────────────────────────────
+const subjectTeachers = [
+  {
+    id: 1,
+    subject: 'Maths',
+    subjectColor: 'bg-green-100 text-green-600',
+    subjectIcon: '📐',
+    teacher: 'Rahul Kumar',
+    teacherImage: 'https://i.pravatar.cc/80?img=13',
+    designation: 'Maths Teacher',
+    email: 'rahul.k@school.com',
+    employeeId: 'STAFF-001',
+    status: 'Active',
+  },
+  {
+    id: 2,
+    subject: 'Science',
+    subjectColor: 'bg-blue-100 text-blue-600',
+    subjectIcon: '🔬',
+    teacher: 'Karthik M',
+    teacherImage: 'https://i.pravatar.cc/80?img=15',
+    designation: 'Science Teacher',
+    email: 'karthik.m@school.com',
+    employeeId: 'STAFF-002',
+    status: 'Active',
+  },
+  {
+    id: 3,
+    subject: 'English',
+    subjectColor: 'bg-purple-100 text-purple-600',
+    subjectIcon: '🔤',
+    teacher: 'Priya N',
+    teacherImage: 'https://images.unsplash.com/photo-1580894732444-8fecef2271ff?auto=format&fit=crop&q=80&w=80&h=80',
+    designation: 'English Teacher',
+    email: 'priya.n@school.com',
+    employeeId: 'STAFF-003',
+    status: 'Active',
+  },
+  {
+    id: 4,
+    subject: 'Hindi',
+    subjectColor: 'bg-orange-100 text-orange-600',
+    subjectIcon: 'अ',
+    teacher: 'Divya S',
+    teacherImage: 'https://i.pravatar.cc/80?img=16',
+    designation: 'Hindi Teacher',
+    email: 'divya.s@school.com',
+    employeeId: 'STAFF-004',
+    status: 'Active',
+  },
+  {
+    id: 5,
+    subject: 'Computer',
+    subjectColor: 'bg-cyan-100 text-cyan-600',
+    subjectIcon: '💻',
+    teacher: 'Vijay P',
+    teacherImage: 'https://i.pravatar.cc/80?img=17',
+    designation: 'Computer Teacher',
+    email: 'vijay.p@school.com',
+    employeeId: 'STAFF-005',
+    status: 'Active',
+  },
+  {
+    id: 6,
+    subject: 'Art',
+    subjectColor: 'bg-pink-100 text-pink-600',
+    subjectIcon: '🎨',
+    teacher: 'Meena R',
+    teacherImage: 'https://i.pravatar.cc/80?img=18',
+    designation: 'Art Teacher',
+    email: 'meena.r@school.com',
+    employeeId: 'STAFF-006',
+    status: 'Active',
+  },
+]
+
 const avatarColors = [
   'bg-indigo-100 text-indigo-600',
   'bg-pink-100 text-pink-600',
@@ -64,11 +140,11 @@ const EyeIcon        = ()                            => <svg className="w-4 h-4"
 const DotsIcon       = ()                            => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
 const PlusIcon       = ()                            => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
 const BackIcon       = ()                            => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-const EditIcon       = ()                            => <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
 const PersonIcon     = ({ className = 'w-4 h-4' }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 const EnrollIcon     = ({ className = 'w-4 h-4' }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
 const AttendanceIcon = ({ className = 'w-4 h-4' }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
 const XIcon          = ()                            => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+const AssignTeacherIcon = ({ className = 'w-4 h-4' }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
 
 // ── Quick Action ──────────────────────────────────────────────────────────────
 function QuickAction({ icon, label, sub, color }) {
@@ -107,6 +183,122 @@ function StatPill({ icon, label, value, sub, valueColor = 'text-slate-800', isEn
       {isEnrolled && (
         <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-indigo-600" style={{ width: '80%' }} />
       )}
+    </div>
+  )
+}
+
+// ── Subject Teachers Tab ──────────────────────────────────────────────────────
+function SubjectTeachersTab({ teachers }) {
+  const [search, setSearch] = useState('')
+
+  const filtered = teachers.filter(t =>
+    t.subject.toLowerCase().includes(search.toLowerCase()) ||
+    t.teacher.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-2 flex-wrap flex-shrink-0">
+        <div>
+          <p className="text-sm font-semibold text-slate-700">Subject Teachers ({filtered.length})</p>
+          <p className="text-xs text-slate-400 mt-0.5">Teachers assigned to teach subjects in this class.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+            <AssignTeacherIcon className="w-4 h-4" /> Assign Teachers
+          </button>
+          <div className="flex items-center gap-2 border border-slate-200 bg-white rounded-lg px-3 py-1.5 shadow-sm">
+            <SearchIcon />
+            <input
+              className="text-sm text-slate-600 outline-none bg-transparent placeholder-slate-400 w-44"
+              placeholder="Search by subject or teacher..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                {['#', 'Subject', 'Teacher', 'Designation', 'Email', 'Employee ID', 'Status', 'Action'].map(h => (
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t, i) => (
+                <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
+                  {/* # */}
+                  <td className="px-4 py-3 text-slate-400 text-xs">{i + 1}</td>
+
+                  {/* Subject */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${t.subjectColor}`}>
+                        {t.subjectIcon}
+                      </span>
+                      <span className="font-semibold text-slate-700 whitespace-nowrap">{t.subject}</span>
+                    </div>
+                  </td>
+
+                  {/* Teacher */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={t.teacherImage}
+                        alt={t.teacher}
+                        className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-slate-100"
+                      />
+                      <span className="font-medium text-slate-700 whitespace-nowrap">{t.teacher}</span>
+                    </div>
+                  </td>
+
+                  {/* Designation */}
+                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{t.designation}</td>
+
+                  {/* Email */}
+                  <td className="px-4 py-3">
+                    <a href={`mailto:${t.email}`} className="text-indigo-500 hover:underline text-xs whitespace-nowrap">{t.email}</a>
+                  </td>
+
+                  {/* Employee ID */}
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md whitespace-nowrap">{t.employeeId}</span>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-4 py-3">
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-600">{t.status}</span>
+                  </td>
+
+                  {/* Action */}
+                  <td className="px-4 py-3">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-400 transition-colors">
+                      <EyeIcon />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/40">
+          <p className="text-xs text-slate-400">Showing 1 to {filtered.length} of {filtered.length} entries</p>
+          <div className="flex items-center gap-1">
+            <button className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 text-sm disabled:opacity-40" disabled>‹</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium border bg-indigo-600 text-white border-indigo-600">1</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 text-sm disabled:opacity-40" disabled>›</button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -181,37 +373,26 @@ export function CreateClassModal({ onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
-
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-slate-800">Create Class Section</h2>
             <p className="text-xs text-slate-400 mt-0.5">Fill in the details to add a new class section.</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 transition-colors"
-          >
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 transition-colors">
             <XIcon />
           </button>
         </div>
 
-        {/* Body */}
         <div className="overflow-y-auto flex-1 px-5 py-4 flex flex-col gap-4">
-
-          {/* Section label */}
           <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-widest">Basic Information</p>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Grade / Standard" required error={errors.grade}>
               <select value={form.grade} onChange={e => set('grade', e.target.value)} className={inputCls(errors.grade)}>
                 <option value="">Select grade</option>
-                {['Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'].map(g => (
-                  <option key={g}>{g}</option>
-                ))}
+                {['Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'].map(g => <option key={g}>{g}</option>)}
               </select>
             </Field>
-
             <Field label="Section" required error={errors.section}>
               <select value={form.section} onChange={e => set('section', e.target.value)} className={inputCls(errors.section)}>
                 <option value="">Select section</option>
@@ -222,15 +403,8 @@ export function CreateClassModal({ onClose, onCreated }) {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Class Code">
-              <input
-                type="text"
-                placeholder="e.g. G5-A (auto if blank)"
-                value={form.code}
-                onChange={e => set('code', e.target.value)}
-                className={inputCls(false)}
-              />
+              <input type="text" placeholder="e.g. G5-A (auto if blank)" value={form.code} onChange={e => set('code', e.target.value)} className={inputCls(false)} />
             </Field>
-
             <Field label="Academic Year" required error={errors.year}>
               <select value={form.year} onChange={e => set('year', e.target.value)} className={inputCls(errors.year)}>
                 <option>2025 – 2026</option>
@@ -241,21 +415,11 @@ export function CreateClassModal({ onClose, onCreated }) {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Max Capacity">
-              <input
-                type="number"
-                min="1"
-                placeholder="e.g. 40"
-                value={form.capacity}
-                onChange={e => set('capacity', e.target.value)}
-                className={inputCls(false)}
-              />
+              <input type="number" min="1" placeholder="e.g. 40" value={form.capacity} onChange={e => set('capacity', e.target.value)} className={inputCls(false)} />
             </Field>
-
             <Field label="Status">
               <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls(false)}>
-                <option>Active</option>
-                <option>Draft</option>
-                <option>Inactive</option>
+                <option>Active</option><option>Draft</option><option>Inactive</option>
               </select>
             </Field>
           </div>
@@ -266,58 +430,25 @@ export function CreateClassModal({ onClose, onCreated }) {
             <Field label="Assign Class Teacher">
               <select value={form.teacher} onChange={e => set('teacher', e.target.value)} className={inputCls(false)}>
                 <option value="">Select teacher</option>
-                <option>Priya N</option>
-                <option>Rahul K</option>
-                <option>Anita R</option>
-                <option>Vijay P</option>
-                <option>Divya S</option>
-                <option>Karthik M</option>
-                <option>Meena R</option>
-                <option>Arun S</option>
-                <option>Sneha T</option>
-                <option>Mohan L</option>
+                {['Priya N','Rahul K','Anita R','Vijay P','Divya S','Karthik M','Meena R','Arun S','Sneha T','Mohan L'].map(t => <option key={t}>{t}</option>)}
               </select>
             </Field>
-
             <Field label="Number of Subjects">
-              <input
-                type="number"
-                min="1"
-                placeholder="e.g. 6"
-                value={form.subjects}
-                onChange={e => set('subjects', e.target.value)}
-                className={inputCls(false)}
-              />
+              <input type="number" min="1" placeholder="e.g. 6" value={form.subjects} onChange={e => set('subjects', e.target.value)} className={inputCls(false)} />
             </Field>
           </div>
 
           <Field label="Notes / Description">
-            <textarea
-              rows={3}
-              placeholder="Optional notes about this class section…"
-              value={form.notes}
-              onChange={e => set('notes', e.target.value)}
-              className={`${inputCls(false)} resize-none`}
-            />
+            <textarea rows={3} placeholder="Optional notes about this class section…" value={form.notes} onChange={e => set('notes', e.target.value)} className={`${inputCls(false)} resize-none`} />
           </Field>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 flex-shrink-0 bg-slate-50/60 rounded-b-2xl">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
-          >
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors">Cancel</button>
+          <button onClick={handleSubmit} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">
             <PlusIcon /> Create Class Section
           </button>
         </div>
-
       </div>
     </div>
   )
@@ -334,7 +465,6 @@ export function OpenClass({ cls, onBack }) {
   const status  = cls?.status  ?? 'Active'
   const teacher = cls?.teacher ?? 'Priya N'
   const role    = cls?.role    ?? 'Hindi Teacher'
-  const avatar  = cls?.avatar  ?? 'PN'
 
   const tabs = [
     { label: 'Students',         icon: <UsersIcon /> },
@@ -350,42 +480,29 @@ export function OpenClass({ cls, onBack }) {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const statusColors = {
-    Active:   'bg-green-100 text-green-600',
-    Draft:    'bg-yellow-100 text-yellow-600',
-    Inactive: 'bg-gray-100 text-gray-500',
-  }
-
   return (
     <div className="flex flex-col gap-4 h-full overflow-hidden">
 
-      {/* Breadcrumb + Header Card */}
+      {/* Header Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex-shrink-0">
         <div className="flex items-start justify-between gap-5 flex-wrap md:flex-nowrap">
-          
-          {/* Left Side: Title & Info Details */}
+
           <div className="flex-1 flex flex-col gap-4 min-w-0">
-            {/* Title & Back */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={onBack}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 transition-colors shadow-sm shrink-0"
-              >
+              <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 transition-colors shadow-sm shrink-0">
                 <BackIcon />
               </button>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl font-bold text-slate-800">{grade}</h1>
                   <span className="bg-green-50 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full border border-green-100 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    {status}
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{status}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">Academic › Class Section › {grade}</p>
               </div>
             </div>
 
-            {/* Info Grid (Academic details) */}
             <div className="flex flex-wrap gap-x-8 gap-y-3 mt-1 pb-4 border-b border-slate-100">
               {[
                 { icon: <CalIcon className="w-4 h-4 text-slate-400" />,     label: 'Academic Year', value: '2025 - 2026' },
@@ -394,9 +511,7 @@ export function OpenClass({ cls, onBack }) {
                 { icon: <CodeIcon className="w-4 h-4 text-slate-400" />,    label: 'Class Code',   value: code },
               ].map(({ icon, label, value }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">
-                    {icon}
-                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0">{icon}</div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5 leading-none">{label}</p>
                     <p className="text-sm font-bold text-slate-700 leading-none">{value}</p>
@@ -405,7 +520,6 @@ export function OpenClass({ cls, onBack }) {
               ))}
             </div>
 
-            {/* Created info row */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400 font-medium">
               <div className="flex items-center gap-1.5">
                 <PersonIcon className="w-4 h-4 text-slate-400" />
@@ -418,7 +532,7 @@ export function OpenClass({ cls, onBack }) {
             </div>
           </div>
 
-          {/* Right Side: Class Teacher Card */}
+          {/* Class Teacher Card */}
           <div className="w-full md:w-[320px] shrink-0 bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between self-stretch">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2.5">Class Teacher</span>
             <div className="flex items-center justify-between gap-3">
@@ -436,11 +550,7 @@ export function OpenClass({ cls, onBack }) {
                   </a>
                 </div>
               </div>
-              
-              <a
-                href={`mailto:${teacher.toLowerCase().replace(' ','.')}@school.com`}
-                className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shrink-0 shadow-sm"
-              >
+              <a href={`mailto:${teacher.toLowerCase().replace(' ','.')}@school.com`} className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shrink-0 shadow-sm">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -464,9 +574,9 @@ export function OpenClass({ cls, onBack }) {
         {/* Stats Pills */}
         <div className="flex gap-3 overflow-x-auto pb-1 flex-shrink-0">
           <StatPill icon={<UsersIcon />}      label="Enrolled Students" value={cls?.students ?? 32}   sub={`/ ${cls?.totalStudents ?? 40} Capacity`} isEnrolled={true} iconBg="bg-indigo-50" iconColor="text-indigo-600" />
-          <StatPill icon={<CheckIcon />}      label="Present Today"     value="28"                    valueColor="text-slate-800"  sub="87.5%" iconBg="bg-green-50" iconColor="text-green-600" />
-          <StatPill icon={<XCircleIcon />}    label="Absent Today"      value="3"                     valueColor="text-slate-800"  sub="9.4%" iconBg="bg-red-50" iconColor="text-red-500" />
-          <StatPill icon={<ClockIcon />}      label="Late Today"        value="1"                     valueColor="text-slate-800"  sub="3.1%" iconBg="bg-amber-50" iconColor="text-amber-500" />
+          <StatPill icon={<CheckIcon />}      label="Present Today"     value="28"                    sub="87.5%" iconBg="bg-green-50" iconColor="text-green-600" />
+          <StatPill icon={<XCircleIcon />}    label="Absent Today"      value="3"                     sub="9.4%" iconBg="bg-red-50" iconColor="text-red-500" />
+          <StatPill icon={<ClockIcon />}      label="Late Today"        value="1"                     sub="3.1%" iconBg="bg-amber-50" iconColor="text-amber-500" />
           <StatPill icon={<BookIcon />}       label="Subjects"          value={cls?.subjects ?? 6}    sub="Assigned" iconBg="bg-purple-50" iconColor="text-purple-600" />
           <StatPill icon={<TimetableIcon />}  label="Timetable Status"  value={cls?.timetable ?? 'Published'} valueColor="text-green-600" sub="Updated 2 days ago" isTimetable={true} iconBg="bg-blue-50" iconColor="text-blue-600" />
         </div>
@@ -529,14 +639,10 @@ export function OpenClass({ cls, onBack }) {
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
                             {s.image ? (
-                              <img
-                                src={s.image}
-                                alt={s.name}
-                                className="w-7 h-7 rounded-full object-cover flex-shrink-0"
-                              />
+                              <img src={s.image} alt={s.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                             ) : (
                               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${avatarColors[s.id % avatarColors.length]}`}>
-                                {s.avatar}
+                                {s.name[0]}
                               </div>
                             )}
                             <span className="font-medium text-slate-700 whitespace-nowrap">{s.name}</span>
@@ -582,8 +688,13 @@ export function OpenClass({ cls, onBack }) {
           </div>
         )}
 
+        {/* Subject Teachers Tab */}
+        {activeTab === 'Subject Teachers' && (
+          <SubjectTeachersTab teachers={subjectTeachers} />
+        )}
+
         {/* Other tabs placeholder */}
-        {activeTab !== 'Students' && (
+        {activeTab !== 'Students' && activeTab !== 'Subject Teachers' && (
           <div className="flex items-center justify-center bg-white border border-slate-200/80 rounded-xl py-16 flex-shrink-0">
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-3 text-indigo-400">

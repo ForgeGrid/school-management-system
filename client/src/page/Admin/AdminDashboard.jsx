@@ -40,7 +40,7 @@ import { Attendece } from "@/components/Admin/Acadameic/Attendance";
 import { Myclass } from "@/components/Admin/Acadameic/Myclass";
 import { ClassSection } from "@/components/Admin/Acadameic/ClassSection";
 import { Timetable } from "@/components/Admin/Acadameic/TimeTable";
-import { Subject } from "@/components/Admin/Acadameic/Subject";
+import Subject from "@/components/Admin/Acadameic/Subject";
 
 
 
@@ -292,8 +292,6 @@ export default function AdminDashboard() {
                     {/* ── Student Admission ─────────────────────────────────── */}
                     {activeTab === "Admission" && (
                       <StudentAdmissionForm
-                        setStudents={setStudents}
-                        setAttendance={setAttendance}
                         setActiveTab={setActiveTab}
                       />
                     )}

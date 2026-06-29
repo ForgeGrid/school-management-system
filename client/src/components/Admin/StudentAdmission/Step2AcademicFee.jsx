@@ -35,20 +35,20 @@ import {
 } from "../../../redux/slice/transportFeeStructureSlice";
 
 const FREQ_DISPLAY = {
-  monthly:    "Monthly",
-  quarterly:  "Quarterly",
-  yearly:     "Yearly",
-  "term-wise":"Termly",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  yearly: "Yearly",
+  "term-wise": "Termly",
   "one-time": "One-time",
 };
 
 export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
   const dispatch = useDispatch();
 
-  const structures             = useSelector(selectStructures);
-  const academicLoadingMap     = useSelector(selectAcademicLoading);
-  const academicError          = useSelector(selectAcademicError);
-  const allRoutes              = useSelector(selectAllBusRoutes)      || [];
+  const structures = useSelector(selectStructures);
+  const academicLoadingMap = useSelector(selectAcademicLoading);
+  const academicError = useSelector(selectAcademicError);
+  const allRoutes = useSelector(selectAllBusRoutes) || [];
   const allTransportStructures = useSelector(selectAllFeeStructures) || [];
 
   const activeRoutes = useMemo(() => allRoutes.filter((r) => r.status === "active"), [allRoutes]);
@@ -60,31 +60,30 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
   const [selectedStructureId, setSelectedStructureId] = useState(form.academicPlanId || null);
 
   // Transport local state
-  const [selectedRouteId,    setSelectedRouteId]    = useState(form.transportRouteId || "");
-  const [transportStop,      setTransportStop]      = useState(form.transportStop    || "");
-  const [transportFee,       setTransportFee]       = useState(0);
+  const [selectedRouteId, setSelectedRouteId] = useState(form.transportRouteId || "");
+  const [transportStop, setTransportStop] = useState(form.transportStop || "");
+  const [transportFee, setTransportFee] = useState(0);
   const [transportFrequency, setTransportFrequency] = useState("Monthly");
-  const [transportStatus]                           = useState("Confirmed");
+  const [transportStatus] = useState("Confirmed");
 
   // Adjustments
   const [discounts, setDiscounts] = useState(
     form.discounts?.length
       ? form.discounts
       : [
-          { id: 1, type: "Scholarship",      amount: 2000 },
-          { id: 2, type: "Sibling Discount", amount: 1000 },
-        ]
+        { id: 1, type: "Scholarship", amount: 2000 },
+        { id: 2, type: "Sibling Discount", amount: 1000 },
+      ]
   );
   const [charges, setCharges] = useState(
     form.additionalCharges?.length
       ? form.additionalCharges
       : [
-          { id: 1, name: "Late Admission Fee", amount: 600 },
-          { id: 2, name: "Activity Fee",       amount: 400 },
-        ]
+        { id: 1, name: "Late Admission Fee", amount: 600 },
+        { id: 2, name: "Activity Fee", amount: 400 },
+      ]
   );
   const [adjustmentsExpanded, setAdjustmentsExpanded] = useState(true);
-  const [showFooter,          setShowFooter]           = useState(false);
 
   const scrollRef = useRef(null);
 
@@ -121,8 +120,8 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
       getAllTransportFeeStructures({
         academicYear,
         route_id: selectedRouteId,
-        status:   "active",
-        limit:    100,
+        status: "active",
+        limit: 100,
       })
     );
   }, [dispatch, form.transport_required, academicYear, selectedRouteId]);
@@ -181,21 +180,14 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
 
   const heads = selectedStructure?.feeHeads || [];
 
-  // ── Scroll / footer reveal ───────────────────────────────────────────────
-  const checkScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    setShowFooter(scrollTop + clientHeight >= scrollHeight - 30);
-  };
 
-  useEffect(() => { checkScroll(); }, [selectedStructure, adjustmentsExpanded, discounts, charges]);
 
   // ── Totals ────────────────────────────────────────────────────────────────
-  const academicSubtotal       = heads.reduce((sum, h) => sum + (h.amount || 0), 0);
-  const discountsTotal         = discounts.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const academicSubtotal = heads.reduce((sum, h) => sum + (h.amount || 0), 0);
+  const discountsTotal = discounts.reduce((sum, d) => sum + (d.amount || 0), 0);
   const additionalChargesTotal = charges.reduce((sum, c) => sum + (c.amount || 0), 0);
-  const transportSubtotal      = form.transport_required ? transportFee : 0;
-  const estimatedTotal         = academicSubtotal + transportSubtotal + additionalChargesTotal - discountsTotal;
+  const transportSubtotal = form.transport_required ? transportFee : 0;
+  const estimatedTotal = academicSubtotal + transportSubtotal + additionalChargesTotal - discountsTotal;
 
   // ── Discount handlers ─────────────────────────────────────────────────────
   const handleDiscountChange = (index, field, value) => {
@@ -205,7 +197,7 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
       return next;
     });
   };
-  const addDiscount    = () => setDiscounts((prev) => [...prev, { id: Date.now(), type: "Custom Discount", amount: 0 }]);
+  const addDiscount = () => setDiscounts((prev) => [...prev, { id: Date.now(), type: "Custom Discount", amount: 0 }]);
   const removeDiscount = (id) => setDiscounts((prev) => prev.filter((d) => d.id !== id));
 
   // ── Charge handlers ───────────────────────────────────────────────────────
@@ -216,7 +208,7 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
       return next;
     });
   };
-  const addCharge    = () => setCharges((prev) => [...prev, { id: Date.now(), name: "", amount: 0 }]);
+  const addCharge = () => setCharges((prev) => [...prev, { id: Date.now(), name: "", amount: 0 }]);
   const removeCharge = (id) => setCharges((prev) => prev.filter((c) => c.id !== id));
 
   // ── Continue ──────────────────────────────────────────────────────────────
@@ -227,29 +219,29 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
       return;
     }
 
-    onChange("academicPlanId")    ({ target: { value: selectedStructureId } });
-    onChange("academicPlan")      ({ target: { value: selectedStructure ? `${selectedStructure.standard} - Academic Plan (${selectedStructure.academicYear})` : "" } });
-    onChange("academicYear")      ({ target: { value: academicYear } });
-    onChange("grade")             ({ target: { value: grade } });
-    onChange("discounts")         ({ target: { value: discounts } });
-    onChange("additionalCharges") ({ target: { value: charges } });
-    onChange("estimatedTotal")    ({ target: { value: estimatedTotal } });
+    onChange("academicPlanId")({ target: { value: selectedStructureId } });
+    onChange("academicPlan")({ target: { value: selectedStructure ? `${selectedStructure.standard} - Academic Plan (${selectedStructure.academicYear})` : "" } });
+    onChange("academicYear")({ target: { value: academicYear } });
+    onChange("grade")({ target: { value: grade } });
+    onChange("discounts")({ target: { value: discounts } });
+    onChange("additionalCharges")({ target: { value: charges } });
+    onChange("estimatedTotal")({ target: { value: estimatedTotal } });
 
     if (form.transport_required) {
-      onChange("transportRouteId")        ({ target: { value: selectedRouteId } });
-      onChange("transportRoute")          ({ target: { value: selectedRoute?.routeName || "" } });
-      onChange("transportStop")           ({ target: { value: transportStop } });
-      onChange("transportFee")            ({ target: { value: transportFee } });
-      onChange("transportFrequency")      ({ target: { value: transportFrequency } });
-      onChange("transportFeeStructureId") ({ target: { value: activeTransportFee?._id || "" } });
+      onChange("transportRouteId")({ target: { value: selectedRouteId } });
+      onChange("transportRoute")({ target: { value: selectedRoute?.routeName || "" } });
+      onChange("transportStop")({ target: { value: transportStop } });
+      onChange("transportFee")({ target: { value: transportFee } });
+      onChange("transportFrequency")({ target: { value: transportFrequency } });
+      onChange("transportFeeStructureId")({ target: { value: activeTransportFee?._id || "" } });
     } else {
       // Explicitly clear all transport fields — prevents stale values leaking into the payload
-      onChange("transportRouteId")        ({ target: { value: "" } });
-      onChange("transportRoute")          ({ target: { value: "" } });
-      onChange("transportStop")           ({ target: { value: "" } });
-      onChange("transportFee")            ({ target: { value: 0 } });
-      onChange("transportFrequency")      ({ target: { value: "" } });
-      onChange("transportFeeStructureId") ({ target: { value: "" } });
+      onChange("transportRouteId")({ target: { value: "" } });
+      onChange("transportRoute")({ target: { value: "" } });
+      onChange("transportStop")({ target: { value: "" } });
+      onChange("transportFee")({ target: { value: 0 } });
+      onChange("transportFrequency")({ target: { value: "" } });
+      onChange("transportFeeStructureId")({ target: { value: "" } });
     }
 
     goNext();
@@ -264,7 +256,6 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
       {/* ── Scrollable main body ── */}
       <div
         ref={scrollRef}
-        onScroll={checkScroll}
         className="flex-1 overflow-y-auto px-6 py-6 hide-scrollbar"
       >
         {/* Page Header */}
@@ -343,9 +334,6 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1.5">
                     Grade / Standard
-                    <span className="ml-1.5 text-[10px] font-bold text-violet-500 bg-violet-50 border border-violet-100 px-1.5 py-0.5 rounded-full">
-                      From Step 1
-                    </span>
                   </label>
                   <div className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 flex items-center text-sm font-bold select-none">
                     {grade || <span className="text-slate-400 font-normal">Not set</span>}
@@ -366,7 +354,8 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                     ) : filteredStructures.length === 0 ? (
                       <div className="w-full h-11 px-3 rounded-lg border border-red-200 bg-red-50/40 flex items-center gap-2 text-sm text-red-500 font-semibold">
                         <AlertCircle className="w-4 h-4 shrink-0" />
-                        No structure for {grade || "this grade"}
+                        {/* No structure for {grade || "this grade"} */}
+                        Nill
                       </div>
                     ) : (
                       <>
@@ -442,11 +431,10 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                               ₹ {(head.amount || 0).toLocaleString("en-IN")}
                             </td>
                             <td className="py-3 text-center">
-                              <span className={`inline-block px-3 py-0.5 rounded-full text-xs font-bold border ${
-                                isMandatory
-                                  ? "bg-green-50 text-green-650 border-green-100"
-                                  : "bg-blue-50 text-blue-650 border-blue-100"
-                              }`}>
+                              <span className={`inline-block px-3 py-0.5 rounded-full text-xs font-bold border ${isMandatory
+                                ? "bg-green-50 text-green-650 border-green-100"
+                                : "bg-blue-50 text-blue-650 border-blue-100"
+                                }`}>
                                 {isMandatory ? "Mandatory" : "Optional"}
                               </span>
                             </td>
@@ -589,11 +577,10 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1.5">Status</label>
                   <div className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-slate-50/70 flex items-center">
-                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold border ${
-                      form.transport_required
-                        ? "bg-green-50 text-green-600 border-green-100"
-                        : "bg-slate-100 text-slate-400 border-slate-200"
-                    }`}>
+                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold border ${form.transport_required
+                      ? "bg-green-50 text-green-600 border-green-100"
+                      : "bg-slate-100 text-slate-400 border-slate-200"
+                      }`}>
                       {form.transport_required ? transportStatus : "N/A"}
                     </span>
                   </div>
@@ -791,18 +778,13 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Footer ── */}
-      <div style={{ maxHeight: showFooter ? "80px" : "0px", overflow: "hidden", transition: "max-height 0.35s cubic-bezier(0.4,0,0.2,1)" }}>
-        <div
-          style={{ transform: showFooter ? "translateY(0)" : "translateY(100%)", opacity: showFooter ? 1 : 0, transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease" }}
-          className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white"
-        >
+        {/* ── Action Buttons ── */}
+        <div className="mt-8 flex items-center justify-between pb-4">
           <button
             type="button"
             onClick={goBack}
-            className="flex items-center gap-2 h-10 px-5 text-sm font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full text-slate-600 bg-white hover:bg-slate-50 transition active:scale-95 cursor-pointer text-sm font-semibold shadow-sm"
           >
             <ArrowLeft className="w-4.5 h-4.5" />
             Back to Step 1
@@ -815,7 +797,7 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
                 const { avatarFile, ...safe } = form;
                 localStorage.setItem("studentAdmissionDraft", JSON.stringify(safe));
               }}
-              className="flex items-center gap-2 h-10 px-5 text-sm font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full text-slate-600 bg-white hover:bg-slate-50 transition active:scale-95 cursor-pointer text-sm font-semibold shadow-sm"
             >
               <Save className="w-4.5 h-4.5" />
               Save Draft
@@ -824,13 +806,14 @@ export function Step2AcademicFee({ form, onChange, goNext, goBack }) {
               type="button"
               onClick={handleContinue}
               disabled={!selectedStructureId || isLoadingStructures}
-              className="flex items-center gap-2 h-10 px-6 text-sm font-black text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition active:scale-95 cursor-pointer shadow-md shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition active:scale-95 cursor-pointer text-sm font-bold shadow-md shadow-blue-200/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continue to Next Step
               <ArrowRight className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
