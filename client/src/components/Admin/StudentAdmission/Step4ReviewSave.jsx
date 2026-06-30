@@ -44,22 +44,22 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
 
   const [confirmed, setConfirmed] = useState(false);
 
-  const apiLoading   = useSelector(selectStudentLoading("enrollStudent"));
+  const apiLoading = useSelector(selectStudentLoading("enrollStudent"));
   const notification = useSelector(selectStudentNotification);
 
-  const structures        = useSelector(selectStructures);
+  const structures = useSelector(selectStructures);
   const selectedStructure = structures.find((s) => s._id === form.academicPlanId) || null;
-  const heads             = selectedStructure?.feeHeads || [];
+  const heads = selectedStructure?.feeHeads || [];
 
-  const acadTotal  = heads.reduce((s, h) => s + (h.amount || 0), 0);
+  const acadTotal = heads.reduce((s, h) => s + (h.amount || 0), 0);
   const transTotal = form.transport_required ? (Number(form.transportFee) || 0) : 0;
 
-  const discounts = form.discounts         || [];
-  const charges   = form.additionalCharges || [];
+  const discounts = form.discounts || [];
+  const charges = form.additionalCharges || [];
 
-  const discountsTotal         = discounts.reduce((s, d) => s + (d.amount || 0), 0);
-  const additionalChargesTotal = charges.reduce((s, c)   => s + (c.amount || 0), 0);
-  const finalTotal             = acadTotal + transTotal + additionalChargesTotal - discountsTotal;
+  const discountsTotal = discounts.reduce((s, d) => s + (d.amount || 0), 0);
+  const additionalChargesTotal = charges.reduce((s, c) => s + (c.amount || 0), 0);
+  const finalTotal = acadTotal + transTotal + additionalChargesTotal - discountsTotal;
 
   const fmt = (n) => `₹ ${Number(n || 0).toLocaleString("en-IN")}`;
 
@@ -101,7 +101,7 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
 
     if (transportRequired) {
       const hasFeeStructure = form.transportFeeStructureId && String(form.transportFeeStructureId).trim() !== "";
-      const hasRoute        = form.transportRouteId        && String(form.transportRouteId).trim()        !== "";
+      const hasRoute = form.transportRouteId && String(form.transportRouteId).trim() !== "";
 
       if (!hasFeeStructure || !hasRoute) {
         alert(
@@ -120,11 +120,11 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
         parentBlock = { mode: "existing", parentUserId: form.parentUserId };
       } else {
         parentBlock = {
-          mode:          "new",
-          name:          form.parent_name,
-          email:         form.parent_email,
+          mode: "new",
+          name: form.parent_name,
+          email: form.parent_email,
           primary_phone: form.parent_phone,
-          ...(form.guardian_name     ? { guardian_name:     form.guardian_name     } : {}),
+          ...(form.guardian_name ? { guardian_name: form.guardian_name } : {}),
           ...(form.guardian_relation ? { guardian_relation: form.guardian_relation } : {}),
         };
       }
@@ -132,32 +132,32 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
 
     // ── Step 4: Build feePlan — NEVER include transport keys when not required
     const feePlan = {
-      academicYear:            form.academicYear,
+      academicYear: form.academicYear,
       academicFeeStructure_id: form.academicPlanId,
-      discounts:         discounts.map((d) => ({ type: d.type, amount: Number(d.amount) || 0 })),
-      additionalCharges: charges.map((c)   => ({ name: c.name, amount: Number(c.amount) || 0 })),
+      discounts: discounts.map((d) => ({ type: d.type, amount: Number(d.amount) || 0 })),
+      additionalCharges: charges.map((c) => ({ name: c.name, amount: Number(c.amount) || 0 })),
     };
 
     // Only attach transport keys when transport is truly required AND IDs are valid
     if (transportRequired) {
       feePlan.transportFeeStructure_id = String(form.transportFeeStructureId).trim();
-      feePlan.currentRoute_id          = String(form.transportRouteId).trim();
+      feePlan.currentRoute_id = String(form.transportRouteId).trim();
     }
     // When transport is NOT required, transportFeeStructure_id and currentRoute_id
     // are intentionally omitted from feePlan entirely — not set to undefined/null/""
 
     // ── Step 5: Build final payload ──────────────────────────────────────────
     const payload = {
-      student_name:       form.student_name,
-      email:              form.email,
-      password:           form.password,
-      admission_no:       form.admission_no,
-      gender:             form.gender?.toLowerCase() || "prefer_not_to_say",
-      dob:                form.dob  || null,
+      student_name: form.student_name,
+      email: form.email,
+      password: form.password,
+      admission_no: form.admission_no,
+      gender: form.gender?.toLowerCase() || "prefer_not_to_say",
+      dob: form.dob || null,
       transport_required: transportRequired,   // always a clean boolean
-      requestedGrade:     form.requestedGrade || form.grade || undefined,
-      address:            form.address,
-      parent:             parentBlock,
+      requestedGrade: form.requestedGrade || form.grade || undefined,
+      address: form.address,
+      parent: parentBlock,
       feePlan,
       ...(form.avatarFile ? { avatarFile: form.avatarFile } : {}),
     };
@@ -181,11 +181,10 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
       {/* ── Toast (API success / error) ── */}
       {notification && (
         <div
-          className={`mx-4 sm:mx-5 mt-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${
-            notification.type === "success"
+          className={`mx-4 sm:mx-5 mt-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${notification.type === "success"
               ? "bg-emerald-50 border-emerald-200 text-emerald-700"
               : "bg-red-50 border-red-200 text-red-700"
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2">
             {notification.type === "success" ? (
@@ -329,11 +328,10 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
 
               <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                 <span className="text-[11px] text-slate-400 font-semibold">Transport Required</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                  form.transport_required
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${form.transport_required
                     ? "bg-green-100 text-green-700"
                     : "bg-slate-100 text-slate-400"
-                }`}>
+                  }`}>
                   {form.transport_required ? "Yes" : "No"}
                 </span>
               </div>
@@ -432,11 +430,10 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
                             ₹ {(h.amount || 0).toLocaleString("en-IN")}
                           </td>
                           <td className="py-2.5 text-center">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                              isMandatory
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${isMandatory
                                 ? "bg-green-50 text-green-700 border-green-100"
                                 : "bg-blue-50 text-blue-600 border-blue-100"
-                            }`}>
+                              }`}>
                               {isMandatory ? "Mandatory" : "Optional"}
                             </span>
                           </td>
@@ -536,10 +533,10 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
               </div>
               <div className="space-y-2.5 text-sm mb-4">
                 {[
-                  { label: "Academic Subtotal",  value: fmt(acadTotal),                     color: "text-blue-100"  },
-                  { label: "Transport Fee",       value: fmt(transTotal),                    color: "text-blue-100"  },
-                  { label: "Additional Charges",  value: `+ ${fmt(additionalChargesTotal)}`, color: "text-green-300" },
-                  { label: "Discounts",           value: `- ${fmt(discountsTotal)}`,          color: "text-rose-300"  },
+                  { label: "Academic Subtotal", value: fmt(acadTotal), color: "text-blue-100" },
+                  { label: "Transport Fee", value: fmt(transTotal), color: "text-blue-100" },
+                  { label: "Additional Charges", value: `+ ${fmt(additionalChargesTotal)}`, color: "text-green-300" },
+                  { label: "Discounts", value: `- ${fmt(discountsTotal)}`, color: "text-rose-300" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="flex justify-between items-center">
                     <span className="text-blue-200 font-semibold">{label}</span>
@@ -573,65 +570,65 @@ export function Step4ReviewSave({ form, goBack, onSubmit, isLoading }) {
             <p className="text-xs text-slate-400 mt-0.5">After confirmation, the student enrolment and fee plan will become active.</p>
           </div>
         </label>
-      </div>
 
-      {/* ── Footer ── */}
-      <div className="flex items-center justify-between px-5 py-4 border-t border-slate-200/80 bg-white shrink-0">
-        <button
-          type="button"
-          onClick={goBack}
-          className="flex items-center gap-2 h-10 px-5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition active:scale-95 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Previous Step
-        </button>
-
-        <div className="flex items-center gap-3">
+        {/* ── Action Buttons ── */}
+        <div className="mt-8 flex items-center justify-between pb-4">
           <button
             type="button"
-            onClick={() => {
-              const { avatarFile, ...safe } = form;
-              localStorage.setItem("studentAdmissionDraft", JSON.stringify(safe));
-            }}
-            className="flex items-center gap-2 h-10 px-5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition active:scale-95 cursor-pointer"
+            onClick={goBack}
+            className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full text-slate-600 bg-white hover:bg-slate-50 transition active:scale-95 cursor-pointer text-sm font-semibold shadow-sm"
           >
-            <Save className="w-4 h-4" /> Save Draft
+            <ArrowLeft className="w-4 h-4" /> Back to Previous Step
           </button>
 
-          <button
-            type="button"
-            onClick={handleConfirmAdmission}
-            disabled={
-              !confirmed ||
-              apiLoading ||
-              !form.academicPlanId ||
-              // Disable if transport is required but IDs are missing
-              (Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
-            }
-            className={`flex items-center gap-2 h-10 px-6 text-sm font-black text-white rounded-xl transition active:scale-95 cursor-pointer shadow-md ${
-              confirmed &&
-              !apiLoading &&
-              form.academicPlanId &&
-              !(Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
-                ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const { avatarFile, ...safe } = form;
+                localStorage.setItem("studentAdmissionDraft", JSON.stringify(safe));
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-full text-slate-600 bg-white hover:bg-slate-50 transition active:scale-95 cursor-pointer text-sm font-semibold shadow-sm"
+            >
+              <Save className="w-4 h-4" /> Save Draft
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConfirmAdmission}
+              disabled={
+                !confirmed ||
+                apiLoading ||
+                !form.academicPlanId ||
+                // Disable if transport is required but IDs are missing
+                (Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
+              }
+              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white rounded-full transition active:scale-95 cursor-pointer shadow-md ${confirmed &&
+                !apiLoading &&
+                form.academicPlanId &&
+                !(Boolean(form.transport_required) && (!form.transportFeeStructureId || !form.transportRouteId))
+                ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200/50"
                 : "bg-slate-300 cursor-not-allowed"
-            }`}
-          >
-            {apiLoading ? (
-              <>
-                <svg className="w-4.5 h-4.5 animate-spin" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-                Submitting...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4.5 h-4.5" />
-                Confirm Admission
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+                }`}
+            >
+              {apiLoading ? (
+                <>
+                  <svg className="w-4.5 h-4.5 animate-spin" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4.5 h-4.5" />
+                  Confirm Admission
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   );
