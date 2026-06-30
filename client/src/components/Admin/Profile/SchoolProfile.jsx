@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 /* ── Shared Primitives (local to this file) ──────────────────────────────── */
 const inputBase = "w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder-gray-400";
@@ -56,9 +56,17 @@ const IcoLock  = () => <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" 
 const IcoGlobe = () => <svg className="w-[18px] h-[18px] text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>;
 
 /* ── Component ───────────────────────────────────────────────────────────── */
-export default function SchoolProfile() {
+const SchoolProfile = forwardRef(function SchoolProfile(props, ref) {
   const [address, setAddress] = useState("123, Sunrise Avenue, Green Park,\nNew Delhi, Delhi - 110016, India");
   const MAX = 500;
+
+  /* Expose handleSave so the parent can trigger save via ref */
+  useImperativeHandle(ref, () => ({
+    handleSave() {
+      // TODO: wire to a real API thunk (e.g. dispatch(updateSchoolProfile({ ... })))
+      console.log("SchoolProfile → save", { address });
+    },
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -149,4 +157,6 @@ export default function SchoolProfile() {
       </Card>
     </div>
   );
-}
+});
+
+export default SchoolProfile;

@@ -26,7 +26,7 @@ import helpdeskRoutes from "./routes/helpdesk.routes.js";
 import subjectRoutes from "./routes/subject.routes.js";
 import classSubjectAssignmentRoutes from "./routes/classSubjectAssignment.routes.js";
 import timetableRoutes from "./routes/timetable.routes.js";
-
+import profileRoutes from "./routes/profile.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -102,7 +102,7 @@ app.use("/api/v0/helpdesk", helpdeskRoutes);
 app.use("/api/v0/subjects", subjectRoutes);
 app.use("/api/v0/class-subject-assignments", classSubjectAssignmentRoutes);
 app.use("/api/v0/timetable", timetableRoutes);
-
+app.use("/api/v0/profile", profileRoutes);
 
 
 app.get("/api/v0/health", (req, res) => {

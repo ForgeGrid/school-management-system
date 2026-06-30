@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import MyDetails from "./Profile/MyDetails";
 import ProfessionalProfile from "./Profile/ProfessionalProfile";
 import SchoolProfile from "./Profile/SchoolProfile";
@@ -6,15 +6,25 @@ import Password from "./Profile/Password";
 
 const TABS = ["My Details", "Professional Profile", "School Profile", "Password"];
 
+/* Tabs that have a global save action */
+const SAVEABLE_TABS = ["Professional Profile", "School Profile"];
+
 const IcoSave  = () => <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>;
 
 export default function AdminSettings() {
   const [tab, setTab] = useState("My Details");
 
+  /* Refs so we can call handleSave() on each tab component */
+  const professionalRef = useRef(null);
+  const schoolRef       = useRef(null);
+
+  const showSave = SAVEABLE_TABS.includes(tab);
+
+
   const content = {
     "My Details":           <MyDetails />,
-    "Professional Profile": <ProfessionalProfile />,
-    "School Profile":       <SchoolProfile />,
+    "Professional Profile": <ProfessionalProfile ref={professionalRef} />,
+    "School Profile":       <SchoolProfile ref={schoolRef} />,
     "Password":             <Password />,
   };
 
@@ -27,9 +37,6 @@ export default function AdminSettings() {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-tight">Settings</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage your profile and account settings</p>
         </div>
-        <button className="flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors shadow-sm uppercase tracking-wide">
-          <IcoSave /> SAVE CHANGES
-        </button>
       </div>
 
       {/* ── Outer Card Wrapper containing Tabs and Tab Content ── */}

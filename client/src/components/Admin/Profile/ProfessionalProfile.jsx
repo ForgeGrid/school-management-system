@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 /* ── Shared Primitives (local to this file) ──────────────────────────────── */
 const inputBase = "w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder-gray-400";
@@ -62,12 +62,20 @@ const IcoId    = () => <svg className="w-[18px] h-[18px] text-gray-400" fill="no
 const IcoInfo  = () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 16v-4m0-4h.01"/></svg>;
 
 /* ── Component ───────────────────────────────────────────────────────────── */
-export default function ProfessionalProfile() {
+const ProfessionalProfile = forwardRef(function ProfessionalProfile(props, ref) {
   const [subjects, setSubjects] = useState(["Mathematics", "Physics", "Science", "Computer Science"]);
   const [highlight, setHighlight] = useState(
     "Passionate educator and school leader with 12 years of experience in academic planning, curriculum development, team management, and overall school administration."
   );
   const MAX = 256;
+
+  /* Expose handleSave so the parent can trigger save via ref */
+  useImperativeHandle(ref, () => ({
+    handleSave() {
+      // TODO: wire to a real API thunk (e.g. dispatch(updateProfessionalProfile({ ... })))
+      console.log("ProfessionalProfile → save", { subjects, highlight });
+    },
+  }));
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -148,4 +156,6 @@ export default function ProfessionalProfile() {
       </div>
     </div>
   );
-}
+});
+
+export default ProfessionalProfile;

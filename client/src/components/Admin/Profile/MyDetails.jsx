@@ -12,7 +12,7 @@ import {
   clearError,
   clearSuccessMessage,
   selectSuccessMessage,
-} from "../../../redux/slice/profileSlice"; // adjust path as needed
+} from "../../../redux/slice/profileSlice"; 
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 const Toast = ({ message, type = "success", onClose }) => {
@@ -49,10 +49,13 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-const SectionHead = ({ title, subtitle }) => (
-  <div className="mb-5">
-    <h2 className="text-base font-bold text-gray-900 leading-tight">{title}</h2>
-    {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+const SectionHead = ({ title, subtitle, action }) => (
+  <div className="mb-5 flex items-start justify-between gap-4">
+    <div>
+      <h2 className="text-base font-bold text-gray-900 leading-tight">{title}</h2>
+      {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+    </div>
+    {action}
   </div>
 );
 
@@ -96,7 +99,10 @@ export default function MyDetails() {
 
   const [name, setName]                   = useState(user?.name ?? "");
   const [avatarPreview, setAvatarPreview] = useState(avatar?.secure_url ?? null);
+  const [avatarFile, setAvatarFile]       = useState(null); // pending file, only sent on Submit
   const [toast, setToast]                 = useState(null);
+
+  const isSaving = loadingProfile || loadingAvatar;
 
   // Sync name when user loads from Redux
   useEffect(() => { if (user?.name) setName(user.name); }, [user?.name]);
@@ -127,12 +133,56 @@ export default function MyDetails() {
     }
   }, [errorAvatar, dispatch]);
 
+  // Only update local preview + hold the file — no API call until Submit is pressed
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAvatarPreview(URL.createObjectURL(file)); // instant local preview
-    dispatch(updateAvatar(file));
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarFile(file);
   };
+
+  const nameChanged   = name.trim() !== "" && name !== (user?.name ?? "");
+  const avatarChanged = !!avatarFile;
+  const hasChanges     = nameChanged || avatarChanged;
+
+  // Single Submit handler — fires the relevant API calls only here
+  const handleSubmit = () => {
+    if (!hasChanges || isSaving) return;
+
+    if (nameChanged) {
+      dispatch(updateProfile({ name }));
+    }
+    if (avatarChanged) {
+      dispatch(updateAvatar(avatarFile));
+      setAvatarFile(null); // clear pending file once submitted
+    }
+  };
+
+  const SubmitButton = (
+    <button
+      type="button"
+      onClick={handleSubmit}
+      disabled={!hasChanges || isSaving}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors shrink-0"
+    >
+      {isSaving ? (
+        <>
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          Saving...
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Submit
+        </>
+      )}
+    </button>
+  );
 
   return (
     <>
@@ -145,6 +195,7 @@ export default function MyDetails() {
             <SectionHead
               title="Personal Information"
               subtitle="Update your personal and contact details."
+              action={SubmitButton}
             />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* LEFT: inputs */}
@@ -165,15 +216,7 @@ export default function MyDetails() {
                     disabled
                   />
                 </div>
-                <div>
-                  <button
-                    onClick={() => dispatch(updateProfile({ name }))}
-                    disabled={loadingProfile || !name.trim()}
-                    className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
-                  >
-                    {loadingProfile ? "Saving..." : "Save changes"}
-                  </button>
-                </div>
+
               </div>
 
               {/* RIGHT: profile photo upload — original markup preserved */}
@@ -189,19 +232,16 @@ export default function MyDetails() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     )}
-                    {loadingAvatar && (
-                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center text-xs text-gray-500 font-medium">
-                        Uploading...
-                      </div>
-                    )}
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
                       </svg>
                     </div>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} disabled={loadingAvatar} />
+                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} disabled={isSaving} />
                   </label>
-                  <p className="text-[11px] text-gray-400 text-center leading-tight mt-1">JPG, PNG or GIF. Max size 2MB.</p>
+                  <p className="text-[11px] text-gray-400 text-center leading-tight mt-1">
+                    {avatarFile ? "New photo selected — click Submit to save." : "JPG, PNG or GIF. Max size 2MB."}
+                  </p>
                 </div>
               </div>
             </div>

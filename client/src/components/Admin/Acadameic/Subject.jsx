@@ -129,7 +129,8 @@ export default function Subject() {
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("All Status");
   const [page, setPage]           = useState(1);
-  const [perPage, setPerPage]     = useState(10);
+  // Default page size set to 5 for now (pagination kept minimal until backend wiring)
+  const [perPage, setPerPage]     = useState(5);
   const [showPerPage, setShowPerPage] = useState(false);
   const [openMenu, setOpenMenu]   = useState(null);
 
@@ -164,7 +165,7 @@ export default function Subject() {
   const handleStatus = (v) => { setStatus(v); setPage(1); };
 
   return (
-    <div className="flex flex-col gap-6  h-full overflow-y-auto">
+    <div className="flex flex-col gap-6  h-full ">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -206,7 +207,7 @@ export default function Subject() {
       </div>
 
       {/* ── Filters + Table Card ── */}
-      <div className="bg-white border border-slate-200 rounded-xl">
+      <div className="bg-white border border-slate-200 rounded-xl -mt-4">
         {/* Filters bar */}
         <div className="flex flex-col sm:flex-row gap-3 p-4">
           {/* Search */}
@@ -245,7 +246,7 @@ export default function Subject() {
         </div>
 
         {/* ── Table ── */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mt-2">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-t border-slate-100 bg-slate-50/60">
@@ -392,7 +393,7 @@ export default function Subject() {
               </button>
               {showPerPage && (
                 <div className="absolute bottom-full mb-1 right-0 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-20">
-                  {[10, 20, 50].map(n => (
+                  {[5, 10, 20, 50].map(n => (
                     <button
                       key={n}
                       onClick={() => { setPerPage(n); setPage(1); setShowPerPage(false); }}
@@ -410,4 +411,3 @@ export default function Subject() {
     </div>
   );
 }
-

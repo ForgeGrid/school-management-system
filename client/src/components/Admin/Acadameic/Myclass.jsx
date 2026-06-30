@@ -76,16 +76,19 @@ const TABS = [
   { key: "attendance", label: "Attendance", icon: ClipboardCheck },
 ];
 
+// ── Stat Card (icon + label inline at top, value + sub below, optional progress bar) ──
 function StatCard({ icon: Icon, iconBg, iconColor, label, value, sub, subColor, progress }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2 min-w-0">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
-        <Icon className={`w-4 h-4 ${iconColor}`} />
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+          <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
+        </div>
+        <p className="text-sm font-bold text-slate-700 truncate">{label}</p>
       </div>
-      <p className="text-xs font-semibold text-slate-400 truncate">{label}</p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-xl font-extrabold text-slate-800">{value}</span>
-        {sub && <span className={`text-xs font-bold ${subColor || "text-slate-400"}`}>{sub}</span>}
+      <div className="flex flex-col gap-0.5">
+        <span className="text-2xl font-extrabold text-slate-800 truncate">{value}</span>
+        {sub && <span className={`text-xs font-semibold whitespace-nowrap ${subColor || "text-slate-400"}`}>{sub}</span>}
       </div>
       {progress !== undefined && (
         <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
@@ -108,11 +111,16 @@ function EnrollmentWizard({ onClose }) {
 
   const mockNewAdmissions = MOCK_NEW_ADMISSIONS;
   const mockPromotions = MOCK_PROMOTIONS;
+  const classInfo = CLASS_ENROLL_INFO;
 
+  const availableSeats = classInfo.capacity - classInfo.currentStrength - selectedIds.size;
   const selectedNewAdmissionsCount = mockNewAdmissions.filter(s => selectedIds.has(s.id)).length;
   const selectedPromotionsCount = mockPromotions.filter(s => selectedIds.has(s.id)).length;
   const allAdmissionsSelected = mockNewAdmissions.length > 0 && mockNewAdmissions.every(s => selectedIds.has(s.id));
   const allPromotionsSelected = mockPromotions.length > 0 && mockPromotions.every(s => selectedIds.has(s.id));
+
+  // Map step keys to numeric index for the stepper
+  const stepNumber = step === "candidates" ? 1 : step === "preview" ? 2 : 3;
 
   function handleToggleStudent(id) {
     setSelectedIds(prev => {
@@ -168,55 +176,105 @@ function EnrollmentWizard({ onClose }) {
     onClose();
   }
 
-  // Wizard step labels
-  const STEPS = [
-    { key: "candidates", label: "Select Candidates" },
-    { key: "preview", label: "Preview" },
-    { key: "success", label: "Success" },
-  ];
-  const stepIndex = STEPS.findIndex(s => s.key === step);
-
   return (
-    <div className="flex flex-col gap-5 h-full overflow-y-auto pb-2 pr-1">
-      {/* Wizard header */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-800">Enroll Students</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Grade 5 (A) · Academic Year 2025–2026</p>
-          </div>
-          {/* Step indicator */}
+    <div className="flex flex-col gap-6 h-full overflow-hidden text-slate-700 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+
+      {/* ── HEADER & STEPPER ── */}
+      <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+            {stepNumber === 1 ? 'Enroll Students' : stepNumber === 2 ? 'Preview Allocation' : 'Success'}
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            {stepNumber === 1
+              ? 'Select eligible students to enroll into the class.'
+              : stepNumber === 2
+                ? 'Review the selected students before confirming enrollment.'
+                : 'Students allocation finalized.'}
+          </p>
+        </div>
+
+        {/* 3-Step Stepper Progress Bar */}
+        <div className="flex items-center gap-2">
+          {/* Step 1 Candidates */}
           <div className="flex items-center gap-2">
-            {STEPS.map((s, i) => (
-              <React.Fragment key={s.key}>
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  i < stepIndex ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                  i === stepIndex ? "bg-indigo-50 text-indigo-700 border border-indigo-200" :
-                  "bg-slate-50 text-slate-400 border border-slate-100"
-                }`}>
-                  {i < stepIndex ? (
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black border border-current">{i + 1}</span>
-                  )}
-                  {s.label}
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`w-6 h-px ${i < stepIndex ? "bg-emerald-300" : "bg-slate-200"}`} />
-                )}
-              </React.Fragment>
-            ))}
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${stepNumber === 1
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 font-bold'
+              : 'border border-slate-205 text-slate-400 bg-slate-50'
+              }`}>1</div>
+            <span className={`text-xs font-semibold ${stepNumber === 1 ? 'text-indigo-650 font-bold' : 'text-slate-400'}`}>Candidates</span>
           </div>
-          <button
-            onClick={onClose}
-            className="text-xs font-bold text-slate-400 hover:text-slate-600 px-3 py-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            ✕ Close
-          </button>
+
+          <div className="w-8 h-px bg-slate-200" />
+
+          {/* Step 2 Preview */}
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${stepNumber === 2
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 font-bold'
+              : 'border border-slate-205 text-slate-400 bg-slate-50'
+              }`}>2</div>
+            <span className={`text-xs font-semibold ${stepNumber === 2 ? 'text-indigo-650 font-bold' : 'text-slate-400'}`}>Preview</span>
+          </div>
+
+          <div className="w-8 h-px bg-slate-200" />
+
+          {/* Step 3 Confirm */}
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${stepNumber === 3
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 font-bold'
+              : 'border border-slate-205 text-slate-400 bg-slate-50'
+              }`}>3</div>
+            <span className={`text-xs font-semibold ${stepNumber === 3 ? 'text-indigo-650 font-bold' : 'text-slate-400'}`}>Confirm</span>
+          </div>
         </div>
       </div>
+
+      {/* ── SHARED REUSABLE CLASS SECTION CARD ── */}
+      {(stepNumber === 1 || stepNumber === 2) && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex items-center justify-between flex-wrap gap-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m6 5.87H9m6 0v-2a4 4 0 00-3-3.87M9 20v-2a4 4 0 013-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-bold text-slate-800">{classInfo.grade}</h2>
+                <span className="bg-green-50 text-green-600 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-green-100">
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-400 font-medium">
+                <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold">{classInfo.code}</span>
+                <span className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Academic Year {classInfo.year}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-8 pr-4 flex-wrap sm:flex-nowrap">
+            <div className="text-center min-w-[70px]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block mb-1">Capacity</span>
+              <span className="text-xl font-bold text-slate-800">{classInfo.capacity}</span>
+            </div>
+            <div className="h-8 w-px bg-slate-150 hidden sm:block" />
+            <div className="text-center min-w-[70px]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block mb-1">Current Strength</span>
+              <span className="text-xl font-bold text-slate-800">{classInfo.currentStrength}</span>
+            </div>
+            <div className="h-8 w-px bg-slate-150 hidden sm:block" />
+            <div className="text-center min-w-[70px]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block mb-1">Available Seats</span>
+              <span className={`text-xl font-extrabold ${availableSeats > 0 ? 'text-green-600' : 'text-red-500'}`}>{availableSeats}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Step content */}
       {step === "candidates" && (
