@@ -307,7 +307,7 @@ export const getMyClassIntroService = async (user, { childId = null } = {}) => {
     })
     .populate({
       path: "staff_id",
-      select: "designation qualification experienceYears profile_highlight phone alternatePhone subjects verificationStatus employeeStatus user_id",
+      select: "designation qualification experienceYears profile_highlight phone alternatePhone subjects employeeStatus user_id",
       populate: {
         path: "user_id",
         select: "name email role profile_avatar status",
@@ -712,43 +712,38 @@ export const getMyClassesService = async (user, query = {}) => {
     classTeacherSections.map((cs) => String(cs._id))
   );
 
-  // 4) Flatten assignments into per-section entries, deduplicating class-teacher sections
-  const assignedEntries = []; // { classSection, assignment_id, subject }
+  // 4) Group assignments by unique class-section (no duplicates per subject)
+  // Each section appears once in assignedMap, with all its subjects nested inside.
+  const assignedMap = new Map(); // key: classSectionId string → shaped entry
   for (const assignment of subjectAssignments) {
     for (const cs of assignment.class_section_ids) {
       // skip if not in the same school (safety) or already a class-teacher section
       if (String(cs.school_id) !== String(user.school_id)) continue;
       if (classTeacherSectionIds.has(String(cs._id))) continue;
-      assignedEntries.push({
-        classSection: cs,
-        assignment_id: assignment._id,
-        subject: assignment.subject_id
-          ? {
-            id: assignment.subject_id._id,
-            name: assignment.subject_id.name,
-            code: assignment.subject_id.code,
-          }
-          : null,
-      });
+
+      const key = String(cs._id);
+      if (!assignedMap.has(key)) {
+        assignedMap.set(key, {
+          id: cs._id,
+          academicYear: cs.academicYear,
+          standard: cs.standard,
+          section: cs.section,
+          classCode: cs.classCode,
+          status: cs.status,
+          subjects: [],
+        });
+      }
+
+      if (assignment.subject_id) {
+        assignedMap.get(key).subjects.push({
+          id: assignment.subject_id._id,
+          name: assignment.subject_id.name,
+          code: assignment.subject_id.code,
+          assignment_id: assignment._id,
+        });
+      }
     }
   }
-
-  // Sort assigned entries: academicYear desc, standard asc, section asc, subject name asc
-  assignedEntries.sort((a, b) => {
-    const yearDiff = String(b.classSection.academicYear || "").localeCompare(
-      String(a.classSection.academicYear || "")
-    );
-    if (yearDiff !== 0) return yearDiff;
-    const stdDiff = String(a.classSection.standard || "").localeCompare(
-      String(b.classSection.standard || "")
-    );
-    if (stdDiff !== 0) return stdDiff;
-    const secDiff = String(a.classSection.section || "").localeCompare(
-      String(b.classSection.section || "")
-    );
-    if (secDiff !== 0) return secDiff;
-    return String(a.subject?.name || "").localeCompare(String(b.subject?.name || ""));
-  });
 
   // 5) Shape classTeacherSections (Minimal)
   const shapedClassTeacherSections = classTeacherSections.map((cs) => {
@@ -765,33 +760,28 @@ export const getMyClassesService = async (user, query = {}) => {
     };
   });
 
-  // 6) Shape assignedSections (Minimal)
-  const shapedAssignedSections = assignedEntries.map((entry) => {
-    const cs = entry.classSection;
-    return {
-      id: cs._id,
-      academicYear: cs.academicYear,
-      standard: cs.standard,
-      section: cs.section,
-      classCode: cs.classCode,
-      status: cs.status,
-      capacity: cs.capacity,
-      currentStrength: cs.currentStrength,
-      createdAt: cs.createdAt,
-      assignment_id: entry.assignment_id,
-      subject: entry.subject,
-    };
+  // 6) Shape assignedSections — sort subjects alphabetically within each section,
+  //    then sort sections: academicYear desc, standard asc, section asc
+  const shapedAssignedSections = Array.from(assignedMap.values());
+  shapedAssignedSections.forEach((entry) =>
+    entry.subjects.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+  );
+  shapedAssignedSections.sort((a, b) => {
+    const yearDiff = String(b.academicYear || "").localeCompare(String(a.academicYear || ""));
+    if (yearDiff !== 0) return yearDiff;
+    const stdDiff = String(a.standard || "").localeCompare(String(b.standard || ""));
+    if (stdDiff !== 0) return stdDiff;
+    return String(a.section || "").localeCompare(String(b.section || ""));
   });
 
   // 7) Unique total sections
-  const assignedSectionIds = new Set(shapedAssignedSections.map((s) => String(s.id)));
-  const totalSections = classTeacherSectionIds.size + assignedSectionIds.size;
+  const totalSections = classTeacherSectionIds.size + assignedMap.size;
 
   return {
     classTeacherSections: shapedClassTeacherSections,
     assignedSections: shapedAssignedSections,
     totalClassTeacherSections: shapedClassTeacherSections.length,
-    totalAssignedSections: shapedAssignedSections.length,
+    totalAssignedSections: shapedAssignedSections.length, // unique sections, not subject count
     totalSections,
     roleSummary: {
       isClassTeacher: shapedClassTeacherSections.length > 0,

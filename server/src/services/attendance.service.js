@@ -14,11 +14,15 @@ import {
 } from "../utils/auth.helper.js";
 import {
   dayBounds,
+  getIstStartOfToday,
 } from "../utils/date.helper.js";
+import { normalizeText as normalize } from "../utils/format.helper.js";
 import {
   assertTeacherCanAccessClass,
   buildEditableUntil,
-  assertAttendanceEditable
+  assertAttendanceEditable,
+  formatAttendanceDashboardRow,
+  buildAttendanceDashboardPayload,
 } from "../utils/academic.helper.js";
 import {
   getClassSectionOrThrow as getClassSectionGeneric,
@@ -736,5 +740,206 @@ export const getStudentAttendanceService = async (user, studentId, filters = {})
   return {
     studentId,
     records,
+  };
+};
+
+// --------------------------------------
+// 10) Admin dashboard – all classes for a date
+// GET /attendance/dashboard?academicYear=2028-29&attendanceDate=2026-06-30
+// --------------------------------------
+export const getAttendanceDashboardService = async (user, query = {}) => {
+  assertAdminOnly(user);
+
+  const academicYear = normalize(query.academicYear);
+  if (!academicYear) {
+    throw new Error("academicYear is required");
+  }
+
+  const attendanceDateInput = query.attendanceDate
+    ? new Date(query.attendanceDate)
+    : getIstStartOfToday();
+
+  const { start, end } = dayBounds(attendanceDateInput);
+
+  const filter = {
+    school_id: user.school_id,
+    academicYear,
+  };
+
+  if (query.status && ["active", "inactive"].includes(query.status)) {
+    filter.status = query.status;
+  }
+
+  if (query.standard) {
+    filter.standard = normalize(query.standard);
+  }
+
+  if (query.search) {
+    const searchRegex = new RegExp(normalize(query.search), "i");
+    filter.$or = [
+      { standard: searchRegex },
+      { section: searchRegex },
+      { classCode: searchRegex },
+    ];
+  }
+
+  const classSections = await ClassSection.find(filter)
+    .sort({ academicYear: -1, standard: 1, section: 1 })
+    .populate({
+      path: "classTeacher_id",
+      select: "designation qualification profile_highlight user_id",
+      populate: {
+        path: "user_id",
+        select: "name email profile_avatar status",
+      },
+    });
+
+  // Empty result – return consistent shell
+  if (!classSections.length) {
+    return {
+      items: [],
+      meta: {
+        total: 0,
+        academicYear,
+        attendanceDate: start,
+      },
+      summary: {
+        classes: { total: 0, marked: 0, notMarked: 0 },
+        students: { enrolled: 0, marked: 0, present: 0, absent: 0 },
+      },
+    };
+  }
+
+  const sectionIds = classSections.map((cs) => cs._id);
+
+  const [enrollmentAgg, attendanceAgg] = await Promise.all([
+    StudentEnrollment.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          academicYear,
+          classSection_id: { $in: sectionIds },
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$classSection_id",
+          enrolledCount: { $sum: 1 },
+        },
+      },
+    ]),
+
+    Attendance.aggregate([
+      {
+        $match: {
+          school_id: user.school_id,
+          academicYear,
+          classSection_id: { $in: sectionIds },
+          attendanceDate: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: "$classSection_id",
+          totalMarked: { $sum: 1 },
+          present: { $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] } },
+          absent: { $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] } },
+          late: { $sum: { $cond: [{ $eq: ["$status", "late"] }, 1, 0] } },
+          half_day: { $sum: { $cond: [{ $eq: ["$status", "half_day"] }, 1, 0] } },
+          excused: { $sum: { $cond: [{ $eq: ["$status", "excused"] }, 1, 0] } },
+        },
+      },
+    ]),
+  ]);
+
+  const enrollmentMap = new Map(
+    enrollmentAgg.map((r) => [String(r._id), r.enrolledCount])
+  );
+  const attendanceMap = new Map(
+    attendanceAgg.map((r) => [
+      String(r._id),
+      {
+        totalMarked: r.totalMarked || 0,
+        present: r.present || 0,
+        absent: r.absent || 0,
+        late: r.late || 0,
+        half_day: r.half_day || 0,
+        excused: r.excused || 0,
+      },
+    ])
+  );
+
+  // Build one dashboard row per class section
+  const rows = classSections.map((cs) => {
+    const classTeacher = cs.classTeacher_id
+      ? {
+        staff_profile_id: cs.classTeacher_id._id,
+        user_id: cs.classTeacher_id.user_id?._id || cs.classTeacher_id.user_id,
+        name: cs.classTeacher_id.user_id?.name || null,
+        email: cs.classTeacher_id.user_id?.email || null,
+        designation: cs.classTeacher_id.designation || null,
+        avatar: cs.classTeacher_id.user_id?.profile_avatar || null,
+      }
+      : null;
+
+    const attendanceSummary = attendanceMap.get(String(cs._id)) || {
+      totalMarked: 0, present: 0, absent: 0,
+      late: 0, half_day: 0, excused: 0,
+    };
+    const enrolledCount = enrollmentMap.get(String(cs._id)) || 0;
+
+    return formatAttendanceDashboardRow({
+      classSection: cs,
+      attendanceSummary: { ...attendanceSummary, enrolledCount, attendanceDate: start },
+      classTeacher,
+      role: "school_admin",
+      attendanceDate: start,
+    });
+  });
+
+  // Group by grade, rename rows → sections inside each bucket
+  const payload = buildAttendanceDashboardPayload({
+    rows,
+    academicYear,
+    attendanceDate: start,
+    totalClasses: classSections.length,
+  });
+
+  // Rename .rows → .sections in every grade bucket
+  const items = payload.groupedRows.map((group) => ({
+    grade: group.grade,
+    totalSections: group.totalSections,
+    markedSections: group.markedSections,
+    notMarkedSections: group.notMarkedSections,
+    sections: group.rows,
+  }));
+
+  // School-wide student totals
+  const totalEnrolled = rows.reduce((s, r) => s + (r?.counts?.enrolledCount || 0), 0);
+  const totalMarked = rows.reduce((s, r) => s + (r?.counts?.markedCount || 0), 0);
+  const totalPresent = rows.reduce((s, r) => s + (r?.counts?.present || 0), 0);
+  const totalAbsent = rows.reduce((s, r) => s + (r?.counts?.absent || 0), 0);
+
+  return {
+    items,
+    meta: {
+      total: classSections.length,
+      academicYear,
+      attendanceDate: start,
+    },
+    summary: {
+      classes: {
+        total: classSections.length,
+        marked: payload.totals.markedClasses,
+        notMarked: payload.totals.notMarkedClasses,
+      },
+      students: {
+        enrolled: totalEnrolled,
+        marked: totalMarked,
+        present: totalPresent,
+        absent: totalAbsent,
+      },
+    },
   };
 };

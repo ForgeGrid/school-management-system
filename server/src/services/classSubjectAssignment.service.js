@@ -84,7 +84,6 @@ export const getEligibleStaffForAssignmentService = async (adminUser, subjectId)
 
     const staffList = await StaffProfile.find({
         school_id: adminUser.school_id,
-        verificationStatus: "verified",
         employeeStatus: "employed"
     }).populate("user_id", "name email");
 
@@ -118,11 +117,11 @@ export const createClassSubjectAssignmentService = async (adminUser, data) => {
     try {
         const [subject, staff] = await Promise.all([
             Subject.findOne({ _id: subject_id, school_id: adminUser.school_id, status: "active" }).session(session),
-            StaffProfile.findOne({ _id: staff_id, school_id: adminUser.school_id, verificationStatus: "verified", employeeStatus: "employed" }).session(session)
+            StaffProfile.findOne({ _id: staff_id, school_id: adminUser.school_id, employeeStatus: "employed" }).session(session)
         ]);
 
         if (!subject) throw new Error("Subject not found or inactive");
-        if (!staff) throw new Error("Staff not found, unverified, or not employed");
+        if (!staff) throw new Error("Staff not found or not employed");
 
         const caps = (staff.subjects || []).map(normalizeComparableText);
         if (!caps.includes(normalizeComparableText(subject.name)) && !caps.includes(normalizeComparableText(subject.code))) {
@@ -250,7 +249,7 @@ export const updateClassSubjectAssignmentService = async (adminUser, assignmentI
 
         const [subject, staff] = await Promise.all([
             Subject.findOne({ _id: sId, school_id: adminUser.school_id, status: "active" }),
-            StaffProfile.findOne({ _id: stId, school_id: adminUser.school_id, verificationStatus: "verified", employeeStatus: "employed" })
+            StaffProfile.findOne({ _id: stId, school_id: adminUser.school_id, employeeStatus: "employed" })
         ]);
 
         if (!subject || !staff) throw new Error("Invalid/Inactive Subject or Staff");

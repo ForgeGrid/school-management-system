@@ -9,6 +9,7 @@ import {
   submitAbsentReasonService,
   getMyAttendanceService,
   getStudentAttendanceService,
+  getAttendanceDashboardService,
 } from "../services/attendance.service.js";
 
 // --------------------------------------
@@ -189,6 +190,24 @@ export const getStudentAttendanceHistory = async (req, res) => {
     });
   } catch (err) {
     logger.error("Get student attendance history error:", err);
+    return res.status(400).json({ message: err.message });
+  }
+};
+
+// --------------------------------------
+// 10) School-admin attendance dashboard
+// GET /attendance/dashboard?academicYear=...&attendanceDate=...
+// --------------------------------------
+export const getAttendanceDashboard = async (req, res) => {
+  try {
+    const result = await getAttendanceDashboardService(req.user, req.query);
+
+    return res.json({
+      message: "Attendance dashboard fetched successfully",
+      ...result,
+    });
+  } catch (err) {
+    logger.error("Get attendance dashboard error:", err);
     return res.status(400).json({ message: err.message });
   }
 };

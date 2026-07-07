@@ -219,7 +219,7 @@ export const reAppealSchool = async (req, res) => {
 // --------------------------------------------------
 export const getSchoolStaff = async (req, res) => {
   try {
-    const users = await User.find({ school_id: req.user.school_id })
+    const users = await User.find({ school_id: req.user.school_id , role: "teacher"})
       .sort({ joined_at: -1 });
 
     return res.status(200).json({

@@ -82,7 +82,6 @@ export const getStaffProfileOrThrow = async (StaffProfileModel, schoolId, staffI
 
     const filter = { _id: staffId, school_id: schoolId };
     if (eligibility) {
-        filter.verificationStatus = "verified";
         filter.employeeStatus = "employed";
     }
 
