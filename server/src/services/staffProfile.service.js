@@ -39,6 +39,7 @@ export const createStaffProfileService = async (user, data) => {
     user_id: user.id,
     employeeId,
     school_id: user.school_id, // 🔒 always from user
+    employeeStatus: "employed"
     // verificationStatus: user.role === "school_admin" ? "verified" : "pending",
   });
 
@@ -59,9 +60,7 @@ export const updateStaffProfileService = async (user, data) => {
   // 🔒 Never allow changing these 
   delete data.user_id;
   delete data.school_id;
-  delete data.verificationStatus;
-  delete data.verifiedBy;
-  delete data.verifiedAt;
+
   delete data.employeeStatus;
   delete data.employeeId;
   delete data.resignedAt;
@@ -215,7 +214,6 @@ export const requestRejoinStaffService = async (profileId, user) => {
     _id: profileId,
     user_id: user.id,
     employeeStatus: "resigned",
-    verificationStatus: { $ne: "pending" },
   });
 
   if (!profile) {
@@ -230,7 +228,6 @@ export const requestRejoinStaffService = async (profileId, user) => {
     throw new Error("Only resigned or terminated staff can request rejoin");
   }
 
-  profile.verificationStatus = "pending";
   await profile.save();
 
   return profile;

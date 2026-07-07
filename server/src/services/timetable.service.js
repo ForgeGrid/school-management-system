@@ -139,7 +139,7 @@ const populateTimetableSlots = async (query) => {
         .populate("subject_id", "name code status")
         .populate({
             path: "staff_id",
-            select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+            select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
             populate: {
                 path: "user_id",
                 select: "name email role",
@@ -155,7 +155,7 @@ const populateTimetableSlots = async (query) => {
                 },
                 {
                     path: "staff_id",
-                    select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+                    select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
                     populate: {
                         path: "user_id",
                         select: "name email role",
@@ -166,7 +166,7 @@ const populateTimetableSlots = async (query) => {
                     select: "academicYear standard section classCode status classTeacher_id",
                     populate: {
                         path: "classTeacher_id",
-                        select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+                        select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
                         populate: {
                             path: "user_id",
                             select: "name email role",
@@ -180,7 +180,7 @@ const populateTimetableSlots = async (query) => {
             select: "academicYear standard section classCode status classTeacher_id",
             populate: {
                 path: "classTeacher_id",
-                select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+                select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
                 populate: {
                     path: "user_id",
                     select: "name email role",
@@ -193,7 +193,7 @@ const getClassSectionOrThrow = async (schoolId, classSectionId) => {
     const classSection = await getClassSectionGeneric(ClassSection, schoolId, classSectionId);
     await classSection.populate({
         path: "classTeacher_id",
-        select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+        select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
         populate: {
             path: "user_id",
             select: "name email role",
@@ -238,7 +238,7 @@ const resolveAssignmentForSlot = async ({
             })
             .populate({
                 path: "staff_id",
-                select: "designation qualification experienceYears phone alternatePhone subjects verificationStatus employeeStatus user_id school_id",
+                select: "designation qualification experienceYears phone alternatePhone subjects employeeStatus user_id school_id",
                 populate: {
                     path: "user_id",
                     select: "name email role",
@@ -550,7 +550,7 @@ export const getEligibleTimetableStaffService = async (
         }
 
         const staff = assignment.staff_id;
-        if (staff.verificationStatus !== "verified" || staff.employeeStatus !== "employed") {
+        if (staff.employeeStatus !== "employed") {
             return false;
         }
 
@@ -1042,14 +1042,14 @@ const notifyTimetablePublishedService = async (adminUser, slots) => {
 };
 
 export const getMyTimetableService = async (user, { dayOfWeek = null, childId = null } = {}) => {
-  if (!["student", "parent"].includes(user.role)) {
-    throw new Error("Only student or parent can access timetable");
-  }
+    if (!["student", "parent"].includes(user.role)) {
+        throw new Error("Only student or parent can access timetable");
+    }
 
-  const { classSection } = await resolveStudentPortalContextService(user, { childId });
+    const { classSection } = await resolveStudentPortalContextService(user, { childId });
 
-  return await getTimetableByClassSectionService(user, {
-    classSectionId: classSection._id,
-    dayOfWeek,
-  });
+    return await getTimetableByClassSectionService(user, {
+        classSectionId: classSection._id,
+        dayOfWeek,
+    });
 };

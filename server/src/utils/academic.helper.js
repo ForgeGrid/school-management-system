@@ -110,7 +110,6 @@ export const validateClassTeacher = async (StaffProfileModel, schoolId, staffId)
     const staff = await StaffProfileModel.findOne({
         _id: staffId,
         school_id: schoolId,
-        verificationStatus: "verified",
         employeeStatus: "employed",
     });
 
@@ -266,4 +265,241 @@ export const formatEnrollmentResponse = (enrollment) => {
             },
         },
     };
+};
+
+const safeText = (value, fallback = null) => {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+};
+
+const safeNumber = (value, fallback = 0) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+};
+
+/**
+ * Only two dashboard states for now:
+ * - marked
+ * - not_marked
+ */
+export const buildAttendanceDashboardStatus = ({
+  totalMarked = 0,
+  enrolledCount = 0,
+} = {}) => {
+  const markedCount = safeNumber(totalMarked, 0);
+  const totalStudents = safeNumber(enrolledCount, 0);
+  const unmarkedCount = Math.max(totalStudents - markedCount, 0);
+
+  const status = unmarkedCount === 0 && totalStudents > 0 ? "marked" : "not_marked";
+
+  return {
+    status,
+    isMarked: status === "marked",
+    markedCount,
+    unmarkedCount,
+    totalStudents,
+  };
+};
+
+export const formatAttendanceCounts = (summary = {}) => {
+  const counts = summary.counts || {};
+
+  return {
+    present: safeNumber(counts.present ?? summary.present, 0),
+    absent: safeNumber(counts.absent ?? summary.absent, 0),
+    late: safeNumber(counts.late ?? summary.late, 0),
+    half_day: safeNumber(counts.half_day ?? summary.half_day ?? summary.halfDay, 0),
+    excused: safeNumber(counts.excused ?? summary.excused, 0),
+  };
+};
+
+/**
+ * Build one row for the attendance dashboard table.
+ * Works for both admin and teacher dashboards.
+ */
+export const formatAttendanceDashboardRow = ({
+  classSection,
+  attendanceSummary = null,
+  classTeacher = null,
+  role = "school_admin",
+  subject = null,
+  attendanceDate = null,
+} = {}) => {
+  if (!classSection) return null;
+
+  const classId = classSection._id || classSection.id || null;
+  const enrolledCount = safeNumber(attendanceSummary?.enrolledCount, 0);
+  const totalMarked = safeNumber(attendanceSummary?.totalMarked, 0);
+
+  const statusInfo = buildAttendanceDashboardStatus({
+    totalMarked,
+    enrolledCount,
+  });
+
+  const counts = formatAttendanceCounts(attendanceSummary || {});
+  const attendancePercent =
+    statusInfo.totalStudents > 0
+      ? Math.round((statusInfo.markedCount / statusInfo.totalStudents) * 1000) / 10
+      : 0;
+
+  return {
+    id: classId,
+    academicYear: classSection.academicYear || null,
+    standard: classSection.standard || null,
+    section: classSection.section || null,
+    classCode: classSection.classCode || null,
+    classLabel: `${safeText(classSection.standard, "")}${classSection.section ? ` (${classSection.section})` : ""}`.trim(),
+    status: classSection.status || null,
+
+    classTeacher: classTeacher
+      ? {
+          staff_profile_id: classTeacher.staff_profile_id || classTeacher._id || null,
+          user_id: classTeacher.user_id || null,
+          name: classTeacher.name || null,
+          email: classTeacher.email || null,
+          designation: classTeacher.designation || null,
+          avatar: classTeacher.avatar || classTeacher.profile_avatar || null,
+        }
+      : null,
+
+    subject: subject
+      ? {
+          id: subject.id || subject._id || null,
+          name: subject.name || null,
+          code: subject.code || null,
+        }
+      : null,
+
+    counts: {
+      enrolledCount: statusInfo.totalStudents,
+      markedCount: statusInfo.markedCount,
+      unmarkedCount: statusInfo.unmarkedCount,
+      present: counts.present,
+      absent: counts.absent,
+      late: counts.late,
+      half_day: counts.half_day,
+      excused: counts.excused,
+    },
+
+    attendance: {
+      attendanceDate: attendanceSummary?.attendanceDate || attendanceDate || null,
+      status: statusInfo.status,
+      isMarked: statusInfo.isMarked,
+      percentage: attendancePercent,
+    },
+
+    role, // "school_admin" | "teacher"
+  };
+};
+
+/**
+ * Teacher dashboard returns subject-assigned classes in a flattened form.
+ * This helper merges duplicates so the same class shows once,
+ * with subject chips inside the row.
+ */
+export const mergeAttendanceDashboardRowsByClass = (rows = []) => {
+  const merged = new Map();
+
+  for (const row of rows) {
+    if (!row) continue;
+
+    const id = String(row.id || row._id || "");
+    if (!id) continue;
+
+    if (!merged.has(id)) {
+      merged.set(id, {
+        ...row,
+        subjectChips: [],
+        subjects: [],
+      });
+    }
+
+    const target = merged.get(id);
+
+    const subjectName = row.subject?.name || row.subject?.code || null;
+    if (subjectName && !target.subjectChips.includes(subjectName)) {
+      target.subjectChips.push(subjectName);
+    }
+
+    if (row.subject && !target.subjects.some((s) => String(s.id || s._id) === String(row.subject.id || row.subject._id))) {
+      target.subjects.push(row.subject);
+    }
+
+    if (!target.classTeacher && row.classTeacher) {
+      target.classTeacher = row.classTeacher;
+    }
+
+    // keep the strongest status data if one row has it
+    if (row.attendance?.status) {
+      target.attendance = row.attendance;
+    }
+    if (row.counts) {
+      target.counts = row.counts;
+    }
+  }
+
+  return Array.from(merged.values());
+};
+
+/**
+ * Group rows by grade/standard for accordion UIs.
+ */
+export const groupAttendanceDashboardRowsByGrade = (rows = []) => {
+  const grouped = new Map();
+
+  for (const row of rows) {
+    if (!row) continue;
+
+    const grade = safeText(row.standard, "Unknown Grade");
+    if (!grouped.has(grade)) {
+      grouped.set(grade, {
+        grade,
+        totalSections: 0,
+        markedSections: 0,
+        notMarkedSections: 0,
+        rows: [],
+      });
+    }
+
+    const group = grouped.get(grade);
+    group.totalSections += 1;
+
+    if (row.attendance?.status === "marked") {
+      group.markedSections += 1;
+    } else {
+      group.notMarkedSections += 1;
+    }
+
+    group.rows.push(row);
+  }
+
+  return Array.from(grouped.values());
+};
+
+/**
+ * Build a compact payload that the dashboard page can render directly.
+ */
+export const buildAttendanceDashboardPayload = ({
+  rows = [],
+  academicYear = null,
+  attendanceDate = null,
+  totalClasses = 0,
+} = {}) => {
+  const mergedRows = mergeAttendanceDashboardRowsByClass(rows);
+  const groupedRows = groupAttendanceDashboardRowsByGrade(mergedRows);
+
+  const markedClasses = mergedRows.filter((row) => row?.attendance?.status === "marked").length;
+  const notMarkedClasses = mergedRows.filter((row) => row?.attendance?.status === "not_marked").length;
+
+  return {
+    academicYear,
+    attendanceDate,
+    totals: {
+      classes: totalClasses || mergedRows.length,
+      markedClasses,
+      notMarkedClasses,
+    },
+    groupedRows,
+    rows: mergedRows,
+  };
 };

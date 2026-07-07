@@ -12,6 +12,7 @@ import {
   submitAbsentReason,
   getMyAttendance,
   getStudentAttendanceHistory,
+  getAttendanceDashboard,
 } from "../controller/attendance.controller.js";
 
 const router = express.Router();
@@ -113,6 +114,16 @@ router.get(
   "/student/:studentId",
   requireRole("school_admin", "teacher"),
   getStudentAttendanceHistory
+);
+
+/**
+ * 10) School-admin attendance dashboard
+ * Query params: academicYear (required), attendanceDate?, status?, standard?, search?
+ */
+router.get(
+  "/dashboard",
+  requireRole("school_admin"),
+  getAttendanceDashboard
 );
 
 export default router;

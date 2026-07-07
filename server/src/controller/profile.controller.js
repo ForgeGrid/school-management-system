@@ -14,7 +14,7 @@ import logger from "../utils/logger.js";
  */
 export const updateProfile = async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, phone, alternate_phone } = req.body;
         const user = await User.findById(req.user.id);
 
         if (!user) {
@@ -23,6 +23,13 @@ export const updateProfile = async (req, res) => {
 
         user.name = name || user.name;
         await user.save();
+
+        const staff = await StaffProfile.findOne(user._id);
+        staff.phone = phone || staff.phone;
+        staff.alternatePhone = alternate_phone || staff.alternatePhone;
+
+        await staff.save();
+
 
         res.json({ message: "Profile updated successfully", user: user.toJSON() });
     } catch (err) {
