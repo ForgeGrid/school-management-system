@@ -12,7 +12,10 @@ import {
     deleteSlot,
     getAllSlots,
     publishTimetable,
-    getMyTimetable
+    getMyTimetable,
+    getPeriodTemplateBootstrap,
+    createPeriodTemplate,
+    updatePeriodTemplate
 } from "../controller/timetable.controller.js";
 
 const router = express.Router();
@@ -39,6 +42,17 @@ router.get("/all", requireRole("school_admin"), getAllSlots);
 
 // POST /api/v0/timetable/publish
 router.post("/publish", requireRole("school_admin"), publishTimetable);
+
+// ─── Period Template routes (admin only) ─────────────────────────────────────
+
+// GET  /api/v0/timetable/period-template/bootstrap
+router.get("/period-template/bootstrap", requireRole("school_admin"), getPeriodTemplateBootstrap);
+
+// POST /api/v0/timetable/period-template
+router.post("/period-template", requireRole("school_admin"), createPeriodTemplate);
+
+// PATCH /api/v0/timetable/period-template/:templateId
+router.patch("/period-template/:templateId", requireRole("school_admin"), updatePeriodTemplate);
 
 
 // ─── SHARED ROUTES ────────────────────────────────────────────────────────
