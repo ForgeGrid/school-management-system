@@ -8,6 +8,7 @@ import { ClassSection } from "../models/academic/classSection.model.js";
 import { Subject } from "../models/academic/subject.model.js";
 import { ClassSubjectAssignment } from "../models/academic/classSubjectAssignment.model.js";
 import { StaffProfile } from "../models/staff/teacher.model.js";
+import PeriodTemplate from "../models/academic/periodTemplate.model.js";
 
 import { resolveStudentPortalContextService } from "./studentEnrollment.service.js";
 
@@ -25,7 +26,11 @@ import {
 } from "../utils/date.helper.js";
 import {
     normalizePeriodNo,
-    staffCanHandleSubject
+    staffCanHandleSubject,
+    normalizeTemplateDays,
+    normalizeTemplateSlots,
+    formatPeriodTemplateSummary,
+    formatPeriodTemplateDetail
 } from "../utils/academic.helper.js";
 import {
     getClassSectionOrThrow as getClassSectionGeneric,
@@ -1031,10 +1036,6 @@ export const getAllTimetableSlotsService = async (user, query = {}) => {
     return timetable.map(formatTimetableSlotList);
 };
 
-/**
- * 10) Alias for delete (soft-deactivate)
- */
-export const deleteTimetableSlotService = deactivateTimetableSlotService;
 
 const notifyTimetablePublishedService = async (adminUser, slots) => {
     // Implementation placeholder or actual logic if needed
@@ -1052,4 +1053,140 @@ export const getMyTimetableService = async (user, { dayOfWeek = null, childId = 
         classSectionId: classSection._id,
         dayOfWeek,
     });
+};
+
+
+// ------------------------------------------------------
+// 11) Create Period Template
+// admin only
+// ------------------------------------------------------
+export const createPeriodTemplateService = async (adminUser, data = {}) => {
+    assertAdminOnly(adminUser);
+
+    const name = String(data.name || "").trim();
+    if (!name) throw new Error("name is required");
+
+    const appliesToDays = normalizeTemplateDays(data.appliesToDays);
+    const slots = normalizeTemplateSlots(data.slots);
+
+    const isDefault = Boolean(data.isDefault);
+    const isActive = data.isActive !== undefined ? Boolean(data.isActive) : true;
+
+    // If setting this as default, clear the old default first
+    if (isDefault) {
+        await PeriodTemplate.updateMany(
+            { schoolId: adminUser.school_id, isDefault: true },
+            { $set: { isDefault: false } }
+        );
+    }
+
+    const template = await PeriodTemplate.create({
+        schoolId: adminUser.school_id,
+        name,
+        appliesToDays,
+        slots,
+        isDefault,
+        isActive,
+        createdBy: adminUser.id,
+    });
+
+    return formatPeriodTemplateDetail(template);
+};
+
+// ------------------------------------------------------
+// 12) Update Period Template
+// admin only
+// ------------------------------------------------------
+export const updatePeriodTemplateService = async (adminUser, templateId, data = {}) => {
+    assertAdminOnly(adminUser);
+
+    if (!mongoose.Types.ObjectId.isValid(templateId)) {
+        throw new Error("Invalid templateId");
+    }
+
+    const template = await PeriodTemplate.findOne({
+        _id: templateId,
+        schoolId: adminUser.school_id,
+    });
+
+    if (!template) {
+        throw new Error("Period template not found");
+    }
+
+    if (data.name !== undefined) {
+        const name = String(data.name || "").trim();
+        if (!name) throw new Error("name cannot be empty");
+        template.name = name;
+    }
+
+    if (data.appliesToDays !== undefined) {
+        template.appliesToDays = normalizeTemplateDays(data.appliesToDays);
+    }
+
+    if (data.slots !== undefined) {
+        template.slots = normalizeTemplateSlots(data.slots);
+    }
+
+    if (data.isActive !== undefined) {
+        template.isActive = Boolean(data.isActive);
+    }
+
+    if (data.isDefault !== undefined) {
+        const nextIsDefault = Boolean(data.isDefault);
+
+        if (nextIsDefault) {
+            await PeriodTemplate.updateMany(
+                { schoolId: adminUser.school_id, _id: { $ne: template._id }, isDefault: true },
+                { $set: { isDefault: false } }
+            );
+        }
+
+        template.isDefault = nextIsDefault;
+    }
+
+    await template.save();
+    return formatPeriodTemplateDetail(template);
+};
+
+// ------------------------------------------------------
+// 13) Bootstrap GET for timetable editor
+// Returns:
+/// - use_default -> default exists
+/// - choose_template -> templates exist, but no default
+/// - create_template -> nothing exists yet
+// admin only
+// ------------------------------------------------------
+export const getPeriodTemplateBootstrapService = async (adminUser, query = {}) => {
+    assertAdminOnly(adminUser);
+
+    const templates = await PeriodTemplate.find({
+        schoolId: adminUser.school_id,
+        isActive: true,
+    }).sort({ isDefault: -1, updatedAt: -1, createdAt: -1 });
+
+    const defaultTemplate = templates.find((t) => t.isDefault) || null;
+
+    let selectedTemplate = null;
+    if (query.templateId && mongoose.Types.ObjectId.isValid(query.templateId)) {
+        selectedTemplate = templates.find(
+            (t) => String(t._id) === String(query.templateId)
+        ) || null;
+    } else if (defaultTemplate) {
+        selectedTemplate = defaultTemplate;
+    }
+
+    const state = templates.length === 0
+        ? "create_template"
+        : defaultTemplate
+            ? "use_default"
+            : "choose_template";
+
+    return {
+        state,
+        defaultTemplate: defaultTemplate ? formatPeriodTemplateDetail(defaultTemplate) : null,
+        selectedTemplate: selectedTemplate ? formatPeriodTemplateDetail(selectedTemplate) : null,
+        templates: templates.map(formatPeriodTemplateSummary),
+        canCreateNew: true,
+        canChooseExisting: templates.length > 0,
+    };
 };

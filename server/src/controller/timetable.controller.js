@@ -6,10 +6,13 @@ import {
     getTimetableByClassSectionService,
     getTimetableByStaffService,
     getTimetableByIdService,
-    deleteTimetableSlotService,
+    deactivateTimetableSlotService,
     getAllTimetableSlotsService,
     publishTimetableService,
-    getMyTimetableService
+    getMyTimetableService,
+    createPeriodTemplateService,
+    updatePeriodTemplateService,
+    getPeriodTemplateBootstrapService
 } from "../services/timetable.service.js";
 
 export const getEligibleStaff = async (req, res) => {
@@ -81,7 +84,7 @@ export const getSlotDetail = async (req, res) => {
 
 export const deleteSlot = async (req, res) => {
     try {
-        const result = await deleteTimetableSlotService(req.user, req.params.id);
+        const result = await deactivateTimetableSlotService(req.user, req.params.id);
         return sendSuccess(res, result);
     } catch (err) {
         return sendError(res, { error: err, context: "Delete slot error" });
@@ -115,5 +118,34 @@ export const getMyTimetable = async (req, res) => {
         return sendSuccess(res, result);
     } catch (err) {
         return sendError(res, { error: err, context: "Get my timetable error" });
+    }
+};
+
+// ─── Period Template handlers ─────────────────────────────────────────────────
+
+export const getPeriodTemplateBootstrap = async (req, res) => {
+    try {
+        const result = await getPeriodTemplateBootstrapService(req.user, req.query);
+        return sendSuccess(res, result);
+    } catch (err) {
+        return sendError(res, { error: err, context: "Get period template bootstrap error" });
+    }
+};
+
+export const createPeriodTemplate = async (req, res) => {
+    try {
+        const result = await createPeriodTemplateService(req.user, req.body);
+        return sendSuccess(res, result, 201);
+    } catch (err) {
+        return sendError(res, { error: err, context: "Create period template error" });
+    }
+};
+
+export const updatePeriodTemplate = async (req, res) => {
+    try {
+        const result = await updatePeriodTemplateService(req.user, req.params.templateId, req.body);
+        return sendSuccess(res, result);
+    } catch (err) {
+        return sendError(res, { error: err, context: "Update period template error" });
     }
 };
